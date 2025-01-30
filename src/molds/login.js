@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import importAllFunctions from "@/functions/general/importAllLocalFunctions";
 '../estilos/general/general.css'
+import Music from "@/pages/music/[id]";
 
 let functions = importAllFunctions()
 
@@ -160,6 +161,8 @@ let login={
 functions.localStorageAcces('POST', 'multifunctions', login)
 
 export default function LoginMold() {
+
+    return 'hola mundo'
     
     const [body, setBody] = useState({});
     const [email, setEmail] = useState('');
