@@ -1,0 +1,423 @@
+/*
+html5doctor.com Reset Stylesheet
+v1.6.1
+Last Updated: 2010-09-17
+Author: Richard Clark - http://richclarkdesign.com
+Twitter: @rich_clark
+*/
+
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin:0;
+    padding:0;
+    border:0;
+    outline:0;
+    font-size:100%;
+    vertical-align:baseline;
+    background:transparent;
+}
+
+
+
+.miCirculoGiratorio {
+  
+  border: 8px solid #f3f3f3;
+  border-top: 10px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 2s linear infinite;
+}
+
+.miContenedor {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+}
+
+.sticky{
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
+
+.marco{
+  padding: 2vh;
+  transition: padding 1s ease-in-out;
+}
+
+.sinMarco{
+  padding: 0;
+  transition: padding 1s ease-in-out;
+}
+
+
+H1 {
+  font-size: 2vh;
+}
+
+H2 {
+  font-size: 1.5vh;
+}
+
+p {
+  font-size: 3vh;
+}
+
+@media (min-width: 1000px) {
+  /* Estilos para pantallas con un ancho de 1000px o más */
+  H1 {
+    font-size: 5vh;
+  }
+
+  H2 {
+    font-size: 2.5vh;
+  }
+
+  p {
+    font-size: 3vh;
+  }
+
+}
+
+.disposicionBarra{
+  background-color: #3498db;
+  display: flex;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 0;
+}
+
+@media (max-width: 800px) {
+  .disposicionBarra{
+    background-color: #d534db;
+    display: block;
+    height: 10vh;
+    line-height: 10vh; /* Añadido para centrar verticalmente */
+    text-align: center; /* Añadido para centrar horizontalmente */
+    overflow-y: auto;
+    scrollbar-width: none; /* Para Firefox */
+    -ms-overflow-style: none; /* Para Internet Explorer y Edge */
+    z-index: 0;
+  }
+}
+
+
+
+
+
+
+
+.botones{
+  background: rgb(0, 0, 0);
+  border-radius: 0.7em;
+  width: fit-content;
+  height: fit-content;
+  margin-left: 10px;
+  margin-right: 2px;
+  border: solid white 1px;
+  color: white;
+  padding: 5px;
+  font-size: 2.5vh;
+  cursor: pointer;
+  transition: 0.5s;
+}
+
+.botones:hover{
+  background-color: #404041;
+}
+
+.imagenes{
+  background: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  padding: 5px;
+  transition: 0.5s;
+  object-fit: cover;
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
+.imagenes:hover{
+  background: #FFD700;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  padding: 0px;
+  object-fit: cover;
+}
+
+.backgroundImage::after {
+  content: "";
+  background:#3c3c3a; /*linear-gradient(45deg, rgba(60,60,58,0.8631827731092436) 22%, rgba(15,158,213,0.7175245098039216) 51%, rgba(240,236,225,0.7707457983193278) 87%);*/
+  filter: blur(5px);
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+}
+
+
+.imagenSubirArchivos{
+  background: white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  padding: 5px;
+  transition: 0.5s;
+  object-fit: cover;
+  margin-right: 5px;
+  margin-left: 5px;
+  background-size: 80%;
+  background-repeat: no-repeat; 
+  background-position: center;
+  display: inline-block;
+  margin: 10px;
+}
+
+.imagenSubirArchivos:hover{
+  background: #FFD700;
+  border-radius: 50%;
+  background-size: cover;
+  padding: 0px;
+  object-fit: cover;
+}
+
+
+
+
+
+
+body {
+    line-height:1; 
+}
+
+.bordes{
+  border-radius: 0.3em;
+}
+
+.borde{
+  border: 1px solid #ffffffd0
+}
+
+.centrar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.adaptarAncho{
+  width:auto;
+}
+
+.noSaltoDeLinea{
+  white-space: nowrap;
+  
+}
+
+.padre {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90%;
+}
+
+.slider{
+  width: 100%;
+  height: 15px;
+  background: '#d3d3d3';
+  outline: none;
+  opacity: 0.7;
+  transition: opacity .2s;
+  border-radius: 12px;
+  overflow: hidden;
+  appearance: none;
+  transition: left 0.5s ease;
+}
+
+.resaltar{
+  background: rgba(0, 0, 0, 0);
+  transition: 0.5s;
+  border-radius: 0px;
+}
+
+.resaltar:hover{
+  background: #ddbe0e;
+  border-radius: 0.7em;
+}
+
+
+
+
+
+
+.input-moderno {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border:1px solid white;
+  border-bottom: 2px solid #000000;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  border-radius: 0.7em;
+}
+
+.input-moderno:focus {
+  border-bottom: 5px solid #f44336;
+}
+
+.input-moderno::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+.select-moderno {
+  width: 'fit-content';
+  padding: 12px 20px;
+  
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 2px solid #000000;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  border-radius: 0.7em;
+  appearance: none;
+  background-color: white;
+}
+
+
+
+
+
+
+article,aside,details,figcaption,figure,
+footer,header,hgroup,menu,nav,section {
+    display:block;
+}
+
+nav ul {
+    list-style:none;
+}
+
+blockquote, q {
+    quotes:none;
+}
+
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content:'';
+    content:none;
+}
+
+a {
+    margin:0;
+    padding:0;
+    font-size:100%;
+    vertical-align:baseline;
+    background:transparent;
+}
+
+/* change colours to suit your needs */
+ins {
+    background-color:#ff9;
+    color:#000;
+    text-decoration:none;
+}
+
+/* change colours to suit your needs */
+mark {
+    background-color:#ff9;
+    color:#000;
+    font-style:italic;
+    font-weight:bold;
+}
+
+del {
+    text-decoration: line-through;
+}
+
+abbr[title], dfn[title] {
+    border-bottom:1px dotted;
+    cursor:help;
+}
+
+table {
+    border-collapse:collapse;
+    border-spacing:0;
+}
+
+/* change border colour to suit your needs */
+hr {
+    display:block;
+    height:1px;
+    border:0;  
+    border-top:1px solid #cccccc;
+    margin:1em 0;
+    padding:0;
+}
+
+input, select {
+    vertical-align:middle;
+}
+
+
+
+
+
+/* mio */
+html,
+body {
+  color: white;
+  padding: 0;
+  margin: 0;
+  font-size: 2.5vh;
+  font-family: 'Montserrat Alternates', sans-serif;
+}
+
+
+h1, h2, h3, h4, h5{
+  margin: 0px;
+}
+
+
+.linea-horizontal {
+  border-top: 1px solid black; 
+  width: 100%; 
+  margin: 0; 
+}
+
+
+
+* {
+  box-sizing: border-box;
+}
+
+
+.scrollVertical{
+  overflow: scroll; 
+}
+
+.scrollVertical::-webkit-scrollbar {
+  width: 0; /* Ocultar la barra de desplazamiento en navegadores basados en WebKit (Chrome, Safari) */
+}
+

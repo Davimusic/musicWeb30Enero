@@ -1,0 +1,23 @@
+/* components/DraggableComponent.module.css */
+.draggable {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    position: absolute;
+    cursor: move;
+    border: 2px solid transparent;
+  }
+  .draggable.active {
+    border-color: blue;
+  }
+  .resizeHandle {
+    width: 10px;
+    height: 10px;
+    background-color: blue;
+    position: absolute;
+  }
+  .resizeHandle.topLeft { top: -5px; left: -5px; cursor: nwse-resize; }
+  .resizeHandle.topRight { top: -5px; right: -5px; cursor: nesw-resize; }
+  .resizeHandle.bottomLeft { bottom: -5px; left: -5px; cursor: nesw-resize; }
+  .resizeHandle.bottomRight { bottom: -5px; right: -5px; cursor: nwse-resize; }
+  
