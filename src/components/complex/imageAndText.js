@@ -2,21 +2,23 @@ import React, { useEffect, useState } from 'react';
 import Image from '../simple/image';
 import Text from '../simple/text';
 
-const ImageAndText = ({content}) => {
-    
-  const [items, setItems] = useState(content); // Estado para almacenar los datos dinámicos
+const ImageAndText = ({ content, onItemClick }) => {
+  const [items, setItems] = useState(content);
 
   useEffect(() => {
-    setItems(content)
-    console.log(content);        
+    setItems(content);
+    console.log(content);
   }, [content]);
 
   return (
     <div>
       {items.map((item, index) => (
-        <div key={index} style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '10px' }}>
+        <div
+          key={index}
+          onClick={() => onItemClick(item)} // Ejecuta la función onItemClick con el item seleccionado
+          style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '10px', cursor: 'pointer' }}
+        >
           <Image
-            onClick={item.image.onClick}
             className={item.image.className}
             style={item.image.style}
             alt={item.image.alt}
@@ -37,4 +39,4 @@ const ImageAndText = ({content}) => {
   );
 };
 
-export default ImageAndText; 
+export default ImageAndText;

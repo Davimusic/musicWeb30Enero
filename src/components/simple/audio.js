@@ -30,6 +30,13 @@ const Audio = ({
     }
   }, [volume]);
 
+  useEffect(() => {//por mi
+    audioRef.current.play();
+    setCurrentTime(0)
+    setIsPlaying(true);
+  }, [src]);
+
+
   const togglePlayPause = () => {
     if (isPlaying) {
       audioRef.current.pause();

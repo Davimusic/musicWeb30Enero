@@ -1,60 +1,75 @@
 "use client";
-import React, {useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import Audio from '@/components/simple/audio';
 import ImageAndText from '@/components/complex/imageAndText';
-import importAllFunctions from '@/functions/general/importAllLocalFunctions';
-import useHandleImageClick from '@/functions/specialized/music/handleImageClick';
 import dataMusic from '@/functions/soloDePrueba/music';
-
+import getFolderContents from '@/functions/utils/getFolderContents';
+import FileBrowser from '@/functions/cms/fileBrowser';
 
 export default function Music() {
-    // Inicializar los estados primero
-    const [song, setSong] = useState('https://res.cloudinary.com/dplncudbq/video/upload/v1692977795/mias/relax7_orxvbj.mp3');
     const [content, setContent] = useState([]); // Inicialmente vacío
+    const { musicContent } = dataMusic();
 
-    // Usar el custom hook después de inicializar los estados
-    const handleImageClick = useHandleImageClick(setSong, setContent);
+    
 
-    // Obtener los datos con handleImageClick
-    const { playerMusic, musicContent } = dataMusic(handleImageClick);
+    // Función para manejar el clic en un item
+    const handleItemClick = (item) => {
+        setContent([item]); // Actualiza el estado `content` con el item seleccionado
+        console.log("Item seleccionado:", item);
+    };
 
-    // Actualizar el estado de `content` con `test1` después de que se inicialice
+    // Inicializa `content` con el primer elemento de `musicContent`
     useState(() => {
-        setContent(playerMusic);
-    }, [playerMusic]);
+        if (musicContent && musicContent.length > 0) {
+        setContent([musicContent[0]]);
+        console.log("Inicializando content:", musicContent[0]);
+        }
+    }, [musicContent]);
+
+    // Log para verificar cambios en `content`
+    useEffect(() => {
+        console.log("Contenido actualizado:", content);
+    }, [content]);
 
     return (
         <div style={{ height: '100vh', background: 'black', display: 'flex', flexDirection: 'column' }}>
-            {/* Contenedor del contenido superior con scroll */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                <ImageAndText content={musicContent} />
-            </div>
+        {/* Contenedor del contenido superior con scroll */}
+        <div style={{ flex: 1, overflowY: 'auto', margin: '2%' }}>
+            <ImageAndText content={musicContent} onItemClick={handleItemClick} />
+        </div>
 
-            {/* Contenedor fijo en la parte inferior */}
-            <div style={{ backgroundColor: '#1e1e1e', padding: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                    <ImageAndText content={content} />
-                </div>
-                <Audio
-                    id={'1'}
-                    src={song}
-                    autoPlay={false}
-                    loop={false}
-                    controlsList={true}
-                    backgroundColor="#1e1e1e"
-                    buttonColor="#ffffff"
-                    sliderEmptyColor="#444"
-                    sliderFilledColor="#1db954"
-                    showPlayButton={true}
-                    showVolumeButton={true}
-                    playIcon="https://res.cloudinary.com/dplncudbq/image/upload/v1738190812/play_slnrjf.png"
-                    pauseIcon="https://res.cloudinary.com/dplncudbq/image/upload/v1738190812/pause_h2cozi.png"
-                    volumeIcon="https://res.cloudinary.com/dplncudbq/image/upload/v1738190812/volumeup_qodl3n.png"
-                    width="100%"
-                />
+        {/* Contenedor fijo en la parte inferior */}
+        <div style={{ backgroundColor: '#1e1e1e', padding: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <ImageAndText content={content} onItemClick={handleItemClick} />
+            <FileBrowser type={'image'} showControls={false} actionFunction={''} path={'exclusiveMusicForExclusivePeople'} />
+        
             </div>
+            {content && content.length > 0 && content[0].audio ? (
+            <>
+                {console.log("Contenido de 'content':", content)}
+                <Audio
+                id={content[0].audio.id}
+                src={content[0].audio.src}
+                autoPlay={content[0].audio.autoPlay}
+                loop={content[0].audio.loop}
+                controlsList={content[0].audio.controlsList}
+                backgroundColor={content[0].audio.backgroundColor}
+                buttonColor={content[0].audio.buttonColor}
+                sliderEmptyColor={content[0].audio.sliderEmptyColor}
+                sliderFilledColor={content[0].audio.sliderFilledColor}
+                showPlayButton={content[0].audio.showPlayButton}
+                showVolumeButton={content[0].audio.showVolumeButton}
+                playIcon={content[0].audio.playIcon}
+                pauseIcon={content[0].audio.pauseIcon}
+                volumeIcon={content[0].audio.volumeIcon}
+                width={content[0].audio.width}
+                />
+            </>
+            ) : (
+            console.log("Esperando datos en 'content'...")
+            )}
+        </div>
         </div>
     );
 }
-
-
