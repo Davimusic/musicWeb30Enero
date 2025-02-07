@@ -42,7 +42,7 @@ export default function Music() {
         <div style={{ backgroundColor: '#1e1e1e', padding: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <ImageAndText content={content} onItemClick={handleItemClick} />
-            <FileBrowser type={'image'} showControls={false} actionFunction={''} path={'exclusiveMusicForExclusivePeople'} />
+            <FileBrowser onPathChange={'exclusiveMusicForExclusivePeople'} type={'image'} showControls={false} actionFunction={''} path={'exclusiveMusicForExclusivePeople'} />
         
             </div>
             {content && content.length > 0 && content[0].audio ? (
