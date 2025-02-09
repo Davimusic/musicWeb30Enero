@@ -1,4 +1,4 @@
-import axios from 'axios';
+/*import axios from 'axios';
 
 const CLOUD_NAME = 'dplncudbq'; // Reemplaza con tu cloud name
 const API_KEY = '332683334251235'; // Reemplaza con tu API key
@@ -42,4 +42,4 @@ const getFolderContents = async (folderPath) => {
   }
 };
 
-export default getFolderContents;
+export default getFolderContents;*/
