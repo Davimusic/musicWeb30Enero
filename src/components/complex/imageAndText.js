@@ -29,7 +29,7 @@ const ImageAndText = ({ content, onItemClick }) => {
           />
           <Text
             id={item.text.id}
-            text={item.text.text}
+            text={item.text.textDescripcion}
             style={item.text.style}
             className={item.text.className}
           />

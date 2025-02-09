@@ -18,10 +18,37 @@ export default function UploadFilesToCloudinary() {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [loading, setLoading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState('');
   const [previews, setPreviews] = useState([]);
 
   const path = 'exclusiveMusicForExclusivePeople';
+
+
+function save(creation){
+    fetch('/api/saveCompositionToDb', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ composition: creation }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log(data.message);
+          setUploadSuccess('upload objects to mongoDb')
+        } else {
+          console.error(data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error al guardar la composición:', error);
+      });
+}
+
+
+  
+  
 
   useEffect(() => {
     if (selectedFiles.length) {
@@ -112,7 +139,9 @@ export default function UploadFilesToCloudinary() {
       console.log('Objeto de la creación musical:', creation);
       // No mostramos el objeto en pantalla
 
-      setUploadSuccess(true);
+      save(creation)
+
+      setUploadSuccess('files uploaded');
     } catch (error) {
       console.error('Error al subir los archivos:', error);
     } finally {
@@ -130,7 +159,7 @@ export default function UploadFilesToCloudinary() {
 
     // Acumular los nuevos archivos seleccionados
     setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
-    setUploadSuccess(false);
+    setUploadSuccess('');
   };
 
   const getFileIcon = (type) => {
@@ -359,7 +388,7 @@ export default function UploadFilesToCloudinary() {
       )}
 
       {loading && <p style={styles.loadingMessage}>Subiendo archivos...</p>}
-      {uploadSuccess && <p style={styles.successMessage}>¡Subida exitosa!</p>}
+      {uploadSuccess != '' && <p style={styles.successMessage}>{uploadSuccess}</p>}
     </div>
   );
 }

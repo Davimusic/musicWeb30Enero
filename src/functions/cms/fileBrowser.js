@@ -3,6 +3,7 @@ let API_SECRET = 'TOCYNfFpLI-FPVM421gOYXptw9o'
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import getFileIcon from '../music/getFileIcon';
 import '../../estilos/general/general.css'
 
 const FileBrowser = ({ path, onPathChange }) => {
@@ -61,21 +62,7 @@ const FileBrowser = ({ path, onPathChange }) => {
         document.body.removeChild(link);
     };
 
-    const getFileIcon = (format) => {
-        const icons = {
-            audio: '🎵',
-            video: '🎥',
-            pdf: '📄',
-            midi: '🎹',
-            default: '📁'
-        };
-
-        if (['mp3', 'wav', 'ogg', 'aac'].includes(format)) return icons.audio;
-        if (['mp4', 'mov', 'avi', 'mkv'].includes(format)) return icons.video;
-        if (['pdf'].includes(format)) return icons.pdf;
-        if (['mid', 'midi'].includes(format)) return icons.midi;
-        return icons.default;
-    };
+    
 
     return (
         <div style={{ background: 'black', color: 'white', padding: '20px' }}>

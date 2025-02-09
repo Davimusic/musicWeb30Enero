@@ -3,7 +3,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 let cachedDb = null;
 
 export async function connectToDatabase() {
-    const uri = 'mongodb+srv://davis123:davis123@cluster0.hujqu.mongodb.net/SENA';
+    const uri = 'mongodb+srv://davis123:davis123@cluster0.hujqu.mongodb.net/compositionLibrery';
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
@@ -15,7 +15,7 @@ export async function connectToDatabase() {
   
     try {
       await client.connect();
-      const db = client.db('PlanFelipeMusical');
+      const db = client.db('exclusiveMusicForExclusivePeople');
       cachedDb = db;
       return db;
     } catch (error) {

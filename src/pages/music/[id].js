@@ -2,15 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import Audio from '@/components/simple/audio';
 import ImageAndText from '@/components/complex/imageAndText';
-import dataMusic from '@/functions/soloDePrueba/music';
-import getFolderContents from '@/functions/utils/getFolderContents';
-import FileBrowser from '@/functions/cms/fileBrowser';
+import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
+import MidiAndPdf from '@/components/complex/midiAndPdf';
+import Video from '@/components/simple/video';
 
 export default function Music() {
-    const [content, setContent] = useState([]); // Inicialmente vacío
-    const { musicContent } = dataMusic();
-
-    
+    const [content, setContent] = useState([]);
+    const [musicContent, setMusicContent] = useState([]);
 
     // Función para manejar el clic en un item
     const handleItemClick = (item) => {
@@ -18,18 +16,32 @@ export default function Music() {
         console.log("Item seleccionado:", item);
     };
 
-    // Inicializa `content` con el primer elemento de `musicContent`
-    useState(() => {
-        if (musicContent && musicContent.length > 0) {
-        setContent([musicContent[0]]);
-        console.log("Inicializando content:", musicContent[0]);
-        }
-    }, [musicContent]);
-
-    // Log para verificar cambios en `content`
     useEffect(() => {
-        console.log("Contenido actualizado:", content);
-    }, [content]);
+            fetch('/api/getCompositionsFromDb', {
+                method: 'GET',
+                headers: {
+                'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                console.log(data.compositions);
+                console.log([mapCompositionsToMusicContent(data.compositions)[0]]);
+                console.log(mapCompositionsToMusicContent(data.compositions));
+                setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
+                setMusicContent(mapCompositionsToMusicContent(data.compositions))
+                
+                } else {
+                console.error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error al obtener las composiciones:', error);
+            });
+    }, []);
+
+    
 
     return (
         <div style={{ height: '100vh', background: 'black', display: 'flex', flexDirection: 'column' }}>
@@ -40,10 +52,16 @@ export default function Music() {
 
         {/* Contenedor fijo en la parte inferior */}
         <div style={{ backgroundColor: '#1e1e1e', padding: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <ImageAndText content={content} onItemClick={handleItemClick} />
-            <FileBrowser onPathChange={'exclusiveMusicForExclusivePeople'} type={'image'} showControls={false} actionFunction={''} path={'exclusiveMusicForExclusivePeople'} />
-        
+            <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+                <ImageAndText content={content} onItemClick={handleItemClick} />
+                <MidiAndPdf content={content} onItemClick={handleItemClick} />
+                {content && content.length > 0 && content[0].audio ? (
+                    <div>
+                        <Video id={content[0].video.id} src={content[0].video.src} style={{ width: '100px', height: '100px' }} className={[]} onClick={() => console.log('Video clicked')} />
+                    </div>
+                ) : (
+                    console.log("Esperando datos en 'content video'...")
+                )}
             </div>
             {content && content.length > 0 && content[0].audio ? (
             <>

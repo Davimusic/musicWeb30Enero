@@ -1,47 +1,42 @@
-export default function renderFile(file, resourceType, altText, onClick) {
-    switch (resourceType) {
-        case 'image':
-            return <img 
-                src={file.secure_url} 
-                alt={altText} 
-                onClick={onClick}
-                style={{ maxWidth: '200px', maxHeight: '200px', marginTop: '10px' }}
-            />;
-            
-        case 'video':
-            return <video 
-                controls 
-                src={file.secure_url} 
-                onClick={onClick}
-                style={{ maxWidth: '300px', marginTop: '10px' }}
-            />;
-            
-        case 'audio':
-        case 'midi':
-            return <audio 
-                controls 
-                src={file.secure_url} 
-                style={{ marginTop: '10px' }}
-            />;
-            
-        case 'pdf':
-            return (
-                <div style={{ marginTop: '10px' }}>
-                    <a
-                        href={file.secure_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: 'white' }}
-                    >
-                        Ver PDF
-                    </a>
-                </div>
-            );
-            
-        default:
-            return null;
+export default function determineResourceType(file) {
+        const fileName = file.name.toLowerCase();
+
+        // Primero, verificamos si es un archivo MIDI por la extensión
+        if (fileName.endsWith('.mid') || fileName.endsWith('.midi')) {
+        return 'midi';
+        }
+    
+        // Luego, obtenemos el tipo MIME
+        let mimeType = file.type;
+    
+        if (!mimeType) {
+        // Si mimeType está vacío, determinar según la extensión
+        if (fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.gif')) {
+            mimeType = 'image/*';
+        } else if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi')) {
+            mimeType = 'video/*';
+        } else if (fileName.endsWith('.mp3') || fileName.endsWith('.wav') || fileName.endsWith('.ogg')) {
+            mimeType = 'audio/*';
+        } else if (fileName.endsWith('.pdf')) {
+            mimeType = 'application/pdf';
+        } else {
+            mimeType = 'unknown';
+        }
+        }
+    
+        if (mimeType.startsWith('image/')) {
+        return 'imagen';
+        } else if (mimeType.startsWith('video/')) {
+        return 'video';
+        } else if (mimeType.startsWith('audio/')) {
+        return 'audio';
+        } else if (mimeType === 'application/pdf') {
+        return 'pdf';
+        } else {
+        return 'unsupported';
+        }
     }
-}
+
 
 
 /*const determineResourceType = (file) => {
