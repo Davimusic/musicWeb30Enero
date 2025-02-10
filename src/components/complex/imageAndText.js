@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from '../simple/image';
 import Text from '../simple/text';
+import HeartIcon from './heartIcon';
 
 const ImageAndText = ({ content, onItemClick }) => {
   const [items, setItems] = useState(content);
@@ -20,19 +21,28 @@ const ImageAndText = ({ content, onItemClick }) => {
         >
           <Image
             className={item.image.className}
-            style={item.image.style}
+            style={{ ...item.image.style, marginRight: '10px'}} 
             alt={item.image.alt}
             width={item.image.width}
             height={item.image.height}
             id={item.image.id}
             src={item.image.src}
           />
-          <Text
-            id={item.text.id}
-            text={item.text.textDescripcion}
-            style={item.text.style}
-            className={item.text.className}
-          />
+          <div style={{display: 'block'}}>
+            <Text
+              id={item.text.id}
+              text={item.text.textTitle}
+              style={item.text.style}
+              className={item.text.className}
+            />
+            <Text
+              id={item.text.id}
+              text={item.text.textDescripcion}
+              style={item.text.style}
+              className={item.text.className}
+            />
+          </div>
+          <HeartIcon size={45}/>
         </div>
       ))}
     </div>

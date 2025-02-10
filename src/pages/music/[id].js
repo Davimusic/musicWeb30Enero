@@ -5,6 +5,147 @@ import ImageAndText from '@/components/complex/imageAndText';
 import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
 import MidiAndPdf from '@/components/complex/midiAndPdf';
 import Video from '@/components/simple/video';
+'../../estilos/general/general.css';
+
+export default function Music() {
+    const [content, setContent] = useState([]);
+    const [musicContent, setMusicContent] = useState([]);
+    const [isContentVisible, setIsContentVisible] = useState(true); // Estado para controlar la visibilidad del contenido
+
+    const handleItemClick = (item) => {
+        setContent([item]);
+        console.log("Item seleccionado:", item);
+    };
+
+    const toggleContentVisibility = () => {
+        setIsContentVisible(!isContentVisible); // Alternar la visibilidad del contenido
+    };
+
+    useEffect(() => {
+        fetch('/api/getCompositionsFromDb', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(data.compositions);
+                console.log([mapCompositionsToMusicContent(data.compositions)[0]]);
+                console.log(mapCompositionsToMusicContent(data.compositions));
+                setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
+                setMusicContent(mapCompositionsToMusicContent(data.compositions));
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener las composiciones:', error);
+        });
+    }, []);
+
+    if (content && content.length > 0) {
+        return (
+            <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                {/* Capa de fondo con efecto de desenfoque, opacidad, margen oscuro y bordes redondeados */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${content[0].image.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(8px)',
+                    opacity: '0.5',
+                    margin: '20px',
+                    zIndex: 1,
+                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', // Margen oscuro
+                    borderRadius: '20px', // Bordes redondeados
+                }}></div>
+
+                {/* Contenedor del contenido superior con scroll */}
+                <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
+                    <ImageAndText content={musicContent} onItemClick={handleItemClick} />
+                </div>
+
+                {/* Contenedor fijo en la parte inferior */}
+                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px' }}>
+                    {/* Botón para ocultar/mostrar contenido */}
+                    <button 
+                        onClick={toggleContentVisibility}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            zIndex: 3,
+                            padding: '10px',
+                            borderRadius: '5px',
+                            border: 'none',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {isContentVisible ? 'Ocultar' : 'Mostrar'}
+                    </button>
+
+                    {/* Contenido que se ocultará/mostrará */}
+                    <div style={{ display: isContentVisible ? 'flex' : 'none', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        <MidiAndPdf content={content} onItemClick={handleItemClick} />
+                        {content[0].video ? (
+                            <div>
+                                <Video id={content[0].video.id} src={content[0].video.src} style={{ width: '100px', height: '100px' }} className={[]} onClick={() => console.log('Video clicked')} />
+                            </div>
+                        ) : (
+                            console.log("Esperando datos en 'content video'...")
+                        )}
+                    </div>
+
+                    {/* Componente Audio (siempre visible) */}
+                    <Audio
+                        id={content[0].audio.id}
+                        src={content[0].audio.src}
+                        autoPlay={content[0].audio.autoPlay}
+                        loop={content[0].audio.loop}
+                        controlsList={content[0].audio.controlsList}
+                        backgroundColor={content[0].audio.backgroundColor}
+                        buttonColor={content[0].audio.buttonColor}
+                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
+                        sliderFilledColor={content[0].audio.sliderFilledColor}
+                        showPlayButton={content[0].audio.showPlayButton}
+                        showVolumeButton={content[0].audio.showVolumeButton}
+                        playIcon={content[0].audio.playIcon}
+                        pauseIcon={content[0].audio.pauseIcon}
+                        volumeIcon={content[0].audio.volumeIcon}
+                        width={content[0].audio.width}
+                        allMusicProyects={musicContent}
+                        setContent={setContent}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
+            Cargando contenido...
+        </div>
+    );
+}
+
+/*"use client";
+import React, { useEffect, useState } from 'react';
+import Audio from '@/components/simple/audio';
+import ImageAndText from '@/components/complex/imageAndText';
+import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
+import MidiAndPdf from '@/components/complex/midiAndPdf';
+import Video from '@/components/simple/video';
+import Text from '@/components/simple/text';
+'../../estilos/general/general.css'
 
 export default function Music() {
     const [content, setContent] = useState([]);
@@ -41,8 +182,7 @@ export default function Music() {
 
     if (content && content.length > 0) {
         return (
-            <div style={{ height: '100vh', background: 'black', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                {/* Capa de fondo con efecto de desenfoque, opacidad, margen oscuro y bordes redondeados */}
+            <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 <div style={{
                     position: 'absolute',
                     top: 0,
@@ -60,15 +200,16 @@ export default function Music() {
                     borderRadius: '20px', // Bordes redondeados
                 }}></div>
 
-                {/* Contenedor del contenido superior con scroll */}
                 <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
                     <ImageAndText content={musicContent} onItemClick={handleItemClick} />
                 </div>
 
-                {/* Contenedor fijo en la parte inferior */}
-                <div style={{ backgroundColor: '#1e1e1e', padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px' }}>
+                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px' }}>
                     <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
-                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        
+                            
+                            <ImageAndText content={content} onItemClick={handleItemClick} />
+                        
                         <MidiAndPdf content={content} onItemClick={handleItemClick} />
                         {content[0].video ? (
                             <div>
@@ -94,6 +235,8 @@ export default function Music() {
                         pauseIcon={content[0].audio.pauseIcon}
                         volumeIcon={content[0].audio.volumeIcon}
                         width={content[0].audio.width}
+                        allMusicProyects={musicContent}
+                        setContent = {setContent}
                     />
                 </div>
             </div>
@@ -105,5 +248,5 @@ export default function Music() {
             Cargando contenido...
         </div>
     );
-}
+}*/
 

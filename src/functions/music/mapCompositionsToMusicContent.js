@@ -23,6 +23,7 @@ export default function mapCompositionsToMusicContent(data) {
             text: {
                 id: `text_${composition._id}`,
                 textDescripcion: composition.descripcion,
+                textTitle: composition.titulo,
                 style: {},
                 className: []
             },
