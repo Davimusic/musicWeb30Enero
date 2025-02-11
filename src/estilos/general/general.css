@@ -1,12 +1,62 @@
-.color1 {color: #060606;}
-.color2 {color: #0c283f;}
-.color3 {color: #1d6188;}
-.color4 {color: #2b95c8;}
-.color5 {color: #2bc6c8;}
+/* Colores de texto */
+.color1 { color: #060606; }
+.color2 { color: #0c283f; }
+.color3 { color: #1d6188; }
+.color4 { color: #2b95c8; }
+.color5 { color: #2bc6c8; }
 
-.backgroundColor1 { background-color: #060606;}
-.backgroundColor2 { background-color: #0c283f;}
-.backgroundColor3 { background-color: #1d6188;}
-.backgroundColor4 { background-color: #2b95c8;}
-.backgroundColor5 { background-color: #2bc6c8;}
+/* Colores de fondo */
+.backgroundColor1 { background-color: #060606; }
+.backgroundColor2 { background-color: #0c283f; }
+.backgroundColor3 { background-color: #1d6188; }
+.backgroundColor4 { background-color: #2b95c8; }
+.backgroundColor5 { background-color: #2bc6c8; }
 
+/* Font Sizes for Titles */
+.title-xl { font-size: 2.5rem; }
+.title-lg { font-size: 2rem; }
+.title-md { font-size: 1.75rem; }
+.title-sm { font-size: 1.5rem; }
+.title-xs { font-size: 1.25rem; }
+.title-xxs { font-size: 1rem; }
+
+/* Font Sizes for Content */
+.content-default { font-size: 1rem; }
+.content-small { font-size: 0.875rem; }
+
+/* Responsive Font Sizes */
+@media (max-width: 1200px) {
+  .title-xl { font-size: 2.25rem; }
+  .title-lg { font-size: 1.75rem; }
+  .title-md { font-size: 1.5rem; }
+  .title-sm { font-size: 1.25rem; }
+  .title-xs { font-size: 1rem; }
+  .title-xxs { font-size: 0.875rem; }
+  
+  .content-default { font-size: 0.875rem; }
+  .content-small { font-size: 0.75rem; }
+}
+
+@media (max-width: 768px) {
+  .title-xl { font-size: 2rem; }
+  .title-lg { font-size: 1.5rem; }
+  .title-md { font-size: 1.25rem; }
+  .title-sm { font-size: 1rem; }
+  .title-xs { font-size: 0.875rem; }
+  .title-xxs { font-size: 0.75rem; }
+  
+  .content-default { font-size: 0.75rem; }
+  .content-small { font-size: 0.625rem; }
+}
+
+@media (max-width: 576px) {
+  .title-xl { font-size: 1.75rem; }
+  .title-lg { font-size: 1.25rem; }
+  .title-md { font-size: 1rem; }
+  .title-sm { font-size: 0.875rem; }
+  .title-xs { font-size: 0.75rem; }
+  .title-xxs { font-size: 0.625rem; }
+  
+  .content-default { font-size: 0.625rem; }
+  .content-small { font-size: 0.5rem; }
+}

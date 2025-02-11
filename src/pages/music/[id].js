@@ -5,12 +5,23 @@ import ImageAndText from '@/components/complex/imageAndText';
 import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
 import MidiAndPdf from '@/components/complex/midiAndPdf';
 import Video from '@/components/simple/video';
-'../../estilos/general/general.css';
+import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose';
+import '../../estilos/general/general.css';
 
 export default function Music() {
     const [content, setContent] = useState([]);
     const [musicContent, setMusicContent] = useState([]);
     const [isContentVisible, setIsContentVisible] = useState(true); // Estado para controlar la visibilidad del contenido
+    const [currentTimeMedia, setCurrentTimeMedia] = useState(0);
+    const [componentInUse, setComponentInUse] = useState('');
+
+    useEffect(() => {
+        console.log(currentTimeMedia);
+    }, [currentTimeMedia]);
+
+    useEffect(() => {
+        console.log(componentInUse);
+    }, [componentInUse]);
 
     const handleItemClick = (item) => {
         setContent([item]);
@@ -72,60 +83,77 @@ export default function Music() {
                 </div>
 
                 {/* Contenedor fijo en la parte inferior */}
-                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px' }}>
-                    {/* Botón para ocultar/mostrar contenido */}
-                    <button 
-                        onClick={toggleContentVisibility}
-                        style={{
-                            position: 'absolute',
-                            top: '10px',
-                            right: '10px',
-                            zIndex: 3,
-                            padding: '10px',
-                            borderRadius: '5px',
-                            border: 'none',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        {isContentVisible ? 'Ocultar' : 'Mostrar'}
-                    </button>
+                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
+    {/* Botón para ocultar/mostrar contenido */}
+    <ToggleIconOpenAndClose
+  size={30}
+  isOpen={isContentVisible}
+  onToggle={toggleContentVisibility}
+  style={{
+    position: 'sticky',
+    top: '10px',
+    right: '10px',
+    zIndex: 3,
+    borderRadius: '50%',
+    padding: '5px',
+  }}
+/>
+    {/* Contenido que se ocultará/mostrará */}
+    <div 
+        style={{ 
+            opacity: isContentVisible ? 1 : 0,
+            maxHeight: isContentVisible ? '70vh' : '0', // Ajusta este valor según sea necesario
+            overflow: 'hidden',
+            transition: 'opacity 2s ease, max-height 2s ease',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center'
+        }}
+    >
+        <ImageAndText content={content} onItemClick={handleItemClick} />
+        <MidiAndPdf content={content} onItemClick={handleItemClick} />
+        {content[0].video ? (
+            <Video  
+                currentTimeMedia={currentTimeMedia} 
+                setCurrentTimeMedia={setCurrentTimeMedia} 
+                componentInUse={componentInUse} 
+                setComponentInUse={setComponentInUse} 
+                id={content[0].video.id} 
+                src={content[0].video.src} 
+                style={{ width: '300px', height: '300px' }} 
+                className={[]} 
+                onClick={() => console.log('Video clicked')} 
+            />
+        ) : (
+            console.log("Esperando datos en 'content video'...")
+        )}
+    </div>
 
-                    {/* Contenido que se ocultará/mostrará */}
-                    <div style={{ display: isContentVisible ? 'flex' : 'none', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <ImageAndText content={content} onItemClick={handleItemClick} />
-                        <MidiAndPdf content={content} onItemClick={handleItemClick} />
-                        {content[0].video ? (
-                            <div>
-                                <Video id={content[0].video.id} src={content[0].video.src} style={{ width: '100px', height: '100px' }} className={[]} onClick={() => console.log('Video clicked')} />
-                            </div>
-                        ) : (
-                            console.log("Esperando datos en 'content video'...")
-                        )}
-                    </div>
-
-                    {/* Componente Audio (siempre visible) */}
-                    <Audio
-                        id={content[0].audio.id}
-                        src={content[0].audio.src}
-                        autoPlay={content[0].audio.autoPlay}
-                        loop={content[0].audio.loop}
-                        controlsList={content[0].audio.controlsList}
-                        backgroundColor={content[0].audio.backgroundColor}
-                        buttonColor={content[0].audio.buttonColor}
-                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
-                        sliderFilledColor={content[0].audio.sliderFilledColor}
-                        showPlayButton={content[0].audio.showPlayButton}
-                        showVolumeButton={content[0].audio.showVolumeButton}
-                        playIcon={content[0].audio.playIcon}
-                        pauseIcon={content[0].audio.pauseIcon}
-                        volumeIcon={content[0].audio.volumeIcon}
-                        width={content[0].audio.width}
-                        allMusicProyects={musicContent}
-                        setContent={setContent}
-                    />
-                </div>
+    {/* Componente Audio (siempre visible) */}
+    <Audio
+        id={content[0].audio.id}
+        src={content[0].audio.src}
+        autoPlay={content[0].audio.autoPlay}
+        loop={content[0].audio.loop}
+        controlsList={content[0].audio.controlsList}
+        backgroundColor={content[0].audio.backgroundColor}
+        buttonColor={content[0].audio.buttonColor}
+        sliderEmptyColor={content[0].audio.sliderEmptyColor}
+        sliderFilledColor={content[0].audio.sliderFilledColor}
+        showPlayButton={content[0].audio.showPlayButton}
+        showVolumeButton={content[0].audio.showVolumeButton}
+        playIcon={content[0].audio.playIcon}
+        pauseIcon={content[0].audio.pauseIcon}
+        volumeIcon={content[0].audio.volumeIcon}
+        width={content[0].audio.width}
+        allMusicProyects={musicContent}
+        setContent={setContent}
+        setCurrentTimeMedia={setCurrentTimeMedia}
+        currentTimeMedia={currentTimeMedia}
+        setComponentInUse={setComponentInUse}
+        componentInUse={componentInUse}
+    />
+</div>
             </div>
         );
     }

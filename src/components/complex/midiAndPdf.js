@@ -2,7 +2,7 @@ import React from 'react';
 import getFileIcon from '@/functions/music/getFileIcon';
 
 const MidiAndPdf = ({ content, onItemClick }) => {
-    console.log(content);
+    //console.log(content);
     
 
 
