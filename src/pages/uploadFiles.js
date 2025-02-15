@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import renderFile from '@/functions/cms/renderFile';
 import determineResourceType from '@/functions/cms/determineResourceType';
-'../estilos/general/general.css'
+import '../estilos/general/general.css';
 
 export default function UploadFilesToCloudinary() {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -12,18 +12,27 @@ export default function UploadFilesToCloudinary() {
   const [loading, setLoading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [previews, setPreviews] = useState([]);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768); // Estado para detectar pantallas grandes
+  const [isDesktop, setIsDesktop] = useState(false); // Inicialmente false
 
   const path = 'exclusiveMusicForExclusivePeople';
 
   // Efecto para detectar cambios en el tamaño de la pantalla
   useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768);
-    };
+    // Verificar si estamos en el cliente antes de acceder a `window`
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setIsDesktop(window.innerWidth >= 768);
+      };
 
-    window.addEventListener('resize', handleResize); // Escuchar cambios en el tamaño de la pantalla
-    return () => window.removeEventListener('resize', handleResize); // Limpiar el evento al desmontar el componente
+      // Establecer el valor inicial de `isDesktop`
+      handleResize();
+
+      // Escuchar cambios en el tamaño de la pantalla
+      window.addEventListener('resize', handleResize);
+
+      // Limpiar el evento al desmontar el componente
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, []);
 
   function save(creation) {
@@ -213,17 +222,17 @@ export default function UploadFilesToCloudinary() {
       }}
       className='backgroundColor1'
     >
-      <div className='backgroundColor2' style={{...containerStyles, borderRadius: '0.7em'}}>
+      <div className='backgroundColor2' style={{ ...containerStyles, borderRadius: '0.7em' }}>
         {/* Formulario (izquierda en pantallas grandes) */}
-        <div style={{...formContainerStyles, border: '1px solid white'}}>
-            <button
-              onClick={uploadFiles}
-              style={{ marginTop: '20px', marginBottom: '20px', padding: '12px 25px', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '100%', backgroundColor: '#4CAF50' }}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#45a049')}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#4CAF50')}
-            >
-              Subir Todos los Archivos
-            </button>
+        <div style={{ ...formContainerStyles, border: '1px solid white' }}>
+          <button
+            onClick={uploadFiles}
+            style={{ marginTop: '20px', marginBottom: '20px', padding: '12px 25px', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '100%', backgroundColor: '#4CAF50' }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#45a049')}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#4CAF50')}
+          >
+            Subir Todos los Archivos
+          </button>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'flex', flexDirection: 'column', fontWeight: 'bold' }}>
               Título:
@@ -326,7 +335,6 @@ export default function UploadFilesToCloudinary() {
     </div>
   );
 }
-
 
 
 /*import React, { useState, useEffect } from 'react';
