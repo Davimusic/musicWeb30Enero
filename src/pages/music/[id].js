@@ -6,14 +6,17 @@ import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMu
 import MidiAndPdf from '@/components/complex/midiAndPdf';
 import Video from '@/components/simple/video';
 import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose';
-import '../../estilos/general/general.css';
+'../../estilos/general/general.css';
+import MainLogo from '@/components/complex/mainLogo';
 
 export default function Music() {
     const [content, setContent] = useState([]);
     const [musicContent, setMusicContent] = useState([]);
-    const [isContentVisible, setIsContentVisible] = useState(true); // Estado para controlar la visibilidad del contenido
+    const [isContentVisible, setIsContentVisible] = useState(true);
     const [currentTimeMedia, setCurrentTimeMedia] = useState(0);
     const [componentInUse, setComponentInUse] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingTimeout, setLoadingTimeout] = useState(null); // Para almacenar el temporizador
 
     useEffect(() => {
         console.log(currentTimeMedia);
@@ -29,8 +32,43 @@ export default function Music() {
     };
 
     const toggleContentVisibility = () => {
-        setIsContentVisible(!isContentVisible); // Alternar la visibilidad del contenido
+        setIsContentVisible(!isContentVisible);
     };
+
+    // Función para iniciar la carga
+    const startLoading = () => {
+        // Iniciar un temporizador de 500 ms
+        const timeout = setTimeout(() => {
+            setIsLoading(true); // Activar el estado de carga solo si pasan 500 ms
+        }, 500);
+        setLoadingTimeout(timeout); // Guardar el temporizador en el estado
+    };
+
+    // Función para detener la carga
+    const stopLoading = () => {
+        if (loadingTimeout) {
+            clearTimeout(loadingTimeout); // Cancelar el temporizador si la carga termina antes
+        }
+        setIsLoading(false); // Desactivar el estado de carga
+    };
+
+    useEffect(() => {
+        // Simular el inicio de la carga (por ejemplo, al hacer clic en un botón o cargar un recurso)
+        startLoading();
+
+        // Simular la finalización de la carga después de un tiempo aleatorio
+        const loadTime = Math.random() * 1000; // Tiempo de carga entre 0 y 1000 ms
+        setTimeout(() => {
+            stopLoading();
+        }, loadTime);
+
+        // Limpiar el temporizador al desmontar el componente
+        return () => {
+            if (loadingTimeout) {
+                clearTimeout(loadingTimeout);
+            }
+        };
+    }, []); // Ejecutar solo al montar el componente
 
     useEffect(() => {
         fetch('/api/getCompositionsFromDb', {
@@ -73,8 +111,8 @@ export default function Music() {
                     opacity: '0.5',
                     margin: '20px',
                     zIndex: 1,
-                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', // Margen oscuro
-                    borderRadius: '20px', // Bordes redondeados
+                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)',
+                    borderRadius: '20px',
                 }}></div>
 
                 {/* Contenedor del contenido superior con scroll */}
@@ -84,83 +122,107 @@ export default function Music() {
 
                 {/* Contenedor fijo en la parte inferior */}
                 <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
-    {/* Botón para ocultar/mostrar contenido */}
-    <ToggleIconOpenAndClose
-  size={30}
-  isOpen={isContentVisible}
-  onToggle={toggleContentVisibility}
-  style={{
-    position: 'sticky',
-    top: '10px',
-    right: '10px',
-    zIndex: 3,
-    borderRadius: '50%',
-    padding: '5px',
-  }}
-/>
-    {/* Contenido que se ocultará/mostrará */}
-    <div 
-        style={{ 
-            opacity: isContentVisible ? 1 : 0,
-            maxHeight: isContentVisible ? '70vh' : '0', // Ajusta este valor según sea necesario
-            overflow: 'hidden',
-            transition: 'opacity 2s ease, max-height 2s ease',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center'
-        }}
-    >
-        <ImageAndText content={content} onItemClick={handleItemClick} />
-        <MidiAndPdf content={content} onItemClick={handleItemClick} />
-        {content[0].video ? (
-            <Video  
-                currentTimeMedia={currentTimeMedia} 
-                setCurrentTimeMedia={setCurrentTimeMedia} 
-                componentInUse={componentInUse} 
-                setComponentInUse={setComponentInUse} 
-                id={content[0].video.id} 
-                src={content[0].video.src} 
-                style={{ width: '300px', height: '300px' }} 
-                className={[]} 
-                onClick={() => console.log('Video clicked')} 
-            />
-        ) : (
-            console.log("Esperando datos en 'content video'...")
-        )}
-    </div>
+                    {/* Botón para ocultar/mostrar contenido */}
+                    <ToggleIconOpenAndClose
+                        size={30}
+                        isOpen={isContentVisible}
+                        onToggle={toggleContentVisibility}
+                        style={{
+                            position: 'sticky',
+                            top: '10px',
+                            right: '10px',
+                            zIndex: 3,
+                            borderRadius: '50%',
+                            padding: '5px',
+                        }}
+                    />
 
-    {/* Componente Audio (siempre visible) */}
-    <Audio
-        id={content[0].audio.id}
-        src={content[0].audio.src}
-        autoPlay={content[0].audio.autoPlay}
-        loop={content[0].audio.loop}
-        controlsList={content[0].audio.controlsList}
-        backgroundColor={content[0].audio.backgroundColor}
-        buttonColor={content[0].audio.buttonColor}
-        sliderEmptyColor={content[0].audio.sliderEmptyColor}
-        sliderFilledColor={content[0].audio.sliderFilledColor}
-        showPlayButton={content[0].audio.showPlayButton}
-        showVolumeButton={content[0].audio.showVolumeButton}
-        playIcon={content[0].audio.playIcon}
-        pauseIcon={content[0].audio.pauseIcon}
-        volumeIcon={content[0].audio.volumeIcon}
-        width={content[0].audio.width}
-        allMusicProyects={musicContent}
-        setContent={setContent}
-        setCurrentTimeMedia={setCurrentTimeMedia}
-        currentTimeMedia={currentTimeMedia}
-        setComponentInUse={setComponentInUse}
-        componentInUse={componentInUse}
-    />
-</div>
+                    {/* Contenido que se ocultará/mostrará */}
+                    <div 
+                        style={{ 
+                            opacity: isContentVisible ? 1 : 0,
+                            maxHeight: isContentVisible ? '70vh' : '0',
+                            overflow: 'hidden',
+                            transition: 'opacity 2s ease, max-height 2s ease',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        <MidiAndPdf content={content} onItemClick={handleItemClick} />
+                        
+                        {content[0].video ? (
+                            <Video  
+                                currentTimeMedia={currentTimeMedia} 
+                                setCurrentTimeMedia={setCurrentTimeMedia} 
+                                componentInUse={componentInUse} 
+                                setComponentInUse={setComponentInUse} 
+                                id={content[0].video.id} 
+                                src={content[0].video.src} 
+                                style={{ width: '300px', height: '300px' }} 
+                                className={[]} 
+                                onClick={() => console.log('Video clicked')} 
+                                setIsLoading={setIsLoading}
+                            />
+                        ) : (
+                            console.log("Esperando datos en 'content video'...")
+                        )}
+                    </div>
+
+                    {/* Componente Audio (siempre visible) */}
+                    <Audio
+                        id={content[0].audio.id}
+                        src={content[0].audio.src}
+                        autoPlay={content[0].audio.autoPlay}
+                        loop={content[0].audio.loop}
+                        controlsList={content[0].audio.controlsList}
+                        backgroundColor={content[0].audio.backgroundColor}
+                        buttonColor={content[0].audio.buttonColor}
+                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
+                        sliderFilledColor={content[0].audio.sliderFilledColor}
+                        showPlayButton={content[0].audio.showPlayButton}
+                        showVolumeButton={content[0].audio.showVolumeButton}
+                        playIcon={content[0].audio.playIcon}
+                        pauseIcon={content[0].audio.pauseIcon}
+                        volumeIcon={content[0].audio.volumeIcon}
+                        width={content[0].audio.width}
+                        allMusicProyects={musicContent}
+                        setContent={setContent}
+                        setCurrentTimeMedia={setCurrentTimeMedia}
+                        currentTimeMedia={currentTimeMedia}
+                        setComponentInUse={setComponentInUse}
+                        componentInUse={componentInUse}
+                        setIsLoading={setIsLoading}
+                    />
+                </div>
+
+                {/* Componente de carga con transición suave */}
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backdropFilter: 'blur(10px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999,
+                    opacity: isLoading ? 1 : 0,
+                    visibility: isLoading ? 'visible' : 'hidden',
+                    transition: 'opacity 0.5s ease, visibility 0.5s ease',
+                }}>
+                    <MainLogo animate={true} size={'40vh'} />
+                </div>
             </div>
         );
     }
 
     return (
         <div style={{ height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
-            Cargando contenido...
+            <MainLogo animate={true} size={'40vh'}/>
         </div>
     );
 }
