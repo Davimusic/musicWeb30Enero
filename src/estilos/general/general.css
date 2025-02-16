@@ -60,3 +60,29 @@
   .content-default { font-size: 0.625rem; }
   .content-small { font-size: 0.5rem; }
 }
+
+
+.video-normal, .video-fullscreen {
+  transition: all 1.5s ease-in-out;
+}
+
+.video-normal {
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+}
+
+.video-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+button {
+  transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+button:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.1);
+}

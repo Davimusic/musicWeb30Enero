@@ -10,6 +10,10 @@ import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose'
 import MainLogo from '@/components/complex/mainLogo';
 import Modal from '@/components/complex/modal';
 
+
+import ExpandIcon from '@/components/complex/expandIcon';
+import ShrinkIcon from '@/components/complex/shirnkIcon';
+
 export default function Music() {
     const [content, setContent] = useState([]);
     const [musicContent, setMusicContent] = useState([]);
@@ -142,7 +146,15 @@ export default function Music() {
 
                     <button onClick={openModal}>Abrir Modal</button>
                     {content[0].video ? (
-                        <div style={{ position: isVideoFullScreen ? 'fixed' : 'relative', top: isVideoFullScreen ? '0' : 'auto', left: isVideoFullScreen ? '0' : 'auto', width: isVideoFullScreen ? '100vw' : '40px', height: isVideoFullScreen ? '100vh' : '40px', zIndex: isVideoFullScreen ? 9999 : 'auto', backgroundColor: isVideoFullScreen ? 'rgba(0, 0, 0, 0.9)' : 'transparent' }}>
+                        <div 
+                            className={isVideoFullScreen ? 'video-fullscreen' : 'video-normal'}
+                            style={{
+                                position: isVideoFullScreen ? 'fixed' : 'relative',
+                                top: isVideoFullScreen ? '0' : 'auto',
+                                left: isVideoFullScreen ? '0' : 'auto',
+                                zIndex: isVideoFullScreen ? 9999 : 'auto',
+                            }}
+                        >
                             <Video  
                                 currentTimeMedia={currentTimeMedia} 
                                 setCurrentTimeMedia={setCurrentTimeMedia} 
@@ -155,12 +167,29 @@ export default function Music() {
                                 onClick={() => console.log('Video clicked')} 
                                 setIsLoading={setIsLoading}
                             />
-                            <button 
+                            {/* Íconos de expandir/reducir */}
+                            <div 
                                 onClick={toggleVideoFullScreen} 
-                                style={{ position: 'absolute', left: '20px', top: '10px', right: '10px', zIndex: 10000, backgroundColor: 'white', padding: '5px', borderRadius: '5px' }}
+                                style={{
+                                    position: 'absolute', 
+                                    right: '0px', 
+                                    top: '0px', 
+                                    left: '1px',
+                                    zIndex: 10000, 
+                                    cursor: 'pointer',
+                                    backgroundColor: 'none', 
+                                    padding: '0px', 
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
                             >
-                                {isVideoFullScreen ? 'Reducir' : 'Expandir'}
-                            </button>
+                                {isVideoFullScreen ? (
+                                    <ShrinkIcon onClick={toggleVideoFullScreen} size={30} />
+                                ) : (
+                                    <ExpandIcon onClick={toggleVideoFullScreen} size={30} />
+                                )}
+                            </div>
                         </div>
                     ) : (
                         console.log("Esperando datos en 'content video'...")
@@ -223,6 +252,7 @@ export default function Music() {
                     visibility: isLoading ? 'visible' : 'hidden',
                     transition: 'opacity 0.5s ease, visibility 0.5s ease',
                 }}>
+                    <MainLogo animate={true} size={'40vh'}/>
                 </div>
             </div>
         );
