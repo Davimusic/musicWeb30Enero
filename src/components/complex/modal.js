@@ -26,12 +26,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1000, // Asegúrate de que este valor sea mayor que el de otros elementos
   },
   modal: {
     backgroundColor: 'black',
     padding: '20px',
     borderRadius: '8px',
     position: 'relative',
+    zIndex: 1001, // Asegúrate de que este valor sea mayor que el del overlay
   },
   closeButton: {
     position: 'absolute',

@@ -8,6 +8,247 @@ import Video from '@/components/simple/video';
 import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose';
 '../../estilos/general/general.css';
 import MainLogo from '@/components/complex/mainLogo';
+import Modal from '@/components/complex/modal';
+
+export default function Music() {
+    const [content, setContent] = useState([]);
+    const [musicContent, setMusicContent] = useState([]);
+    const [isContentVisible, setIsContentVisible] = useState(true);
+    const [currentTimeMedia, setCurrentTimeMedia] = useState(0);
+    const [componentInUse, setComponentInUse] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingTimeout, setLoadingTimeout] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isVideoFullScreen, setIsVideoFullScreen] = useState(false);
+
+    useEffect(() => {
+        console.log(currentTimeMedia);
+    }, [currentTimeMedia]);
+
+    useEffect(() => {
+        console.log(componentInUse);
+    }, [componentInUse]);
+
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
+
+    const handleItemClick = (item) => {
+        setContent([item]);
+        console.log("Item seleccionado:", item);
+    };
+
+    const toggleContentVisibility = () => {
+        setIsContentVisible(!isContentVisible);
+    };
+
+    const startLoading = () => {
+        const timeout = setTimeout(() => {
+            setIsLoading(true);
+        }, 500);
+        setLoadingTimeout(timeout);
+    };
+
+    const stopLoading = () => {
+        if (loadingTimeout) {
+            clearTimeout(loadingTimeout);
+        }
+        setIsLoading(false);
+    };
+
+    const toggleVideoFullScreen = () => {
+        const newFullScreenState = !isVideoFullScreen;
+        setIsVideoFullScreen(newFullScreenState);
+        setComponentInUse(newFullScreenState ? 'video' : 'audio');
+    };
+
+    useEffect(() => {
+        startLoading();
+        const loadTime = Math.random() * 1000;
+        setTimeout(() => {
+            stopLoading();
+        }, loadTime);
+
+        return () => {
+            if (loadingTimeout) {
+                clearTimeout(loadingTimeout);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        fetch('/api/getCompositionsFromDb', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
+                setMusicContent(mapCompositionsToMusicContent(data.compositions));
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al obtener las composiciones:', error);
+        });
+    }, []);
+
+    if (content && content.length > 0) {
+        return (
+            <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <Modal isOpen={isModalOpen} onClose={closeModal}>
+                    <h2>Contenido Dinámico</h2>
+                    <p>Este es un ejemplo de contenido dinámico dentro del modal.</p>
+                    <button onClick={closeModal}>Cerrar Modal</button>
+                </Modal>
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${content[0].image.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(8px)',
+                    opacity: '0.5',
+                    margin: '20px',
+                    zIndex: 1,
+                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)',
+                    borderRadius: '20px',
+                }}></div>
+
+                <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
+                    <ImageAndText content={musicContent} onItemClick={handleItemClick} />
+                </div>
+
+                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
+                    <ToggleIconOpenAndClose
+                        size={30}
+                        isOpen={isContentVisible}
+                        onToggle={toggleContentVisibility}
+                        style={{
+                            position: 'sticky',
+                            top: '10px',
+                            right: '10px',
+                            zIndex: 3,
+                            borderRadius: '50%',
+                            padding: '5px',
+                        }}
+                    />
+
+                    <button onClick={openModal}>Abrir Modal</button>
+                    {content[0].video ? (
+                        <div style={{ position: isVideoFullScreen ? 'fixed' : 'relative', top: isVideoFullScreen ? '0' : 'auto', left: isVideoFullScreen ? '0' : 'auto', width: isVideoFullScreen ? '100vw' : '40px', height: isVideoFullScreen ? '100vh' : '40px', zIndex: isVideoFullScreen ? 9999 : 'auto', backgroundColor: isVideoFullScreen ? 'rgba(0, 0, 0, 0.9)' : 'transparent' }}>
+                            <Video  
+                                currentTimeMedia={currentTimeMedia} 
+                                setCurrentTimeMedia={setCurrentTimeMedia} 
+                                componentInUse={componentInUse} 
+                                setComponentInUse={setComponentInUse} 
+                                id={content[0].video.id} 
+                                src={content[0].video.src} 
+                                style={{ width: '100%', height: '100%' }} 
+                                className={[]} 
+                                onClick={() => console.log('Video clicked')} 
+                                setIsLoading={setIsLoading}
+                            />
+                            <button 
+                                onClick={toggleVideoFullScreen} 
+                                style={{ position: 'absolute', left: '20px', top: '10px', right: '10px', zIndex: 10000, backgroundColor: 'white', padding: '5px', borderRadius: '5px' }}
+                            >
+                                {isVideoFullScreen ? 'Reducir' : 'Expandir'}
+                            </button>
+                        </div>
+                    ) : (
+                        console.log("Esperando datos en 'content video'...")
+                    )}
+
+                    <div 
+                        style={{ 
+                            opacity: isContentVisible ? 1 : 0,
+                            maxHeight: isContentVisible ? '70vh' : '0',
+                            overflow: 'hidden',
+                            transition: 'opacity 2s ease, max-height 2s ease',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        <MidiAndPdf content={content} onItemClick={handleItemClick} />
+                    </div>
+
+                    <Audio
+                        id={content[0].audio.id}
+                        src={content[0].audio.src}
+                        autoPlay={content[0].audio.autoPlay}
+                        loop={content[0].audio.loop}
+                        controlsList={content[0].audio.controlsList}
+                        backgroundColor={content[0].audio.backgroundColor}
+                        buttonColor={content[0].audio.buttonColor}
+                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
+                        sliderFilledColor={content[0].audio.sliderFilledColor}
+                        showPlayButton={content[0].audio.showPlayButton}
+                        showVolumeButton={content[0].audio.showVolumeButton}
+                        playIcon={content[0].audio.playIcon}
+                        pauseIcon={content[0].audio.pauseIcon}
+                        volumeIcon={content[0].audio.volumeIcon}
+                        width={content[0].audio.width}
+                        allMusicProyects={musicContent}
+                        setContent={setContent}
+                        setCurrentTimeMedia={setCurrentTimeMedia}
+                        currentTimeMedia={currentTimeMedia}
+                        setComponentInUse={setComponentInUse}
+                        componentInUse={componentInUse}
+                        setIsLoading={setIsLoading}
+                    />
+                </div>
+
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backdropFilter: 'blur(10px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999,
+                    opacity: isLoading ? 1 : 0,
+                    visibility: isLoading ? 'visible' : 'hidden',
+                    transition: 'opacity 0.5s ease, visibility 0.5s ease',
+                }}>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
+            <MainLogo animate={true} size={'40vh'}/>
+        </div>
+    );
+}
+
+
+
+/**
+ * "use client";
+import React, { useEffect, useState } from 'react';
+import Audio from '@/components/simple/audio';
+import ImageAndText from '@/components/complex/imageAndText';
+import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
+import MidiAndPdf from '@/components/complex/midiAndPdf';
+import Video from '@/components/simple/video';
+import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose';
+'../../estilos/general/general.css';
+import MainLogo from '@/components/complex/mainLogo';
+import Modal from '@/components/complex/modal';
 
 export default function Music() {
     const [content, setContent] = useState([]);
@@ -17,6 +258,7 @@ export default function Music() {
     const [componentInUse, setComponentInUse] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [loadingTimeout, setLoadingTimeout] = useState(null); // Para almacenar el temporizador
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         console.log(currentTimeMedia);
@@ -25,6 +267,10 @@ export default function Music() {
     useEffect(() => {
         console.log(componentInUse);
     }, [componentInUse]);
+
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
+
 
     const handleItemClick = (item) => {
         setContent([item]);
@@ -97,7 +343,11 @@ export default function Music() {
     if (content && content.length > 0) {
         return (
             <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                {/* Capa de fondo con efecto de desenfoque, opacidad, margen oscuro y bordes redondeados */}
+                <Modal isOpen={isModalOpen} onClose={closeModal}>
+        <h2>Contenido Dinámico</h2>
+        <p>Este es un ejemplo de contenido dinámico dentro del modal.</p>
+        <button onClick={closeModal}>Cerrar Modal</button>
+      </Modal>
                 <div style={{
                     position: 'absolute',
                     top: 0,
@@ -115,14 +365,11 @@ export default function Music() {
                     borderRadius: '20px',
                 }}></div>
 
-                {/* Contenedor del contenido superior con scroll */}
                 <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
                     <ImageAndText content={musicContent} onItemClick={handleItemClick} />
                 </div>
 
-                {/* Contenedor fijo en la parte inferior */}
                 <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
-                    {/* Botón para ocultar/mostrar contenido */}
                     <ToggleIconOpenAndClose
                         size={30}
                         isOpen={isContentVisible}
@@ -137,7 +384,25 @@ export default function Music() {
                         }}
                     />
 
-                    {/* Contenido que se ocultará/mostrará */}
+<button onClick={openModal}>Abrir Modal</button>
+{content[0].video ? (
+                            <Video  
+                                currentTimeMedia={currentTimeMedia} 
+                                setCurrentTimeMedia={setCurrentTimeMedia} 
+                                componentInUse={componentInUse} 
+                                setComponentInUse={setComponentInUse} 
+                                id={content[0].video.id} 
+                                src={content[0].video.src} 
+                                style={{ width: '50px', height: '50px' }} 
+                                className={[]} 
+                                onClick={() => console.log('Video clicked')} 
+                                setIsLoading={setIsLoading}
+                            />
+                            //crea boton para expandir video a pantalla completa
+                        ) : (
+                            console.log("Esperando datos en 'content video'...")
+                        )}
+
                     <div 
                         style={{ 
                             opacity: isContentVisible ? 1 : 0,
@@ -152,25 +417,9 @@ export default function Music() {
                         <ImageAndText content={content} onItemClick={handleItemClick} />
                         <MidiAndPdf content={content} onItemClick={handleItemClick} />
                         
-                        {content[0].video ? (
-                            <Video  
-                                currentTimeMedia={currentTimeMedia} 
-                                setCurrentTimeMedia={setCurrentTimeMedia} 
-                                componentInUse={componentInUse} 
-                                setComponentInUse={setComponentInUse} 
-                                id={content[0].video.id} 
-                                src={content[0].video.src} 
-                                style={{ width: '300px', height: '300px' }} 
-                                className={[]} 
-                                onClick={() => console.log('Video clicked')} 
-                                setIsLoading={setIsLoading}
-                            />
-                        ) : (
-                            console.log("Esperando datos en 'content video'...")
-                        )}
+                        
                     </div>
 
-                    {/* Componente Audio (siempre visible) */}
                     <Audio
                         id={content[0].audio.id}
                         src={content[0].audio.src}
@@ -197,7 +446,6 @@ export default function Music() {
                     />
                 </div>
 
-                {/* Componente de carga con transición suave */}
                 <div style={{
                     position: 'fixed',
                     top: 0,
@@ -214,7 +462,6 @@ export default function Music() {
                     visibility: isLoading ? 'visible' : 'hidden',
                     transition: 'opacity 0.5s ease, visibility 0.5s ease',
                 }}>
-                    <MainLogo animate={true} size={'40vh'} />
                 </div>
             </div>
         );
@@ -226,117 +473,4 @@ export default function Music() {
         </div>
     );
 }
-
-/*"use client";
-import React, { useEffect, useState } from 'react';
-import Audio from '@/components/simple/audio';
-import ImageAndText from '@/components/complex/imageAndText';
-import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
-import MidiAndPdf from '@/components/complex/midiAndPdf';
-import Video from '@/components/simple/video';
-import Text from '@/components/simple/text';
-'../../estilos/general/general.css'
-
-export default function Music() {
-    const [content, setContent] = useState([]);
-    const [musicContent, setMusicContent] = useState([]);
-
-    const handleItemClick = (item) => {
-        setContent([item]);
-        console.log("Item seleccionado:", item);
-    };
-
-    useEffect(() => {
-        fetch('/api/getCompositionsFromDb', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log(data.compositions);
-                console.log([mapCompositionsToMusicContent(data.compositions)[0]]);
-                console.log(mapCompositionsToMusicContent(data.compositions));
-                setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
-                setMusicContent(mapCompositionsToMusicContent(data.compositions));
-            } else {
-                console.error(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener las composiciones:', error);
-        });
-    }, []);
-
-    if (content && content.length > 0) {
-        return (
-            <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: `url(${content[0].image.src})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    filter: 'blur(8px)',
-                    opacity: '0.5',
-                    margin: '20px',
-                    zIndex: 1,
-                    boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', // Margen oscuro
-                    borderRadius: '20px', // Bordes redondeados
-                }}></div>
-
-                <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
-                    <ImageAndText content={musicContent} onItemClick={handleItemClick} />
-                </div>
-
-                <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px' }}>
-                    <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
-                        
-                            
-                            <ImageAndText content={content} onItemClick={handleItemClick} />
-                        
-                        <MidiAndPdf content={content} onItemClick={handleItemClick} />
-                        {content[0].video ? (
-                            <div>
-                                <Video id={content[0].video.id} src={content[0].video.src} style={{ width: '100px', height: '100px' }} className={[]} onClick={() => console.log('Video clicked')} />
-                            </div>
-                        ) : (
-                            console.log("Esperando datos en 'content video'...")
-                        )}
-                    </div>
-                    <Audio
-                        id={content[0].audio.id}
-                        src={content[0].audio.src}
-                        autoPlay={content[0].audio.autoPlay}
-                        loop={content[0].audio.loop}
-                        controlsList={content[0].audio.controlsList}
-                        backgroundColor={content[0].audio.backgroundColor}
-                        buttonColor={content[0].audio.buttonColor}
-                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
-                        sliderFilledColor={content[0].audio.sliderFilledColor}
-                        showPlayButton={content[0].audio.showPlayButton}
-                        showVolumeButton={content[0].audio.showVolumeButton}
-                        playIcon={content[0].audio.playIcon}
-                        pauseIcon={content[0].audio.pauseIcon}
-                        volumeIcon={content[0].audio.volumeIcon}
-                        width={content[0].audio.width}
-                        allMusicProyects={musicContent}
-                        setContent = {setContent}
-                    />
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div style={{ height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
-            Cargando contenido...
-        </div>
-    );
-}*/
-
+ */
