@@ -17,7 +17,7 @@ import ShrinkIcon from '@/components/complex/shirnkIcon';
 export default function Music() {
     const [content, setContent] = useState([]);
     const [musicContent, setMusicContent] = useState([]);
-    const [isContentVisible, setIsContentVisible] = useState(true);
+    const [isContentVisible, setIsContentVisible] = useState(false);
     const [currentTimeMedia, setCurrentTimeMedia] = useState(0);
     const [componentInUse, setComponentInUse] = useState('');
     const [isLoading, setIsLoading] = useState(false);
