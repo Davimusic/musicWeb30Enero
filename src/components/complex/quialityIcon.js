@@ -1,6 +1,3 @@
-
-
-
 import React, { useState } from 'react';
 
 const QualityIcon = ({ size = 30, onClick }) => {
@@ -64,6 +61,7 @@ const QualityIcon = ({ size = 30, onClick }) => {
 };
 
 export default QualityIcon;
+
 
 
 

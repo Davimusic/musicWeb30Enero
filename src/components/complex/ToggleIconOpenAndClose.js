@@ -22,9 +22,7 @@ const ToggleIconOpenAndClose = ({ size = 30, isOpen = false, onToggle, style }) 
     <div
       onClick={handleClick}
       style={{
-        display: 'inline-block',
         cursor: 'pointer',
-        marginLeft: 'auto',
         ...style, // Aplicar estilos pasados como prop
       }}
     >

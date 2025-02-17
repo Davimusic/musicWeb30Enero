@@ -25,6 +25,11 @@ export default function Music() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isVideoFullScreen, setIsVideoFullScreen] = useState(false);
 
+
+    useEffect(() => {
+        console.log(musicContent);
+    }, [musicContent]);
+
     useEffect(() => {
         console.log(currentTimeMedia);
     }, [currentTimeMedia]);
@@ -88,6 +93,10 @@ export default function Music() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log(data.compositions);
+            
+            console.log(mapCompositionsToMusicContent(data.compositions));
+            
             if (data.success) {
                 setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
                 setMusicContent(mapCompositionsToMusicContent(data.compositions));
@@ -114,7 +123,7 @@ export default function Music() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundImage: `url(${content[0].image.src})`,
+                    backgroundImage: `url(${content[0].imagePrincipal.src})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     filter: 'blur(8px)',
@@ -130,7 +139,7 @@ export default function Music() {
                 </div>
 
                 <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
-                    <div style={{display: 'flex', justifyContent: 'space-around', alignItems: 'center'}}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <ImageAndText content={content} onItemClick={handleItemClick} />
                         
                         <ToggleIconOpenAndClose
@@ -153,8 +162,8 @@ export default function Music() {
                                 setCurrentTimeMedia={setCurrentTimeMedia} 
                                 componentInUse={componentInUse} 
                                 setComponentInUse={setComponentInUse} 
-                                id={content[0].video.id} 
-                                src={content[0].video.src} 
+                                id={content[0].videoPrincipal.id} 
+                                src={content[0].videoPrincipal.src} 
                                 style={{ width: '100%', height: '100%' }} 
                                 className={[]} 
                                 onClick={() => console.log('Video clicked')} 
@@ -206,21 +215,21 @@ export default function Music() {
                     </div>
 
                     <Audio
-                        id={content[0].audio.id}
-                        src={content[0].audio.src}
-                        autoPlay={content[0].audio.autoPlay}
-                        loop={content[0].audio.loop}
-                        controlsList={content[0].audio.controlsList}
-                        backgroundColor={content[0].audio.backgroundColor}
-                        buttonColor={content[0].audio.buttonColor}
-                        sliderEmptyColor={content[0].audio.sliderEmptyColor}
-                        sliderFilledColor={content[0].audio.sliderFilledColor}
-                        showPlayButton={content[0].audio.showPlayButton}
-                        showVolumeButton={content[0].audio.showVolumeButton}
-                        playIcon={content[0].audio.playIcon}
-                        pauseIcon={content[0].audio.pauseIcon}
-                        volumeIcon={content[0].audio.volumeIcon}
-                        width={content[0].audio.width}
+                        id={content[0].audioPrincipal.id}
+                        src={content[0].audioPrincipal.src}
+                        autoPlay={content[0].audioPrincipal.autoPlay}
+                        loop={content[0].audioPrincipal.loop}
+                        controlsList={content[0].audioPrincipal.controlsList}
+                        backgroundColor={content[0].audioPrincipal.backgroundColor}
+                        buttonColor={content[0].audioPrincipal.buttonColor}
+                        sliderEmptyColor={content[0].audioPrincipal.sliderEmptyColor}
+                        sliderFilledColor={content[0].audioPrincipal.sliderFilledColor}
+                        showPlayButton={content[0].audioPrincipal.showPlayButton}
+                        showVolumeButton={content[0].audioPrincipal.showVolumeButton}
+                        playIcon={content[0].audioPrincipal.playIcon}
+                        pauseIcon={content[0].audioPrincipal.pauseIcon}
+                        volumeIcon={content[0].audioPrincipal.volumeIcon}
+                        width={content[0].audioPrincipal.width}
                         allMusicProyects={musicContent}
                         setContent={setContent}
                         setCurrentTimeMedia={setCurrentTimeMedia}
