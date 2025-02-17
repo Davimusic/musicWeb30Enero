@@ -191,8 +191,10 @@ const Audio = ({
     setIsRepeat(!isRepeat);
   };
 
-  // Función para obtener la siguiente canción
+  /*/ Función para obtener la siguiente canción
   const getNextSong = () => {
+    console.log(allMusicProyects);
+    
     if (allMusicProyects.length === 0) return null;
 
     const currentIndex = allMusicProyects.findIndex((song) => song.audio.src === src);
@@ -209,7 +211,49 @@ const Audio = ({
       const nextIndex = (currentIndex + 1) % allMusicProyects.length;
       return allMusicProyects[nextIndex];
     }
-  };
+  };*/
+
+  const getNextSong = () => {
+    console.log(allMusicProyects);
+    
+    if (allMusicProyects.length === 0) return null;
+
+    // Filtra los proyectos que tienen un audioPrincipal definido
+    const projectsWithAudioPrincipal = allMusicProyects.filter(project => project.audioPrincipal);
+
+    if (projectsWithAudioPrincipal.length === 0) return null;
+
+    // Encuentra el índice del proyecto que contiene el audioPrincipal actual
+    const currentProjectIndex = projectsWithAudioPrincipal.findIndex((project) => 
+        project.audioPrincipal.src === src // Usamos la variable local `src`
+    );
+
+    if (currentProjectIndex === -1) return null;
+
+    if (isShuffle) {
+        // Modo aleatorio: selecciona un proyecto aleatorio
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * projectsWithAudioPrincipal.length);
+        } while (randomIndex === currentProjectIndex); // Evita repetir el mismo proyecto
+
+        const randomProject = projectsWithAudioPrincipal[randomIndex];
+        // Selecciona el audioPrincipal del proyecto aleatorio
+        const nextAudio = randomProject.audioPrincipal;
+        console.log(randomProject);
+        
+        return randomProject;
+    } else {
+        // Modo normal: selecciona el siguiente proyecto en la lista
+        const nextProjectIndex = (currentProjectIndex + 1) % projectsWithAudioPrincipal.length;
+        const nextProject = projectsWithAudioPrincipal[nextProjectIndex];
+        // Selecciona el audioPrincipal del siguiente proyecto
+        const nextAudio = nextProject.audioPrincipal;
+        console.log({ project: nextProject, audio: nextAudio });
+        
+        return  nextProject ;
+    }
+};
 
   // Función para manejar el final de la reproducción
   const handleEnded = () => {
@@ -220,11 +264,13 @@ const Audio = ({
     } else {
       // Reproducir la siguiente canción
       const nextSong = getNextSong();
+      console.log(nextSong);
+      
       if (nextSong) {
         setContent([nextSong]); // Actualiza la canción actual
 
         // Cambia la fuente del audio y espera a que esté lista para reproducir
-        audioRef.current.src = mixUrlWithQuality(nextSong.audio.src, quality);
+        audioRef.current.src = mixUrlWithQuality(nextSong.audioPrincipal.src, quality);
         audioRef.current.load(); // Recarga el audio con la nueva fuente
 
         // Espera a que el audio esté listo antes de reproducir
