@@ -1,3 +1,6 @@
+
+
+
 import React, { useState } from 'react';
 
 const QualityIcon = ({ size = 30, onClick }) => {
@@ -19,18 +22,24 @@ const QualityIcon = ({ size = 30, onClick }) => {
         xmlns="http://www.w3.org/2000/svg"
         onClick={handleClick}
         className={isAnimating ? 'pulse' : ''}
-        style={{ 
-          cursor: 'pointer', 
+        style={{
+          cursor: 'pointer',
           transition: 'transform 0.3s ease',
         }}
-        stroke={'white'}
-        strokeWidth="1"
+        stroke="currentColor"
+        strokeWidth="1.5"
         fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {/* Ícono de calidad (HD) */}
+        {/* Engranaje minimalista */}
         <path
-          d="M5 7h2v4h2V7h2v10H9v-4H7v4H5V7zm8 0h3a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3h-3V7zm2 2v6h1a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-1z"
+          d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
           fill="currentColor"
+        />
+        <path
+          d="M19.4 8.6l-1.5-1.1c.2-.5.3-1 .3-1.5s-.1-1-.3-1.5l1.5-1.1c.3-.2.4-.6.2-.9l-1.4-2.4c-.2-.3-.6-.4-.9-.2l-1.5 1.1c-.5-.2-1-.3-1.5-.3s-1 .1-1.5.3L10.6.4c-.3-.2-.7-.1-.9.2L8.3 3c-.2.3-.1.7.2.9l1.5 1.1c-.2.5-.3 1-.3 1.5s.1 1 .3 1.5L8.5 8.6c-.3.2-.4.6-.2.9l1.4 2.4c.2.3.6.4.9.2l1.5-1.1c.5.2 1 .3 1.5.3s1-.1 1.5-.3l1.5 1.1c.3.2.7.1.9-.2l1.4-2.4c.2-.3.1-.7-.2-.9z"
+          fill="none"
         />
       </svg>
       <style jsx>{`
@@ -55,3 +64,7 @@ const QualityIcon = ({ size = 30, onClick }) => {
 };
 
 export default QualityIcon;
+
+
+
+

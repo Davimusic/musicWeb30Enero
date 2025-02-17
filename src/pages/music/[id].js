@@ -130,22 +130,15 @@ export default function Music() {
                 </div>
 
                 <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
-                    <ToggleIconOpenAndClose
-                        size={30}
-                        isOpen={isContentVisible}
-                        onToggle={toggleContentVisibility}
-                        style={{
-                            position: 'sticky',
-                            top: '10px',
-                            right: '10px',
-                            zIndex: 3,
-                            borderRadius: '50%',
-                            padding: '5px',
-                        }}
-                    />
-
-                    <button onClick={openModal}>Abrir Modal</button>
-                    {content[0].video ? (
+                    <div style={{display: 'flex', justifyContent: 'space-around', alignItems: 'center'}}>
+                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        
+                        <ToggleIconOpenAndClose
+                            size={30}
+                            isOpen={isContentVisible}
+                            onToggle={toggleContentVisibility}
+                        />
+                    
                         <div 
                             className={isVideoFullScreen ? 'video-fullscreen' : 'video-normal'}
                             style={{
@@ -166,6 +159,7 @@ export default function Music() {
                                 className={[]} 
                                 onClick={() => console.log('Video clicked')} 
                                 setIsLoading={setIsLoading}
+                                isVideoFullScreen={isVideoFullScreen}
                             />
                             {/* Íconos de expandir/reducir */}
                             <div 
@@ -174,26 +168,27 @@ export default function Music() {
                                     position: 'absolute', 
                                     right: '0px', 
                                     top: '0px', 
-                                    left: '1px',
+                                    left: '0px',
                                     zIndex: 10000, 
                                     cursor: 'pointer',
                                     backgroundColor: 'none', 
                                     padding: '0px', 
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
+                                    justifyContent: 'left',
                                 }}
                             >
                                 {isVideoFullScreen ? (
-                                    <ShrinkIcon onClick={toggleVideoFullScreen} size={30} />
+                                    <ShrinkIcon onClick={toggleVideoFullScreen} size={50} />
                                 ) : (
-                                    <ExpandIcon onClick={toggleVideoFullScreen} size={30} />
+                                    <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
                                 )}
                             </div>
                         </div>
-                    ) : (
-                        console.log("Esperando datos en 'content video'...")
-                    )}
+                    </div>
+
+                    
+                    
 
                     <div 
                         style={{ 
@@ -206,7 +201,7 @@ export default function Music() {
                             alignItems: 'center'
                         }}
                     >
-                        <ImageAndText content={content} onItemClick={handleItemClick} />
+                        
                         <MidiAndPdf content={content} onItemClick={handleItemClick} />
                     </div>
 

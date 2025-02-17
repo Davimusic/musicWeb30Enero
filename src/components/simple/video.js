@@ -4,6 +4,7 @@ import extractArrayContentToStrings from '@/functions/general/extractArrayConten
 import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
 import TogglePlayPause from '../complex/TogglePlayPause';
 import QualityIcon from '../complex/quialityIcon';
+import QualitySelectorModal from '../complex/qualitySelectorModal';
 
 const Video = ({
   id,
@@ -16,6 +17,7 @@ const Video = ({
   setComponentInUse,
   componentInUse,
   setIsLoading,
+  isVideoFullScreen
 }) => {
   const videoRef = useRef(null);
   const [quality, setQuality] = useState(25);
@@ -32,6 +34,8 @@ const Video = ({
 
   // Pausar el video si el componente en uso es 'audio'
   useEffect(() => {
+    console.log(componentInUse);
+    
     if (componentInUse === 'audio' && videoRef.current && !videoRef.current.paused) {
       videoRef.current.pause();
     }
@@ -165,7 +169,7 @@ const Video = ({
         Tu navegador no admite el elemento de video.
       </video>
 
-      {componentInUse != 'audio' && (
+      {isVideoFullScreen && (
         <div className="progress-bar">
           <span style={{ color: '#2bc6c8' }}>{formatTime(currentTime)}</span>
           <div className="slider-container">
@@ -199,20 +203,9 @@ const Video = ({
         
       )}
 
-      
+        <QualitySelectorModal isOpen={isModalOpen} onClose={closeQualityModal} onQualityChange={handleQualityChange} />
 
-      {isModalOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <h2>Selecciona la calidad del video</h2>
-            <button onClick={() => handleQualityChange(100)} style={styles.qualityOptionButton}>Alta</button>
-            <button onClick={() => handleQualityChange(75)} style={styles.qualityOptionButton}>Media</button>
-            <button onClick={() => handleQualityChange(50)} style={styles.qualityOptionButton}>Baja</button>
-            <button onClick={() => handleQualityChange(25)} style={styles.qualityOptionButton}>Muy baja</button>
-            <button onClick={closeQualityModal} style={styles.closeButton}>Cerrar</button>
-          </div>
-        </div>
-      )}
+      
 
       <style jsx>{`
         .progress-bar {
