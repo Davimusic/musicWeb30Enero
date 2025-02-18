@@ -5,6 +5,7 @@ import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
 import TogglePlayPause from '../complex/TogglePlayPause';
 import QualityIcon from '../complex/quialityIcon';
 import QualitySelectorModal from '../complex/qualitySelectorModal';
+import GlassIcon from '../complex/glassIcon';
 
 const Video = ({
   id,
@@ -25,6 +26,7 @@ const Video = ({
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showControls, setShowControls] = useState(false);
   const currentTimeMediaRef = useRef(currentTimeMedia);
 
   // Actualizar la referencia de currentTimeMedia cuando cambia
@@ -156,8 +158,26 @@ const Video = ({
   // Verifica si el tamaño del video es menor de 100px
   const isSmallVideo = style.width < 100 && style.height < 100;
 
+  // Función para manejar el hover o el toque en el video
+  const handleMouseEnter = () => {
+    setShowControls(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowControls(false);
+  };
+
+  const handleTouchStart = () => {
+    setShowControls(!showControls);
+  };
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', ...style }}>
+    <div 
+      style={{ position: 'relative', width: '100%', height: '100%', ...style }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+    >
       <video
         ref={videoRef}
         id={id}
@@ -168,45 +188,66 @@ const Video = ({
         <source src={mixUrlWithQuality(src, quality)} type="video/mp4" />
         Tu navegador no admite el elemento de video.
       </video>
-
+  
       {isVideoFullScreen && (
-        <div className="progress-bar">
-          <span style={{ color: '#2bc6c8' }}>{formatTime(currentTime)}</span>
-          <div className="slider-container">
-            <input
-              type="range"
-              min="0"
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="seek-slider"
-              style={{
-                background: `linear-gradient(to right, #2bc6c8 ${
-                  (currentTime / (duration || 1)) * 100
-                }%, #060606 ${(currentTime / (duration || 1)) * 100}%)`,
-              }}
-            />
+        <>
+          <div className="input-container" style={{ 
+    position: 'absolute', 
+    top: '10px',  
+    left: '50%', 
+    transform: 'translateX(-50%)',  
+    display: showControls ? 'flex' : 'none', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    padding: '5px', 
+    borderRadius: '10px',
+    width: 'auto',
+}} onClick={(e) => e.stopPropagation()}>
+    <input type="text" placeholder="Search" style={{
+        width: '80vw',
+        padding: '5px',
+        border: 'none',
+        borderRadius: '10px',
+        outline: 'none',
+    }} onClick={(e) => e.stopPropagation()} />
+    <GlassIcon style={{ marginLeft: '5px', color: '#fff' }} onClick={(e) => e.stopPropagation()} />
+</div>
+
+
+
+
+
+          <div className="progress-bar" style={{opacity: showControls ? 1 : 0, transition: 'opacity 0.3s' }}>
+            <GlassIcon/>
+            <span style={{ color: '#2bc6c8' }}>{formatTime(currentTime)}</span>
+            <div className="slider-container">
+              <input
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime}
+                onChange={handleSeek}
+                className="seek-slider"
+                style={{
+                  background: `linear-gradient(to right, #2bc6c8 ${
+                    (currentTime / (duration || 1)) * 100
+                  }%, #060606 ${(currentTime / (duration || 1)) * 100}%)`,
+                }}
+              />
+            </div>
+            <span style={{ color: '#2bc6c8' }}>{formatTime(duration)}</span>
+              <TogglePlayPause
+                size={40}
+                isPlaying={isPlaying}
+                onToggle={togglePlayPause}
+              />
+              <QualityIcon size={30} onClick={openQualityModal} />
           </div>
-          <span style={{ color: '#2bc6c8' }}>{formatTime(duration)}</span>
-          <div style={styles.controlsContainer}>
-          {/* Botón de reproducción/pausa personalizado */}
-          <TogglePlayPause
-            size={40}
-            isPlaying={isPlaying}
-            onToggle={togglePlayPause}
-          />
-
-          {/* Ícono de configuración de calidad */}
-          <QualityIcon size={30} onClick={openQualityModal} />
-        </div>
-        </div>
-        
+        </>
       )}
-
-        <QualitySelectorModal isOpen={isModalOpen} onClose={closeQualityModal} onQualityChange={handleQualityChange} />
-
-      
-
+  
+      <QualitySelectorModal isOpen={isModalOpen} onClose={closeQualityModal} onQualityChange={handleQualityChange} />
+  
       <style jsx>{`
         .progress-bar {
           position: absolute;
@@ -220,12 +261,12 @@ const Video = ({
           padding: 10px;
           border-radius: 10px;
         }
-
+  
         .slider-container {
           flex: 1;
           position: relative;
         }
-
+  
         .seek-slider {
           -webkit-appearance: none;
           appearance: none;
@@ -236,11 +277,11 @@ const Video = ({
           transition: opacity 0.2s;
           border-radius: 2px;
         }
-
+  
         .seek-slider:hover {
           opacity: 1;
         }
-
+  
         .seek-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
@@ -250,7 +291,7 @@ const Video = ({
           border-radius: 50%;
           cursor: pointer;
         }
-
+  
         .seek-slider::-moz-range-thumb {
           width: 12px;
           height: 12px;
@@ -261,6 +302,7 @@ const Video = ({
       `}</style>
     </div>
   );
+  
 };
 
 // Estilos
@@ -325,8 +367,8 @@ export default Video;
 
 
 
-
-/*import React, { useEffect, useRef, useState } from 'react';
+/**
+import React, { useEffect, useRef, useState } from 'react';
 import '../../estilos/general/general.css';
 import extractArrayContentToStrings from '@/functions/general/extractArrayContentToStrings';
 import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
@@ -643,8 +685,8 @@ const styles = {
   },
 };
 
-export default Video;*/
-
+export default Video;
+ */
 
 
 

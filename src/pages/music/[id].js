@@ -174,10 +174,10 @@ export default function Music() {
                             <div 
                                 onClick={toggleVideoFullScreen} 
                                 style={{
+                                    background: 'green',
                                     position: 'absolute', 
-                                    right: '0px', 
                                     top: '0px', 
-                                    left: '0px',
+                                    right: '10px', // Añadimos un margen derecho para despejar el borde
                                     zIndex: 10000, 
                                     cursor: 'pointer',
                                     backgroundColor: 'none', 
@@ -185,14 +185,16 @@ export default function Music() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'left',
+                                    width: 'auto' // Cambiamos el ancho para que sea automático
                                 }}
-                            >
+                                >
                                 {isVideoFullScreen ? (
                                     <ShrinkIcon onClick={toggleVideoFullScreen} size={50} />
                                 ) : (
                                     <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
                                 )}
                             </div>
+
                         </div>
                     </div>
 
