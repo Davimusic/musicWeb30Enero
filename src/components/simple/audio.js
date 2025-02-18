@@ -29,6 +29,8 @@ const Audio = ({
   setComponentInUse,
   componentInUse,
   setIsLoading,
+  isEndedVideo,
+  setIsEndedVideo
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -41,6 +43,9 @@ const Audio = ({
   const [quality, setQuality] = useState(25); // Estado para la calidad del audio
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+
+  
+
   // Efecto para pausar el audio si componentInUse cambia a 'video'
   useEffect(() => {
     if (componentInUse === 'video' && audioRef.current && !audioRef.current.paused) {
@@ -52,7 +57,12 @@ const Audio = ({
   // Efecto para sincronizar componentInUse con isPlaying
   useEffect(() => {
     if (isPlaying) {
-      setComponentInUse('audio'); // Si está reproduciendo, componentInUse es 'audio'
+      if(isEndedVideo){
+        setComponentInUse('video')//esto viene de video, cuando acaba el video el manda el mensaje para que lo deje empezar a el con el siguienyte video
+        setIsEndedVideo(false)
+      } else {
+        setComponentInUse('audio'); // Si está reproduciendo, componentInUse es 'audio'
+      }
     } else if (audioRef.current && audioRef.current.paused) {
       setComponentInUse(''); // Si está pausado, componentInUse es ''
     }
@@ -214,7 +224,7 @@ const Audio = ({
   };*/
 
   const getNextSong = () => {
-    console.log(allMusicProyects);
+    //console.log(allMusicProyects);
     
     if (allMusicProyects.length === 0) return null;
 
@@ -249,7 +259,7 @@ const Audio = ({
         const nextProject = projectsWithAudioPrincipal[nextProjectIndex];
         // Selecciona el audioPrincipal del siguiente proyecto
         const nextAudio = nextProject.audioPrincipal;
-        console.log({ project: nextProject, audio: nextAudio });
+        //console.log({ project: nextProject, audio: nextAudio });
         
         return  nextProject ;
     }
@@ -264,7 +274,7 @@ const Audio = ({
     } else {
       // Reproducir la siguiente canción
       const nextSong = getNextSong();
-      console.log(nextSong);
+      //console.log(nextSong);
       
       if (nextSong) {
         setContent([nextSong]); // Actualiza la canción actual

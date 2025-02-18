@@ -24,6 +24,7 @@ export default function Music() {
     const [loadingTimeout, setLoadingTimeout] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isVideoFullScreen, setIsVideoFullScreen] = useState(false);
+    const [isEndedVideo, setIsEndedVideo] = useState(false);
 
 
     useEffect(() => {
@@ -31,7 +32,11 @@ export default function Music() {
     }, [musicContent]);
 
     useEffect(() => {
-        console.log(currentTimeMedia);
+        console.log(componentInUse);
+    }, [componentInUse]);
+
+    useEffect(() => {
+        //console.log(currentTimeMedia);
     }, [currentTimeMedia]);
 
     useEffect(() => {
@@ -157,43 +162,49 @@ export default function Music() {
                                 zIndex: isVideoFullScreen ? 9999 : 'auto',
                             }}
                         >
-                            <Video  
-                                currentTimeMedia={currentTimeMedia} 
-                                setCurrentTimeMedia={setCurrentTimeMedia} 
-                                componentInUse={componentInUse} 
-                                setComponentInUse={setComponentInUse} 
-                                id={content[0].videoPrincipal.id} 
-                                src={content[0].videoPrincipal.src} 
-                                style={{ width: '100%', height: '100%' }} 
-                                className={[]} 
-                                onClick={() => console.log('Video clicked')} 
+                            
+                            <Video
+                                currentTimeMedia={currentTimeMedia}
+                                setCurrentTimeMedia={setCurrentTimeMedia}
+                                componentInUse={componentInUse}
+                                setComponentInUse={setComponentInUse}
+                                id={content[0].videoPrincipal.id}
+                                src={content[0].videoPrincipal.src}
+                                style={{ width: '100%', height: '100%' }}
+                                className={[]}
+                                onClick={() => console.log('Video clicked')}
                                 setIsLoading={setIsLoading}
                                 isVideoFullScreen={isVideoFullScreen}
+                                allMusicProyects={musicContent}
+                                setContent={setContent}
+                                setIsEndedVideo={setIsEndedVideo}
                             />
                             {/* Íconos de expandir/reducir */}
-                            <div 
-                                onClick={toggleVideoFullScreen} 
+                            <div
+                                onClick={toggleVideoFullScreen}
                                 style={{
-                                    background: 'green',
-                                    position: 'absolute', 
-                                    top: '0px', 
-                                    right: '10px', // Añadimos un margen derecho para despejar el borde
-                                    zIndex: 10000, 
+                                    position: 'absolute',
+                                    top: '0px',
+                                    right: '0', 
+                                    zIndex: 10000,
                                     cursor: 'pointer',
-                                    backgroundColor: 'none', 
-                                    padding: '0px', 
+                                    backgroundColor: 'none',
+                                    padding: '0px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'left',
-                                    width: 'auto' // Cambiamos el ancho para que sea automático
+                                    justifyContent: 'center',
+                                    width:  'auto'
                                 }}
-                                >
-                                {isVideoFullScreen ? (
-                                    <ShrinkIcon onClick={toggleVideoFullScreen} size={50} />
-                                ) : (
-                                    <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
-                                )}
-                            </div>
+                            >
+                            {isVideoFullScreen ? (
+                                <ShrinkIcon onClick={toggleVideoFullScreen} size={50} />
+                            ) : (
+                                <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
+                            )}
+                        </div>
+
+
+
 
                         </div>
                     </div>
@@ -239,6 +250,8 @@ export default function Music() {
                         setComponentInUse={setComponentInUse}
                         componentInUse={componentInUse}
                         setIsLoading={setIsLoading}
+                        isEndedVideo={isEndedVideo}
+                        setIsEndedVideo={setIsEndedVideo}
                     />
                 </div>
 
