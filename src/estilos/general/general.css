@@ -95,3 +95,34 @@ button:hover {
 .effectHover:hover {
   background-color: rgba(0, 0, 0, 0.61);
 }
+
+
+/* Estilos para el contenedor principal (visible en pantallas grandes) */
+.input-container {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 10px;
+  width: auto;
+}
+
+/* Estilos para el contenedor móvil (oculto por defecto) */
+.input-container-CellUP {
+  display: none; /* Oculta el contenedor móvil por defecto */
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 10px;
+  margin: 0 auto; /* Centrado horizontal */
+}
+
+/* Media query para móviles */
+@media (max-width: 768px) {
+  .input-container {
+    display: none; /* Oculta el contenedor principal en móviles */
+  }
+  .input-container-CellUP {
+    display: inline-flex; /* Muestra el contenedor móvil en pantallas pequeñas */
+  }
+}

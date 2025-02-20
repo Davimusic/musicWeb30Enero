@@ -23,8 +23,8 @@ const GlassIcon = ({ size = 30, onClick = () => {} }) => {
           cursor: 'pointer', 
           transition: 'transform 0.3s ease',
         }}
-        stroke={'black'}
-        strokeWidth="1"
+        stroke={'white'}
+        strokeWidth="1.5"
         fill="none"
       >
         {/* Ícono de lupa */}

@@ -29,14 +29,19 @@ const QualityIcon = ({ size = 30, onClick }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {/* Engranaje minimalista */}
+        {/* Lápiz (representa editar) */}
         <path
-          d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
-          fill="currentColor"
-        />
-        <path
-          d="M19.4 8.6l-1.5-1.1c.2-.5.3-1 .3-1.5s-.1-1-.3-1.5l1.5-1.1c.3-.2.4-.6.2-.9l-1.4-2.4c-.2-.3-.6-.4-.9-.2l-1.5 1.1c-.5-.2-1-.3-1.5-.3s-1 .1-1.5.3L10.6.4c-.3-.2-.7-.1-.9.2L8.3 3c-.2.3-.1.7.2.9l1.5 1.1c-.2.5-.3 1-.3 1.5s.1 1 .3 1.5L8.5 8.6c-.3.2-.4.6-.2.9l1.4 2.4c.2.3.6.4.9.2l1.5-1.1c.5.2 1 .3 1.5.3s1-.1 1.5-.3l1.5 1.1c.3.2.7.1.9-.2l1.4-2.4c.2-.3.1-.7-.2-.9z"
+          d="M17 3L21 7L7 21H3V17L17 3Z"
+          stroke="currentColor"
           fill="none"
+        />
+        {/* Línea diagonal que sugiere movimiento o ajuste */}
+        <line
+          x1="15"
+          y1="5"
+          x2="19"
+          y2="9"
+          stroke="currentColor"
         />
       </svg>
       <style jsx>{`

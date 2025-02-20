@@ -9,10 +9,11 @@ import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose'
 '../../estilos/general/general.css';
 import MainLogo from '@/components/complex/mainLogo';
 import Modal from '@/components/complex/modal';
-
-
 import ExpandIcon from '@/components/complex/expandIcon';
 import ShrinkIcon from '@/components/complex/shirnkIcon';
+import GlassIcon from '@/components/complex/glassIcon';
+import SeacrhTagInDb from '@/components/complex/searchTag';
+import { searchTagInDb } from '@/functions/music/searchTagInDb';
 
 export default function Music() {
     const [content, setContent] = useState([]);
@@ -26,6 +27,8 @@ export default function Music() {
     const [isVideoFullScreen, setIsVideoFullScreen] = useState(false);
     const [isEndedVideo, setIsEndedVideo] = useState(false);
 
+    const [searchTerm, setSearchTerm] = useState(''); // Estado para almacenar el valor del input
+    const [searchResults, setSearchResults] = useState([]); // Estado para almacenar los resultados de la búsqueda
 
     useEffect(() => {
         console.log(musicContent);
@@ -90,28 +93,7 @@ export default function Music() {
     }, []);
 
     useEffect(() => {
-        fetch('/api/getCompositionsFromDb', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data.compositions);
-            
-            console.log(mapCompositionsToMusicContent(data.compositions));
-            
-            if (data.success) {
-                setContent([mapCompositionsToMusicContent(data.compositions)[0]]);
-                setMusicContent(mapCompositionsToMusicContent(data.compositions));
-            } else {
-                console.error(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener las composiciones:', error);
-        });
+        searchTagInDb('', setContent, setMusicContent)
     }, []);
 
     if (content && content.length > 0) {
@@ -140,12 +122,27 @@ export default function Music() {
                 }}></div>
 
                 <div style={{ flex: 1, overflowY: 'auto', margin: '2%', position: 'relative', zIndex: 2 }}>
+                    <div style={{ width: '100%', textAlign: 'center' }}>
+                        <div 
+                            className="input-container-CellUP" 
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <SeacrhTagInDb setContent={setContent} setMusicContent={setMusicContent}/>
+                        </div>
+                    </div>    
                     <ImageAndText content={musicContent} onItemClick={handleItemClick} />
                 </div>
 
                 <div className='backgroundColor2' style={{padding: '10px', position: 'relative', zIndex: 2, borderRadius: '20px', margin: '10px', maxHeight: '80vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <ImageAndText content={content} onItemClick={handleItemClick} />
+
+                        <div 
+                            className="input-container" 
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <SeacrhTagInDb setContent={setContent} setMusicContent={setMusicContent}/>
+                        </div>
                         
                         <ToggleIconOpenAndClose
                             size={30}
@@ -178,6 +175,7 @@ export default function Music() {
                                 allMusicProyects={musicContent}
                                 setContent={setContent}
                                 setIsEndedVideo={setIsEndedVideo}
+                                setMusicContent={setMusicContent}
                             />
                             {/* Íconos de expandir/reducir */}
                             <div
