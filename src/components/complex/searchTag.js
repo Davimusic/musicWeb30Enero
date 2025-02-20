@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import GlassIcon from './glassIcon'; // Asegúrate de que la ruta sea correcta
 import { searchTagInDb } from '@/functions/music/searchTagInDb'; // Asegúrate de que la ruta sea correcta
 import Modal from './modal'; // Asegúrate de que la ruta sea correcta
+'../../estilos/general/general.css'
 
 const SearchTagInDb = ({ path, setContent, setMusicContent }) => {
     const [searchResults, setSearchResults] = useState('');

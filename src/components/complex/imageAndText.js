@@ -16,6 +16,7 @@ const ImageAndText = ({ content, onItemClick }) => {
     <div>
       {items.map((item, index) => (
         <div
+          id={item.idObjeto}
           key={index}
           onClick={() => onItemClick(item)} // Ejecuta la función onItemClick con el item seleccionado
           style={{

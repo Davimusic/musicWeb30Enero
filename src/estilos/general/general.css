@@ -101,20 +101,26 @@ button:hover {
 .input-container {
   display: flex;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
   padding: 5px;
   border-radius: 10px;
   width: auto;
 }
 
-/* Estilos para el contenedor móvil (oculto por defecto) */
 .input-container-CellUP {
   display: none; /* Oculta el contenedor móvil por defecto */
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
   padding: 5px;
   border-radius: 10px;
-  margin: 0 auto; /* Centrado horizontal */
+  position: fixed; /* Fija el contenedor en la pantalla */
+  top: 0; /* Lo posiciona en la parte superior */
+  left: 50%; /* Lo posiciona en el centro horizontalmente */
+  transform: translateX(-50%); /* Lo centra horizontalmente */
+  width: auto; /* Ajusta el ancho según el contenido */
+  z-index: 1000; /* Se asegura de que esté por encima de otros elementos */
+}
+
+.spaceTopOnlyPhone{
+    padding-top: 0px;
 }
 
 /* Media query para móviles */
@@ -125,4 +131,15 @@ button:hover {
   .input-container-CellUP {
     display: inline-flex; /* Muestra el contenedor móvil en pantallas pequeñas */
   }
+
+  .spaceTopOnlyPhone {
+    position: fixed; /* Fija el contenedor en la pantalla */
+    top: 35px; /* Posiciona el contenedor en la parte superior */
+    
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+  }
+}
+
+.highlight {
+  background-color: #1d6188;
 }

@@ -20,8 +20,280 @@ export default function UploadFilesToCloudinary() {
 
   const path = 'exclusiveMusicForExclusivePeople';
 
+  const exampleCompositions = [
+    {
+      _id: "1739829519109.0",
+      titulo: "nuevo1",
+      descripcion: "descipr",
+      etiquetas: ["a", "s", "d", "f", "g"],
+      archivos: [
+        {
+          tipo: "image",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739829496/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/tp1pjsrfckagc9an1hgv.png",
+          texto_explicativo: "imagennn",
+          es_principal: true,
+          metadatos: { duracion: null, formato: "png", tamano: "0.55MB" }
+        },
+        {
+          tipo: "video",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739829514/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/zssjouiynr0iygtuzqao.mp4",
+          texto_explicativo: "princiapl video",
+          es_principal: true,
+          metadatos: { duracion: "88.417959s", formato: "mp4", tamano: "6.68MB" }
+        },
+        {
+          tipo: "audio",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739829499/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/kuffsq7chrxeknjn5wrh.mp3",
+          texto_explicativo: "audio no prin",
+          es_principal: true,
+          metadatos: { duracion: "43.311s", formato: "mp3", tamano: "0.66MB" }
+        }
+      ],
+      audio_principal: {
+        tipo: "audio",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739829499/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/kuffsq7chrxeknjn5wrh.mp3",
+        texto_explicativo: "audio no prin",
+        es_principal: true,
+        metadatos: { duracion: "43.311s", formato: "mp3", tamano: "0.66MB" }
+      },
+      video_principal: {
+        tipo: "video",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739829514/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/zssjouiynr0iygtuzqao.mp4",
+        texto_explicativo: "princiapl video",
+        es_principal: true,
+        metadatos: { duracion: "88.417959s", formato: "mp4", tamano: "6.68MB" }
+      },
+      imagen_principal: {
+        tipo: "image",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739829496/exclusiveMusicForExclusivePeople/nuevo1_20250217_165818/tp1pjsrfckagc9an1hgv.png",
+        texto_explicativo: "imagennn",
+        es_principal: true,
+        metadatos: { duracion: null, formato: "png", tamano: "0.55MB" }
+      },
+      estadisticas: {
+        visitas: 0,
+        descargas: 0,
+        compartidos: 0
+      },
+      fecha_creacion: "2025-02-17T21:58:39.127Z"
+    },
+    {
+      _id: "1739833985715.0",
+      titulo: "nuevi2",
+      descripcion: "des2",
+      etiquetas: ["a", "s", "w", "d", ""],
+      archivos: [
+        {
+          tipo: "video",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739833975/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/akvwhjpsrryl8nceydj0.mp4",
+          texto_explicativo: "video1",
+          es_principal: true,
+          metadatos: { duracion: "23.75s", formato: "mp4", tamano: "0.51MB" }
+        },
+        {
+          tipo: "audio",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739833976/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/gilrco9twutgptgys5wb.mp3",
+          texto_explicativo: "audio1 ",
+          es_principal: true,
+          metadatos: { duracion: "23.74525s", formato: "mp3", tamano: "0.36MB" }
+        },
+        {
+          tipo: "image",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739833975/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/aycbrbjhwpjzyer6mbl0.jpg",
+          texto_explicativo: "iamgen1",
+          es_principal: true,
+          metadatos: { duracion: null, formato: "jpg", tamano: "0.04MB" }
+        }
+      ],
+      audio_principal: {
+        tipo: "audio",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739833976/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/gilrco9twutgptgys5wb.mp3",
+        texto_explicativo: "audio1 ",
+        es_principal: true,
+        metadatos: { duracion: "23.74525s", formato: "mp3", tamano: "0.36MB" }
+      },
+      video_principal: {
+        tipo: "video",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739833975/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/akvwhjpsrryl8nceydj0.mp4",
+        texto_explicativo: "video1",
+        es_principal: true,
+        metadatos: { duracion: "23.75s", formato: "mp4", tamano: "0.51MB" }
+      },
+      imagen_principal: {
+        tipo: "image",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739833975/exclusiveMusicForExclusivePeople/nuevi2_20250217_181255/aycbrbjhwpjzyer6mbl0.jpg",
+        texto_explicativo: "iamgen1",
+        es_principal: true,
+        metadatos: { duracion: null, formato: "jpg", tamano: "0.04MB" }
+      },
+      estadisticas: {
+        visitas: 0,
+        descargas: 0,
+        compartidos: 0
+      },
+      fecha_creacion: "2025-02-17T23:13:05.715Z"
+    },
+    {
+      _id: "1739834162464.0",
+      titulo: "saul",
+      descripcion: "des saul",
+      etiquetas: ["q", "a", "w", "perro"],
+      archivos: [
+        {
+          tipo: "video",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739834157/exclusiveMusicForExclusivePeople/saul_20250217_181549/wdkpmb3toe5nojwuydoy.mp4",
+          texto_explicativo: "sauliño",
+          es_principal: true,
+          metadatos: { duracion: "43.281995s", formato: "mp4", tamano: "3.59MB" }
+        },
+        {
+          tipo: "audio",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739834148/exclusiveMusicForExclusivePeople/saul_20250217_181549/es8j2ntxnjmussnrgxft.mp3",
+          texto_explicativo: "audiño",
+          es_principal: true,
+          metadatos: { duracion: "43.311s", formato: "mp3", tamano: "0.66MB" }
+        },
+        {
+          tipo: "image",
+          url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739834151/exclusiveMusicForExclusivePeople/saul_20250217_181549/bhir7pnxzcdt0tomyjcj.png",
+          texto_explicativo: "imaegiño",
+          es_principal: true,
+          metadatos: { duracion: null, formato: "png", tamano: "2.25MB" }
+        }
+      ],
+      audio_principal: {
+        tipo: "audio",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739834148/exclusiveMusicForExclusivePeople/saul_20250217_181549/es8j2ntxnjmussnrgxft.mp3",
+        texto_explicativo: "audiño",
+        es_principal: true,
+        metadatos: { duracion: "43.311s", formato: "mp3", tamano: "0.66MB" }
+      },
+      video_principal: {
+        tipo: "video",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/video/upload/v1739834157/exclusiveMusicForExclusivePeople/saul_20250217_181549/wdkpmb3toe5nojwuydoy.mp4",
+        texto_explicativo: "sauliño",
+        es_principal: true,
+        metadatos: { duracion: "43.281995s", formato: "mp4", tamano: "3.59MB" }
+      },
+      imagen_principal: {
+        tipo: "image",
+        url_cloudinary: "https://res.cloudinary.com/dplncudbq/image/upload/v1739834151/exclusiveMusicForExclusivePeople/saul_20250217_181549/bhir7pnxzcdt0tomyjcj.png",
+        texto_explicativo: "imaegiño",
+        es_principal: true,
+        metadatos: { duracion: null, formato: "png", tamano: "2.25MB" }
+      },
+      estadisticas: {
+        visitas: 0,
+        descargas: 0,
+        compartidos: 0
+      },
+      fecha_creacion: "2025-02-17T23:16:02.464Z"
+    }
+  ];
+
+  // Función para generar tags aleatorios relacionados con la música
+function generateRandomTags() {
+  const musicTags = [
+    "rock", "pop", "jazz", "blues", "classical", "electronic", "hiphop", 
+    "reggae", "metal", "folk", "country", "latin", "indie", "punk", 
+    "soul", "funk", "disco", "techno", "house", "dubstep", "trance", 
+    "ambient", "acoustic", "orchestral", "synthwave", "lo-fi", "rap", 
+    "rnb", "edm", "kpop", "jpop", "world", "experimental", "instrumental"
+  ];
+
+  // Seleccionar entre 3 y 6 tags aleatorios
+  const numTags = Math.floor(Math.random() * 4) + 3; // Entre 3 y 6 tags
+  const selectedTags = [];
+  for (let i = 0; i < numTags; i++) {
+    const randomIndex = Math.floor(Math.random() * musicTags.length);
+    selectedTags.push(musicTags[randomIndex]);
+  }
+  return selectedTags;
+}
+
+function generateSingleComposition(index) {
+  // Seleccionar un objeto de ejemplo aleatorio
+  const randomIndex = Math.floor(Math.random() * exampleCompositions.length);
+  const example = exampleCompositions[randomIndex];
+
+  // Crear una copia del objeto de ejemplo para no modificar el original
+  const newComposition = JSON.parse(JSON.stringify(example));
+
+  // Cambiar el _id y los tags
+  newComposition._id = Date.now() + index; // ID único basado en el índice
+  newComposition.etiquetas = generateRandomTags(); // Tags aleatorios
+  newComposition.titulo = `${newComposition.titulo}${Date.now()}`
+
+  return newComposition;
+}
+
+// Función para guardar la creación en la base de datos
+function save(creation) {
+  fetch('/api/saveCompositionToDb', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ composition: creation }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log(data.message);
+        setUploadSuccess('Archivos subidos y guardados en MongoDB');
+      } else {
+        console.error(data.message);
+      }
+    })
+    .catch((error) => {
+      console.error('Error al guardar la composición:', error);
+    });
+}
+
+
+
+async function generateAndSaveCompositions() {
+  for (let i = 0; i < 100; i++) {
+    const composition = generateSingleComposition(i); // Generar una composición
+    console.log(`Guardando composición ${i + 1}...`);
+
+    const saved = await save(composition); // Guardar la composición
+    if (!saved) {
+      console.error(`Error al guardar la composición ${i + 1}. Deteniendo el proceso.`);
+      break; // Detener el proceso si hay un error
+    }
+
+    console.log(`Composición ${i + 1} guardada correctamente.`);
+  }
+
+  console.log("Proceso completado.");
+}
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Efecto para detectar cambios en el tamaño de la pantalla
   useEffect(() => {
+    // Ejecutar la función principal
+generateAndSaveCompositions();
+    
     if (typeof window !== 'undefined') {
       const handleResize = () => {
         setIsDesktop(window.innerWidth >= 768);
@@ -33,28 +305,7 @@ export default function UploadFilesToCloudinary() {
     }
   }, []);
 
-  // Función para guardar la creación en la base de datos
-  function save(creation) {
-    fetch('/api/saveCompositionToDb', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ composition: creation }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          console.log(data.message);
-          setUploadSuccess('Archivos subidos y guardados en MongoDB');
-        } else {
-          console.error(data.message);
-        }
-      })
-      .catch((error) => {
-        console.error('Error al guardar la composición:', error);
-      });
-  }
+  
 
   // Efecto para generar previsualizaciones de archivos
   useEffect(() => {

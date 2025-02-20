@@ -1,4 +1,6 @@
 export default function mapCompositionsToMusicContent(compositions) {
+    console.log(compositions);
+    
     return compositions.map(composition => {
         const archivos = composition.archivos || [];
 
@@ -136,7 +138,8 @@ export default function mapCompositionsToMusicContent(compositions) {
                 autoPlay: false,
                 loop: false,
                 informationFile: videoPrincipal.texto_explicativo
-            } : null
+            } : null,
+            idObjeto: composition._id
         };
     });
 }

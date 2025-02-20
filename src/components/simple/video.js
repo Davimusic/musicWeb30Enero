@@ -292,7 +292,7 @@ const Video = ({
 
       {isVideoFullScreen && (
         <div ref={inputRef}>
-          <div className="input-container" 
+          {/*<div className="input-container" 
             style={{ 
               position: 'fixed',
               top: '10px',  
@@ -314,7 +314,7 @@ const Video = ({
               setMusicContent={setMusicContent}
               onInputInteraction={() => setShowControls(true)}
             />
-          </div>
+          </div>*/}
 
           <div className="progress-bar" 
             style={{
