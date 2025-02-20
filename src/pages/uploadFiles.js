@@ -292,7 +292,7 @@ async function generateAndSaveCompositions() {
   // Efecto para detectar cambios en el tamaño de la pantalla
   useEffect(() => {
     // Ejecutar la función principal
-generateAndSaveCompositions();
+//generateAndSaveCompositions();
     
     if (typeof window !== 'undefined') {
       const handleResize = () => {

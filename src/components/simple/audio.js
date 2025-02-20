@@ -10,6 +10,7 @@ import QualityIcon from '../complex/quialityIcon';
 import NextBeforeIcon from '../complex/nextBeforeIcon';
 
 
+
 const Audio = ({
   src,
   id,
@@ -31,7 +32,9 @@ const Audio = ({
   componentInUse,
   setIsLoading,
   isEndedVideo,
-  setIsEndedVideo
+  setIsEndedVideo,
+  currentIndex,
+  setCurrentIndex
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -43,6 +46,18 @@ const Audio = ({
   const [isRepeat, setIsRepeat] = useState(false); // Estado para repetir la canción
   const [quality, setQuality] = useState(25); // Estado para la calidad del audio
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+
+  // Efecto para inicializar currentIndex cuando cambia la lista de canciones
+  useEffect(() => {
+    if (allMusicProyects.length > 0) {
+      const index = allMusicProyects.findIndex(project => project.audioPrincipal?.src === src);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      }
+    }
+  }, [allMusicProyects, src]);
+
 
   const handleToggleShuffle = () => {
     setIsRepeat(false); // Desactivar Repeat si Shuffle se activa
@@ -62,17 +77,26 @@ const Audio = ({
     }
   }, [componentInUse]);
 
+  
+
   // Efecto para sincronizar componentInUse con isPlaying
   useEffect(() => {
     if (isPlaying) {
       if (isEndedVideo) {
+        console.log('llega');
         setComponentInUse('video'); // Esto viene de video, cuando acaba el video el manda el mensaje para que lo deje empezar a él con el siguiente video
         setIsEndedVideo(false);
+        setCurrentTimeMedia(0)
       } else {
         setComponentInUse('audio'); // Si está reproduciendo, componentInUse es 'audio'
       }
     } else if (audioRef.current && audioRef.current.paused) {
-      setComponentInUse(''); // Si está pausado, componentInUse es ''
+      console.log('pasa por aca');
+      if(componentInUse === 'video'){
+        console.log('audio...no haga nada');
+      } else {
+        setComponentInUse(''); // Si está pausado, componentInUse es ''
+      }
     }
   }, [isPlaying]);
 
@@ -213,32 +237,17 @@ const Audio = ({
   const getNextSong = () => {
     if (allMusicProyects.length === 0) return null;
 
-    // Filtra los proyectos que tienen un audioPrincipal definido
-    const projectsWithAudioPrincipal = allMusicProyects.filter(project => project.audioPrincipal);
-
-    if (projectsWithAudioPrincipal.length === 0) return null;
-
-    // Encuentra el índice del proyecto que contiene el audioPrincipal actual
-    const currentProjectIndex = projectsWithAudioPrincipal.findIndex((project) =>
-      project.audioPrincipal.src === src // Usamos la variable local `src`
-    );
-
-    if (currentProjectIndex === -1) return null;
-
     if (isShuffle) {
-      // Modo aleatorio: selecciona un proyecto aleatorio
+      // Modo aleatorio: selecciona una canción aleatoria
       let randomIndex;
       do {
-        randomIndex = Math.floor(Math.random() * projectsWithAudioPrincipal.length);
-      } while (randomIndex === currentProjectIndex); // Evita repetir el mismo proyecto
-
-      const randomProject = projectsWithAudioPrincipal[randomIndex];
-      return randomProject;
+        randomIndex = Math.floor(Math.random() * allMusicProyects.length);
+      } while (randomIndex === currentIndex); // Evita repetir la misma canción
+      return allMusicProyects[randomIndex];
     } else {
-      // Modo normal: selecciona el siguiente proyecto en la lista
-      const nextProjectIndex = (currentProjectIndex + 1) % projectsWithAudioPrincipal.length;
-      const nextProject = projectsWithAudioPrincipal[nextProjectIndex];
-      return nextProject;
+      // Modo normal: selecciona la siguiente canción en la lista
+      const nextIndex = (currentIndex + 1) % allMusicProyects.length;
+      return allMusicProyects[nextIndex];
     }
   };
 
@@ -246,22 +255,9 @@ const Audio = ({
   const getPreviousSong = () => {
     if (allMusicProyects.length === 0) return null;
 
-    // Filtra los proyectos que tienen un audioPrincipal definido
-    const projectsWithAudioPrincipal = allMusicProyects.filter(project => project.audioPrincipal);
-
-    if (projectsWithAudioPrincipal.length === 0) return null;
-
-    // Encuentra el índice del proyecto que contiene el audioPrincipal actual
-    const currentProjectIndex = projectsWithAudioPrincipal.findIndex((project) =>
-      project.audioPrincipal.src === src // Usamos la variable local `src`
-    );
-
-    if (currentProjectIndex === -1) return null;
-
-    // Modo normal: selecciona el proyecto anterior en la lista
-    const previousProjectIndex = (currentProjectIndex - 1 + projectsWithAudioPrincipal.length) % projectsWithAudioPrincipal.length;
-    const previousProject = projectsWithAudioPrincipal[previousProjectIndex];
-    return previousProject;
+    // Modo normal: selecciona la canción anterior en la lista
+    const previousIndex = (currentIndex - 1 + allMusicProyects.length) % allMusicProyects.length;
+    return allMusicProyects[previousIndex];
   };
 
   // Función para manejar el cambio a la siguiente canción
@@ -269,6 +265,7 @@ const Audio = ({
     const nextSong = getNextSong();
     if (nextSong) {
       setContent([nextSong]); // Actualiza la canción actual
+      setCurrentIndex(allMusicProyects.findIndex(project => project.audioPrincipal?.src === nextSong.audioPrincipal.src));
       audioRef.current.src = mixUrlWithQuality(nextSong.audioPrincipal.src, quality);
       audioRef.current.load(); // Recarga el audio con la nueva fuente
       audioRef.current.play();
@@ -281,6 +278,7 @@ const Audio = ({
     const previousSong = getPreviousSong();
     if (previousSong) {
       setContent([previousSong]); // Actualiza la canción actual
+      setCurrentIndex(allMusicProyects.findIndex(project => project.audioPrincipal?.src === previousSong.audioPrincipal.src));
       audioRef.current.src = mixUrlWithQuality(previousSong.audioPrincipal.src, quality);
       audioRef.current.load(); // Recarga el audio con la nueva fuente
       audioRef.current.play();
@@ -296,13 +294,7 @@ const Audio = ({
       audioRef.current.play();
     } else {
       // Reproducir la siguiente canción
-      const nextSong = getNextSong();
-      if (nextSong) {
-        setContent([nextSong]); // Actualiza la canción actual
-        audioRef.current.src = mixUrlWithQuality(nextSong.audioPrincipal.src, quality);
-        audioRef.current.load(); // Recarga el audio con la nueva fuente
-        audioRef.current.play();
-      }
+      handleNextSong();
     }
   };
 

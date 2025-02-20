@@ -7,7 +7,7 @@ import QualityIcon from '../complex/quialityIcon';
 import QualitySelectorModal from '../complex/qualitySelectorModal';
 import GlassIcon from '../complex/glassIcon';
 import SearchTagInDb from '../complex/searchTag';
-
+import NextBeforeIcon from '../complex/nextBeforeIcon';
 
 
 const Video = ({
@@ -25,7 +25,9 @@ const Video = ({
   allMusicProyects = [],
   setContent,
   setIsEndedVideo,
-  setMusicContent
+  setMusicContent,
+  currentIndex,
+  setCurrentIndex
 }) => {
   const videoRef = useRef(null);
   const videoEndedRef = useRef(false);
@@ -39,7 +41,7 @@ const Video = ({
   const inputRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
-
+  
   // Detectar si es un dispositivo móvil y ajustar el breakpoint
   useEffect(() => {
     const checkIfMobile = () => {
@@ -123,32 +125,69 @@ const Video = ({
     setIsLoading(false);
   };
 
-  // Obtener la siguiente canción
-  const getNextSong = () => {
+  // Obtener el siguiente video
+  const getNextVideo = () => {
     if (allMusicProyects.length === 0) return null;
 
-    const projectsWithAudioPrincipal = allMusicProyects.filter(project => project.videoPrincipal);
+    const projectsWithVideoPrincipal = allMusicProyects.filter(project => project.videoPrincipal);
 
-    if (projectsWithAudioPrincipal.length === 0) return null;
+    if (projectsWithVideoPrincipal.length === 0) return null;
 
-    const currentProjectIndex = projectsWithAudioPrincipal.findIndex((project) => 
-      project.videoPrincipal.src === src
-    );
+    const nextIndex = (currentIndex + 1) % projectsWithVideoPrincipal.length;
+    return projectsWithVideoPrincipal[nextIndex];
+  };
 
-    if (currentProjectIndex === -1) return null;
+  // Obtener el video anterior
+  const getPreviousVideo = () => {
+    if (allMusicProyects.length === 0) return null;
 
-    const nextProjectIndex = (currentProjectIndex + 1) % projectsWithAudioPrincipal.length;
-    const nextProject = projectsWithAudioPrincipal[nextProjectIndex];
-    return nextProject;
+    const projectsWithVideoPrincipal = allMusicProyects.filter(project => project.videoPrincipal);
+
+    if (projectsWithVideoPrincipal.length === 0) return null;
+
+    const previousIndex = (currentIndex - 1 + projectsWithVideoPrincipal.length) % projectsWithVideoPrincipal.length;
+    setIsEndedVideo(true);
+    return projectsWithVideoPrincipal[previousIndex];
+  };
+
+  // Manejar cambio al siguiente video
+  const handleNextVideo = () => {
+    const nextVideo = getNextVideo();
+    if (nextVideo) {
+      setContent([nextVideo]);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % allMusicProyects.length);
+      videoRef.current.src = mixUrlWithQuality(nextVideo.videoPrincipal.src, quality);
+      setIsEndedVideo(true);
+      videoRef.current.load();
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  // Manejar cambio al video anterior
+  const handlePreviousVideo = () => {
+    const previousVideo = getPreviousVideo();
+    if (previousVideo) {
+      setContent([previousVideo]);
+      setCurrentIndex((prevIndex) => (prevIndex - 1 + allMusicProyects.length) % allMusicProyects.length);
+      videoRef.current.src = mixUrlWithQuality(previousVideo.videoPrincipal.src, quality);
+      videoRef.current.load();
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
   };
 
   // Manejar finalización del video
   const handleEnded = () => {
     videoEndedRef.current = true;
-    const nextSong = getNextSong();
-    if (nextSong) {
-      setContent([nextSong]);
-      setComponentInUse('video');
+    const nextVideo = getNextVideo();
+    if (nextVideo) {
+      setContent([nextVideo]);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % allMusicProyects.length);
+      videoRef.current.src = mixUrlWithQuality(nextVideo.videoPrincipal.src, quality);
+      videoRef.current.load();
+      videoRef.current.play();
+      setIsPlaying(true);
     }
     setIsEndedVideo(true);
     setCurrentTimeMedia(0);
@@ -292,30 +331,6 @@ const Video = ({
 
       {isVideoFullScreen && (
         <div ref={inputRef}>
-          {/*<div className="input-container" 
-            style={{ 
-              position: 'fixed',
-              top: '10px',  
-              left: '50%', 
-              transform: 'translateX(-50%)',  
-              display: showControls ? 'flex' : 'none', 
-              alignItems: 'center', 
-              backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-              padding: '5px', 
-              borderRadius: '10px',
-              width: 'auto',
-              zIndex: 1000,
-              pointerEvents: 'auto',
-            }} 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SearchTagInDb 
-              setContent={setContent} 
-              setMusicContent={setMusicContent}
-              onInputInteraction={() => setShowControls(true)}
-            />
-          </div>*/}
-
           <div className="progress-bar" 
             style={{
               opacity: showControls ? 1 : 0,
@@ -331,7 +346,6 @@ const Video = ({
               })
             }}
           >
-            <GlassIcon/>
             <span style={{ color: '#2bc6c8' }}>{formatTime(currentTime)}</span>
             <div className="slider-container">
               <input
@@ -350,11 +364,13 @@ const Video = ({
             </div>
             <span style={{ color: '#2bc6c8' }}>{formatTime(duration)}</span>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <NextBeforeIcon onToggle={handlePreviousVideo} direction={'left'} />
               <TogglePlayPause
                 size={40}
                 isPlaying={isPlaying}
                 onToggle={togglePlayPause}
               />
+              <NextBeforeIcon onToggle={handleNextVideo} direction={'right'} />
               <QualityIcon size={30} onClick={openQualityModal} />
             </div>
           </div>
@@ -414,6 +430,8 @@ const Video = ({
     </div>
   );
 };
+
+
 
 
 
