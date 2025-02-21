@@ -143,3 +143,21 @@ button:hover {
 .highlight {
   background-color: #1d6188;
 }
+
+
+/* Clase para aplicar la animación */
+.spin {
+  background-color: #2bc6c8;
+  animation: spin 1s linear infinite;
+}
+
+/* Definición de la animación de giro */
+@keyframes spin {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+      transform: rotate(360deg);
+  }
+}
+

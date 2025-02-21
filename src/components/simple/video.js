@@ -8,6 +8,11 @@ import QualitySelectorModal from '../complex/qualitySelectorModal';
 import GlassIcon from '../complex/glassIcon';
 import SearchTagInDb from '../complex/searchTag';
 import NextBeforeIcon from '../complex/nextBeforeIcon';
+import Menu from '../complex/menu';
+import MenuIcon from '../complex/menuIcon';
+
+
+
 
 
 const Video = ({
@@ -27,7 +32,10 @@ const Video = ({
   setIsEndedVideo,
   setMusicContent,
   currentIndex,
-  setCurrentIndex
+  setCurrentIndex,
+  isEndendVideo,
+  setTags,
+  tags
 }) => {
   const videoRef = useRef(null);
   const videoEndedRef = useRef(false);
@@ -41,7 +49,8 @@ const Video = ({
   const inputRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
-  
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Nuevo estado para controlar la visibilidad del menú
+
   // Detectar si es un dispositivo móvil y ajustar el breakpoint
   useEffect(() => {
     const checkIfMobile = () => {
@@ -288,6 +297,11 @@ const Video = ({
     }
   };
 
+  // Alternar visibilidad del menú
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <div 
       style={{ 
@@ -312,9 +326,8 @@ const Video = ({
         style={{
           width: componentInUse === 'video' ? '100%' : '0px',
           height: componentInUse === 'video' ? '100%' : '0px', // Ocupar toda la altura
-          objectFit: 'cover', // Ajustar el video para cubrir el contenedor
+          objectFit: 'contain', // Ajustar el video para que siempre se vea completo
           objectPosition: 'center', // Centrar el video
-          borderRadius: '10px',
           opacity: componentInUse === 'video' ? 1 : 0,
           visibility: componentInUse === 'video' ? 'visible' : 'hidden',
           transition: 'opacity 0.3s, visibility 0.3s',
@@ -331,7 +344,25 @@ const Video = ({
 
       {isVideoFullScreen && (
         <div ref={inputRef}>
-          <div className="progress-bar" 
+          <div 
+              className="input-container backgroundColor2" 
+              style={{ 
+                  position: 'fixed',
+                  top: '10px',  
+                  left: '50%', 
+                  transform: 'translateX(-50%)',  
+                  display: showControls ? 'flex' : 'none', 
+                  alignItems: 'center', 
+                  padding: '5px', 
+                  borderRadius: '10px',
+                  width: 'auto',
+                  zIndex: 1000,
+              }} 
+              onClick={(e) => e.stopPropagation()}
+          >
+              <SearchTagInDb tags={tags} setTags={setTags}  componentInUse={componentInUse} setIsEndedVideo={setIsEndedVideo} setContent={setContent} setMusicContent={setMusicContent}/>
+          </div>
+          <div className="progress-bar backgroundColor3" 
             style={{
               opacity: showControls ? 1 : 0,
               transition: 'opacity 0.3s',
@@ -346,7 +377,8 @@ const Video = ({
               })
             }}
           >
-            <span style={{ color: '#2bc6c8' }}>{formatTime(currentTime)}</span>
+            <MenuIcon onClick={toggleMenu} /> {/* Aquí se activa el menú */}
+            <span>{formatTime(currentTime)}</span>
             <div className="slider-container">
               <input
                 type="range"
@@ -362,7 +394,7 @@ const Video = ({
                 }}
               />
             </div>
-            <span style={{ color: '#2bc6c8' }}>{formatTime(duration)}</span>
+            <span>{formatTime(duration)}</span>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <NextBeforeIcon onToggle={handlePreviousVideo} direction={'left'} />
               <TogglePlayPause
@@ -377,6 +409,9 @@ const Video = ({
         </div>
       )}
 
+      {/* Menú lateral */}
+      <Menu isOpen={isMenuOpen} onClose={toggleMenu} className='backgroundColor2' />
+
       <QualitySelectorModal 
         isOpen={isModalOpen} 
         onClose={closeQualityModal} 
@@ -388,7 +423,6 @@ const Video = ({
           display: flex;
           align-items: center;
           gap: 8px;
-          background-color: rgba(0, 0, 0, 0.7);
           padding: 10px;
           border-radius: 10px;
           backdrop-filter: blur(5px);
@@ -430,6 +464,8 @@ const Video = ({
     </div>
   );
 };
+
+
 
 
 

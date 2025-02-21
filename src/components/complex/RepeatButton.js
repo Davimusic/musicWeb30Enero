@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const RepeatButton = ({ buttonColor = "#ffffff", size = 24, isRepeat, toggleRepeat }) => {
+const RepeatButton = ({ buttonColor = "#ffffff", size = 30, isRepeat, toggleRepeat }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {

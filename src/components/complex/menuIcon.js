@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
+const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
@@ -28,9 +28,10 @@ const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         strokeWidth="1.5"
         fill="none"
       >
-        {/* Ícono de lupa */}
-        <circle cx="10" cy="10" r="7" />
-        <line x1="15" y1="15" x2="20" y2="20" />
+        {/* Ícono de menú (tres líneas horizontales) */}
+        <line x1="4" y1="6" x2="20" y2="6" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="18" x2="20" y2="18" />
       </svg>
       <style jsx>{`
         @keyframes pulse {
@@ -53,5 +54,4 @@ const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   );
 };
 
-export default GlassIcon;
-
+export default MenuIcon;

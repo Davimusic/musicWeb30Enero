@@ -122,7 +122,7 @@ const Audio = ({
 
   // Efecto para manejar la reproducción automática al cambiar la fuente
   useEffect(() => {
-    if (autoPlay) {
+    if (autoPlay) {      
       audioRef.current.play();
       setIsPlaying(true);
       setComponentInUse('audio'); // Actualizar componentInUse a 'audio' cuando se reproduce automáticamente
@@ -132,6 +132,9 @@ const Audio = ({
 
   // Efecto para recargar el audio con la nueva calidad
   useEffect(() => {
+    console.log('poe acaca');
+    console.log(isEndedVideo);
+    
     setIsLoading(true); // Comienza la carga
     audioRef.current.src = mixUrlWithQuality(src, quality);
     audioRef.current.load(); // Recarga el audio con la nueva calidad
@@ -325,10 +328,10 @@ const Audio = ({
       </audio>
 
       <div className="controls">
-        <div className="">
+        <div className="input-container" style={{ width: '300px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}> 
           {showPlayButton && (
             <TogglePlayPause
-              size={24}
+              size={30}
               isPlaying={isPlaying}
               onToggle={togglePlayPause}
               buttonColor={buttonColor}

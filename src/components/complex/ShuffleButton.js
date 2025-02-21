@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const ShuffleButton = ({ buttonColor = "#ffffff", size = 24, isShuffle, toggleShuffle }) => {
+const ShuffleButton = ({ buttonColor = "#ffffff", size = 30, isShuffle, toggleShuffle }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
