@@ -11,10 +11,6 @@ import NextBeforeIcon from '../complex/nextBeforeIcon';
 import Menu from '../complex/menu';
 import MenuIcon from '../complex/menuIcon';
 
-
-
-
-
 const Video = ({
   id,
   src,
@@ -49,7 +45,7 @@ const Video = ({
   const inputRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Nuevo estado para controlar la visibilidad del menú
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Detectar si es un dispositivo móvil y ajustar el breakpoint
   useEffect(() => {
@@ -366,7 +362,7 @@ const Video = ({
             style={{
               opacity: showControls ? 1 : 0,
               transition: 'opacity 0.3s',
-              zIndex: 999,
+              zIndex: 9999, // Asegúrate de que esté por encima de otros elementos
               position: 'fixed',
               bottom: '20px',
               left: '20px',

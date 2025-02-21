@@ -39,7 +39,8 @@ export default function Music() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [tags, setTags] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Nuevo estado para controlar la visibilidad del menú
-
+  
+  
   useEffect(() => {
       if (content && content.length > 0) {
           const idToFind = content[0].idObjeto;
@@ -120,6 +121,7 @@ export default function Music() {
   const toggleMenu = () => {
       setIsMenuOpen(!isMenuOpen); // Alternar la visibilidad del menú
   };
+
 
   if (content && content.length > 0) {
       return (
