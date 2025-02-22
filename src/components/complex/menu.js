@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { HexColorPicker } from 'react-colorful'; // Importar el selector de colores
 import Modal from './modal';
 
 const Menu = ({ isOpen, onClose, className = '' }) => {
@@ -46,11 +47,6 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
         } else {
             alert('Error: Valor hexadecimal no válido.');
         }
-    };
-
-    // Método para manejar cambios en el selector de colores
-    const handleColorChange = (e) => {
-        setSelectedColor(e.target.value); // Actualizar el color seleccionado
     };
 
     return (
@@ -128,11 +124,11 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <label style={{ color: 'white', marginRight: '10px' }}>Color seleccionado:</label>
-                    <input 
-                        type="color" 
-                        value={selectedColor} 
-                        onChange={handleColorChange} 
-                        style={{ marginRight: '10px', verticalAlign: 'middle' }}
+                    {/* Usar HexColorPicker en lugar del input de tipo color */}
+                    <HexColorPicker 
+                        color={selectedColor} 
+                        onChange={setSelectedColor} 
+                        style={{ marginBottom: '20px' }}
                     />
                 </div>
                 <button 

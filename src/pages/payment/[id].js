@@ -15,6 +15,7 @@ const NotFound = () => {
       }}
     >
       <div 
+        className="container"
         style={{ 
           display: 'flex', 
           flexDirection: 'row', // Por defecto, disposición en fila
@@ -27,20 +28,18 @@ const NotFound = () => {
           flexWrap: 'wrap', // Permitir que los elementos se envuelvan en pantallas pequeñas
         }}
       >
-        {/* Columna izquierda: Contenido */}
+        {/* Columna izquierda: Contenido (PayPal) */}
         <div 
-          className="backgroundColor3" 
+          className="paypal-container backgroundColor3" 
           style={{ 
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
             justifyContent: 'flex-start', // Alinear contenido al inicio
-            flex: 1, // Ocupa el espacio disponible
             height: '80vh', // Altura fija para el contenedor
             borderRadius: '0.7em',
             padding: '1em',
             overflowY: 'auto', // Scroll independiente para esta columna
-            minWidth: '300px', // Ancho mínimo para evitar que se encoja demasiado
             scrollbarWidth: 'none', // Ocultar barra de scroll en Firefox
           }}
         >
@@ -49,6 +48,19 @@ const NotFound = () => {
             {`
               .backgroundColor3::-webkit-scrollbar {
                 display: none; /* Ocultar barra de scroll */
+              }
+
+              /* Estilos para móviles */
+              @media (max-width: 768px) {
+                .container {
+                  display: block; /* Cambia a bloque en móviles */
+                }
+
+                .paypal-container {
+                  width: 100%; /* Ocupa el 100% del ancho en móviles */
+                  height: auto; /* Altura automática */
+                  margin-bottom: 2em; /* Espacio debajo del contenedor */
+                }
               }
             `}
           </style>
