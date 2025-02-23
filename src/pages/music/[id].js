@@ -41,6 +41,7 @@ export default function Music() {
   const [tags, setTags] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dynamicHeight, setDynamicHeight] = useState('60vh');
+  const [contentModal, setContentModal] = useState('');
   const audioPlayerRef = useRef(null); // Referencia para el reproductor de audio
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function Music() {
     console.log(currentIndex);
   }, [currentIndex]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     startLoading();
     const loadTime = Math.random() * 1000;
     setTimeout(() => {
@@ -100,7 +101,7 @@ export default function Music() {
         clearTimeout(loadingTimeout);
       }
     };
-  }, []);
+  }, []);*/
 
   useEffect(() => {
     searchTagInDb('', setContent, setMusicContent, setTags);
@@ -117,6 +118,7 @@ export default function Music() {
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
     openModal()
+    setContentModal(<MidiAndPdf content={content} onItemClick={handleItemClick}/>)
   };
 
   const startLoading = () => {
@@ -146,12 +148,12 @@ export default function Music() {
   if (content && content.length > 0) {
     return (
       <div className='backgroundColor1' style={{ height: '100vh', display: 'block' }}>
-        <Modal isOpen={isModalOpen} onClose={closeModal} children={<MidiAndPdf content={content} onItemClick={handleItemClick}/>} className={'backgroundColor3'}/>
+        <Modal isOpen={isModalOpen} onClose={closeModal} children={contentModal} className={'backgroundColor3'}/>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `url(${content[0].imagePrincipal.src})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(8px)', opacity: '0.5', margin: '20px', zIndex: 1, boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', borderRadius: '20px' }}></div>
         <div className='spaceTopOnlyPhone' style={{ scrollbarWidth: 'thin', position: 'relative', zIndex: 2 }}>
           <div style={{ width: '100%', textAlign: 'center' }}>
             <div className="input-container-CellUP backgroundColor2" onClick={(e) => e.stopPropagation()}>
-              <SeacrhTagInDb tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
+              <SeacrhTagInDb setIsModalOpen={setIsModalOpen} setContentModal={setContentModal} tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
             </div>
           </div>
           <div style={{paddingTop: '20px'}}></div>
@@ -181,7 +183,7 @@ export default function Music() {
               <ImageAndHeart content={content} onItemClick={handleItemClick} />
             </div>
             <div className="input-container backgroundColor2" onClick={(e) => e.stopPropagation()}>
-              <SeacrhTagInDb tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
+              <SeacrhTagInDb setIsModalOpen={setIsModalOpen} setContentModal={setContentModal} tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
             </div>
             <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
             <div className={isVideoFullScreen ? 'video-fullscreen' : 'video-normal'} style={{ position: isVideoFullScreen ? 'fixed' : 'relative', top: isVideoFullScreen ? '0' : 'auto', left: isVideoFullScreen ? '0' : 'auto', zIndex: isVideoFullScreen ? 9999 : 'auto' }}>
@@ -206,6 +208,9 @@ export default function Music() {
                 isEndendVideo={isEndedVideo} 
                 setIsEndedVideo={setIsEndedVideo} 
                 setMusicContent={setMusicContent} 
+                setIsModalOpen={setIsModalOpen}
+                isModalOpen={isModalOpen} 
+                setContentModal={setContentModal}
               />
               <div onClick={toggleVideoFullScreen} style={{ position: 'absolute', top: '0px', right: '0', zIndex: 10000, cursor: 'pointer', backgroundColor: 'none', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto' }}>
                 <ExpandIcon onClick={toggleVideoFullScreen} size={50} />

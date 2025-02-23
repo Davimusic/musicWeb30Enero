@@ -31,7 +31,10 @@ const Video = ({
   setCurrentIndex,
   isEndendVideo,
   setTags,
-  tags
+  tags,
+  setContentModal,
+  setIsModalOpen,
+  isModalOpen
 }) => {
   const videoRef = useRef(null);
   const videoEndedRef = useRef(false);
@@ -39,13 +42,14 @@ const Video = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  //const [isModalOpen, setIsModalOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const currentTimeMediaRef = useRef(currentTimeMedia);
   const inputRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isSmallMobile, setIsSmallMobile] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isShowQuialityModal, setISShowQuialityModal] = useState(false);
 
   // Detectar si es un dispositivo móvil y ajustar el breakpoint
   useEffect(() => {
@@ -240,12 +244,12 @@ const Video = ({
 
   // Abrir modal de calidad
   const openQualityModal = () => {
-    setIsModalOpen(true);
+    setISShowQuialityModal(true);
   };
 
   // Cerrar modal de calidad
   const closeQualityModal = () => {
-    setIsModalOpen(false);
+    setISShowQuialityModal(false);
   };
 
   // Cambiar calidad del video
@@ -356,7 +360,7 @@ const Video = ({
               }} 
               onClick={(e) => e.stopPropagation()}
           >
-              <SearchTagInDb tags={tags} setTags={setTags}  componentInUse={componentInUse} setIsEndedVideo={setIsEndedVideo} setContent={setContent} setMusicContent={setMusicContent}/>
+              <SearchTagInDb setIsModalOpen={setIsModalOpen} setContentModal={setContentModal} tags={tags} setTags={setTags}  componentInUse={componentInUse} setIsEndedVideo={setIsEndedVideo} setContent={setContent} setMusicContent={setMusicContent}/>
           </div>
           <div className="progress-bar backgroundColor3" 
             style={{
@@ -409,7 +413,7 @@ const Video = ({
       <Menu isOpen={isMenuOpen} onClose={toggleMenu} className='backgroundColor2' />
 
       <QualitySelectorModal 
-        isOpen={isModalOpen} 
+        isOpen={isShowQuialityModal} 
         onClose={closeQualityModal} 
         onQualityChange={handleQualityChange} 
       />

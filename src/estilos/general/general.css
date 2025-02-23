@@ -132,7 +132,7 @@ button:hover {
 }
 
 .audioPLayerContent{
-  height: 150px;
+  height: 170px;
 }
 
 /* Media query para móviles */
@@ -149,7 +149,7 @@ button:hover {
   }
 
   .audioPLayerContent{
-    height: 230px;
+    height: 245px;
   }
   
 }

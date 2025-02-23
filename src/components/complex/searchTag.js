@@ -3,7 +3,7 @@ import GlassIcon from './glassIcon';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import Modal from './modal';
 
-const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags }) => {
+const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags, setIsModalOpen, setContentModal }) => {
     const [searchResults, setSearchResults] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
@@ -12,7 +12,6 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
 
-    // Función para manejar la búsqueda
     const handleSearch = async (tag, setContent, setMusicContent) => {
         setIsSearching(true);
         const result = await searchTagInDb(tag, setContent, setMusicContent, setTags);
@@ -22,29 +21,29 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
             setIsEndedVideo(true);
         }
 
-        setShowModal(result === false);
+        if(result === false){
+            setIsModalOpen(true)
+            setContentModal(<p style={{padding: '30px'}}>No results were found for the tag: {searchResults}</p>)
+        }
+        //setShowModal(result === false);
     };
 
-    // Función para manejar cambios en el input
     const handleInputChange = (e) => {
         const value = e.target.value;
         setSearchResults(value);
 
-        // Filtrar sugerencias basadas en lo que el usuario escribe
         const filteredSuggestions = tags.filter(tag => 
             tag.toLowerCase().includes(value.toLowerCase())
         );
         setSuggestions(filteredSuggestions);
     };
 
-    // Función para manejar la selección de una sugerencia
     const handleSuggestionClick = (suggestion) => {
-        setSearchResults(suggestion); // Actualizar el input con la sugerencia seleccionada
-        setSuggestions([]); // Ocultar sugerencias al seleccionar una
-        inputRef.current.focus(); // Mantener el foco en el input
+        setSearchResults(suggestion);
+        setSuggestions([]);
+        inputRef.current.focus();
     };
 
-    // Efecto para manejar el foco y el clic fuera del input/sugerencias
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (
@@ -53,7 +52,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                 suggestionsRef.current && 
                 !suggestionsRef.current.contains(e.target)
             ) {
-                setSuggestions([]); // Ocultar sugerencias si se hace clic fuera
+                setSuggestions([]);
             }
         };
 
@@ -63,7 +62,6 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
         };
     }, []);
 
-    // Efecto para manejar cambios en `path`
     useEffect(() => {
         if (path) {
             setSearchResults(path);
@@ -71,30 +69,29 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
         }
     }, [path]);
 
-    // Estilos locales
     const styles = {
         container: {
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            width: '100%', // Ocupa el 100% del ancho disponible
-            maxWidth: '50vw', // Limita el ancho máximo en pantallas grandes
+            width: '100%',
+            maxWidth: '50vw',
         },
         input: {
-            flex: 1, // Ocupa el 70% del espacio disponible
-            width: '70%', // Ancho reducido en un 30%
+            flex: 1,
+            width: '70%',
             padding: '5px',
             border: 'none',
             borderRadius: '10px',
             outline: 'none',
             fontFamily: 'Montserrat Alternates, sans-serif',
-            fontSize: '1rem', // Tamaño de fuente responsivo
+            fontSize: '1rem',
         },
         icon: {
-            marginLeft: '10px', // Espacio entre el input y el icono
+            marginLeft: '10px',
             color: '#fff',
             cursor: 'pointer',
-            fontSize: '1.5rem', // Tamaño del icono responsivo
+            fontSize: '1.5rem',
         },
         spinAnimation: {
             animation: 'spin 1s linear infinite',
@@ -128,12 +125,12 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                         background: #fff;
                         border: 1px solid #ccc;
                         border-radius: 5px;
-                        width: 70%; // Mismo ancho que el input
+                        width: 70%;
                         max-height: 150px;
                         overflow-y: auto;
                         z-index: 1000;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                        top: 100%; // Se posiciona debajo del input
+                        top: 100%;
                         margin-top: 5px;
                     }
 
@@ -142,26 +139,25 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                         cursor: pointer;
                         color: #333;
                         font-family: 'Montserrat Alternates', sans-serif;
-                        font-weight: bold; // Negrilla
+                        font-weight: bold;
                     }
 
                     .suggestion-item:hover {
                         background-color: #f0f0f0;
                     }
 
-                    /* Estilos responsivos */
                     @media (max-width: 768px) {
                         .container {
-                            max-width: 90vw; // Más ancho en móviles
+                            max-width: 90vw;
                         }
 
                         .input {
-                            width: 60%; // Ancho reducido en móviles
-                            font-size: 0.9rem; // Tamaño de fuente más pequeño en móviles
+                            width: 60%;
+                            font-size: 0.9rem;
                         }
 
                         .icon {
-                            font-size: 1.2rem; // Tamaño del icono más pequeño en móviles
+                            font-size: 1.2rem;
                         }
                     }
                 `}
@@ -175,11 +171,13 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                     style={styles.input}
                     onChange={handleInputChange}
                     onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setIsInputFocused(false)}
                     ref={inputRef}
                 />
                 <GlassIcon 
-                    onClick={() => handleSearch(searchResults, setContent, setMusicContent)} 
+                    onClick={() => {
+                        handleSearch(searchResults, setContent, setMusicContent);
+                        setSuggestions([]); // Ocultar sugerencias al hacer clic en el icono de búsqueda
+                    }} 
                     style={isSearching ? { ...styles.icon, ...styles.spinAnimation } : styles.icon}
                 />
                 
@@ -198,13 +196,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                 )}
             </div>
             
-            {showModal && (
-                <Modal isOpen={true} onClose={() => setShowModal(false)}>
-                    <div style={{ padding: '20px' }}>
-                        <p style={styles.modalText}>No results were found for the tag: {searchResults}</p>
-                    </div>
-                </Modal>
-            )}
+            
         </>
     );
 };
