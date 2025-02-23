@@ -13,6 +13,7 @@
   --backgroundColor5: #2bc6c8;
 }
 
+
 .backgroundColor1 { background-color: var(--backgroundColor1); }
 .backgroundColor2 { background-color: var(--backgroundColor2); }
 .backgroundColor3 { background-color: var(--backgroundColor3); }
@@ -127,7 +128,7 @@ button:hover {
 }
 
 .spaceTopOnlyPhone{
-    padding-top: 0px;
+    margin-top: 0px;
 }
 
 /* Media query para móviles */
@@ -140,10 +141,7 @@ button:hover {
   }
 
   .spaceTopOnlyPhone {
-    position: fixed; /* Fija el contenedor en la pantalla */
-    top: 35px; /* Posiciona el contenedor en la parte superior */
-    
-    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    margin-top: '35px';
   }
 }
 

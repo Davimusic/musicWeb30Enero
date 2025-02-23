@@ -5,7 +5,7 @@ import RootLayout from "./layout";
 function Home() {
   const { tasks } = useTasks();
     return (
-      <div >  
+      <div > 
       </div>
     );
 }
