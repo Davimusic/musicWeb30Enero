@@ -414,49 +414,52 @@ const Video = ({
         onQualityChange={handleQualityChange} 
       />
 
-      <style jsx>{`
-        .progress-bar {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px;
-          border-radius: 10px;
-          backdrop-filter: blur(5px);
-        }
+<style jsx>{`
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+  }
 
-        .slider-container {
-          flex: 1;
-          min-width: ${isSmallMobile ? '100%' : '120px'};
-        }
+  .slider-container {
+    flex: 1;
+    min-width: ${isSmallMobile ? '100%' : '120px'};
+  }
 
-        .seek-slider {
-          -webkit-appearance: none;
-          width: 100%;
-          height: 4px;
-          background: transparent;
-          outline: none;
-          opacity: 0.9;
-          transition: opacity 0.2s;
-        }
+  .seek-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+  }
 
-        .seek-slider:hover {
-          opacity: 1;
-        }
+  .seek-slider:hover {
+    opacity: 1;
+  }
 
-        .seek-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 14px;
-          height: 14px;
-          background: #2bc6c8;
-          border-radius: 50%;
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
+  .seek-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 0; /* Ocultar el thumb */
+    height: 0; /* Ocultar el thumb */
+    background: transparent; /* Hacer el thumb transparente */
+    border: none; /* Eliminar el borde */
+    cursor: pointer;
+  }
 
-        .seek-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-        }
-      `}</style>
+  .seek-slider::-moz-range-thumb {
+    width: 0; /* Ocultar el thumb */
+    height: 0; /* Ocultar el thumb */
+    background: transparent; /* Hacer el thumb transparente */
+    border: none; /* Eliminar el borde */
+    cursor: pointer;
+  }
+`}</style>
     </div>
   );
 };

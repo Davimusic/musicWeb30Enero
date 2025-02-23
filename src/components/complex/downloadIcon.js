@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 
-const ShrinkIcon = ({ size = 30, onClick = () => {} }) => {
+const DownloadIcon = ({ size = 30, isOpen = false, onToggle = () => {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
     event.stopPropagation(); // Evitar la propagación del evento
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 300); // Duración de la animación
-    onClick(); // Ejecutar la función de clic
+    onToggle(); // Ejecutar la función de toggle
   };
 
   return (
@@ -23,16 +23,18 @@ const ShrinkIcon = ({ size = 30, onClick = () => {} }) => {
           cursor: 'pointer', 
           transition: 'transform 0.3s ease',
         }}
-        stroke={'white'}
-        strokeWidth="1"
+        stroke={'currentColor'}
+        strokeWidth="3"
         fill="none"
+        strokeLinecap="round" // Redondea los extremos de las líneas
+        strokeLinejoin="round" // Redondea las esquinas de las uniones
       >
-        {/* Ícono de minimizar */}
-        <path
-          d="M4 4h6v2H6v4H4V4zm14 0h-6v2h4v4h2V4zM4 20v-6h2v4h4v2H4zm14 0h-6v-2h4v-4h2v6z"
-          fill="currentColor"
-          transform="rotate(180 12 12)"
-        />
+        {/* Ícono de flecha hacia abajo (cuando no está abierto) o hacia arriba (cuando está abierto) */}
+        {isOpen ? (
+          <path d="M12 20l6-6m-6 6l-6-6m6 6V4" /> // Flecha hacia arriba
+        ) : (
+          <path d="M12 4v16m0 0l6-6m-6 6l-6-6" /> // Flecha hacia abajo
+        )}
       </svg>
       <style jsx>{`
         @keyframes pulse {
@@ -55,4 +57,4 @@ const ShrinkIcon = ({ size = 30, onClick = () => {} }) => {
   );
 };
 
-export default ShrinkIcon;
+export default DownloadIcon;

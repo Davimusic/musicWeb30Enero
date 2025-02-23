@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful'; // Importar el selector de colores
 import Modal from './modal';
+import '../../estilos/general/general.css';
 
 const Menu = ({ isOpen, onClose, className = '' }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,27 +67,22 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                 }}
                 className={className}
             >
-                <h2 style={{ color: 'white', marginBottom: '20px' }}>Menú</h2>
+                <p className='title-md' style={{ marginBottom: '20px' }}>Menú</p>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Inicio</a>
+                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Inicio</a>
                     </li>
                     <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Explorar</a>
+                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Explorar</a>
                     </li>
                     <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Favoritos</a>
+                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Favoritos</a>
                     </li>
                     <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Configuración</a>
+                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Configuración</a>
                     </li>
                     <li style={{ marginBottom: '15px' }}>
-                        <button 
-                            onClick={() => setIsModalOpen(true)} 
-                            style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            Cambiar color de fondo
-                        </button>
+                        <p onClick={() => setIsModalOpen(true)} className='title-sm'>Cambiar color de fondo</p>
                     </li>
                 </ul>
             </div>
@@ -106,38 +102,41 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                 />
             )}
             {/* Modal para cambiar el color de fondo */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <h2 style={{ color: 'white' }}>Actualizar color de fondo</h2>
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ color: 'white', marginRight: '10px' }}>Selecciona un color:</label>
-                    <select 
-                        value={selectedColorClass} 
-                        onChange={(e) => setSelectedColorClass(e.target.value)}
-                        style={{ padding: '5px', borderRadius: '4px' }}
+            <Modal className={'backgroundColor2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <div style={{padding: '30px'}}>
+                    <p className='title-md'>Actualizar color de fondo</p>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label className='text-general' style={{ marginRight: '10px' }}>Selecciona un color:</label>
+                        <select 
+                            className='text-general'
+                            value={selectedColorClass} 
+                            onChange={(e) => setSelectedColorClass(e.target.value)}
+                            style={{ padding: '5px', borderRadius: '4px' }}
+                        >
+                            <option value="backgroundColor1">Color 1</option>
+                            <option value="backgroundColor2">Color 2</option>
+                            <option value="backgroundColor3">Color 3</option>
+                            <option value="backgroundColor4">Color 4</option>
+                            <option value="backgroundColor5">Color 5</option>
+                        </select>
+                    </div>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label className='text-general' style={{ marginRight: '10px' }}>Color seleccionado:</label>
+                        {/* Usar HexColorPicker en lugar del input de tipo color */}
+                        <HexColorPicker 
+                            color={selectedColor} 
+                            onChange={setSelectedColor} 
+                            style={{ marginBottom: '20px' }}
+                        />
+                    </div>
+                    <button 
+                        className='backgroundColor3 text-general'
+                        onClick={handleUpdateColor}
+                        style={{ padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
-                        <option value="backgroundColor1">Color 1</option>
-                        <option value="backgroundColor2">Color 2</option>
-                        <option value="backgroundColor3">Color 3</option>
-                        <option value="backgroundColor4">Color 4</option>
-                        <option value="backgroundColor5">Color 5</option>
-                    </select>
+                        Actualizar color
+                    </button>
                 </div>
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ color: 'white', marginRight: '10px' }}>Color seleccionado:</label>
-                    {/* Usar HexColorPicker en lugar del input de tipo color */}
-                    <HexColorPicker 
-                        color={selectedColor} 
-                        onChange={setSelectedColor} 
-                        style={{ marginBottom: '20px' }}
-                    />
-                </div>
-                <button 
-                    className='backgroundColor1'
-                    onClick={handleUpdateColor}
-                    style={{ padding: '10px 20px', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                    Actualizar color
-                </button>
             </Modal>
         </>
     );

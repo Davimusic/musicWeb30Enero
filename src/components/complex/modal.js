@@ -1,12 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import '../../estilos/general/general.css'
 
-const Modal = ({ isOpen, onClose, children }) => {
-  if (!isOpen) return null;
+const Modal = ({ isOpen, onClose, children, style, className }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Activar la visibilidad para la animación de entrada
+      setIsVisible(true);
+    } else {
+      // Iniciar la animación de salida
+      setIsVisible(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    // Iniciar la animación de salida
+    setIsVisible(false);
+    // Esperar a que termine la animación antes de cerrar el modal
+    setTimeout(() => {
+      onClose();
+    }, 300); // 300ms debe coincidir con la duración de la animación
+  };
+
+  if (!isOpen && !isVisible) return null;
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <button onClick={onClose} style={styles.closeButton}>
+    <div
+      style={{
+        ...styles.overlay,
+        opacity: isVisible ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+      }}
+    >
+      <div
+        className={className}
+        style={{
+          ...style,
+          ...styles.modal,
+          transform: isVisible ? 'scale(1)' : 'scale(0.8)',
+          opacity: isVisible ? 1 : 0,
+          transition: 'transform 0.3s ease, opacity 0.3s ease',
+        }}
+      >
+        <button onClick={handleClose} style={styles.closeButton}>
           ×
         </button>
         {children}
@@ -22,18 +59,18 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000, // Asegúrate de que este valor sea mayor que el de otros elementos
+    //backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
   },
   modal: {
-    backgroundColor: 'black',
     padding: '20px',
     borderRadius: '8px',
     position: 'relative',
-    zIndex: 1001, // Asegúrate de que este valor sea mayor que el del overlay
+    //backgroundColor: 'white',
+    zIndex: 1001,
   },
   closeButton: {
     position: 'absolute',
@@ -43,7 +80,7 @@ const styles = {
     border: 'none',
     fontSize: '40px',
     cursor: 'pointer',
-    color: 'white'
+    color: 'black',
   },
 };
 

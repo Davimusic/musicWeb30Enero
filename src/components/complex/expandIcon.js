@@ -24,13 +24,16 @@ const ExpandIcon = ({ size = 30, onClick = () => {} }) => {
           transition: 'transform 0.3s ease',
         }}
         stroke={'white'}
-        strokeWidth="1"
+        strokeWidth="0.1"
         fill="none"
+        strokeLinecap="round" // Redondea los extremos de las líneas
+        strokeLinejoin="round" // Redondea las esquinas de las uniones
       >
-        {/* Ícono de maximizar */}
+        {/* Ícono de minimizar con esquinas más redondeadas */}
         <path
-          d="M4 4h6v2H6v4H4V4zm14 0h-6v2h4v4h2V4zM4 20v-6h2v4h4v2H4zm14 0h-6v-2h4v-4h2v6z"
+          d="M5 5h5v2H7v3H5V5zm12 0h-5v2h3v3h2V5zM5 19v-5h2v3h3v2H5zm12 0h-5v-2h3v-3h2v5z"
           fill="currentColor"
+          transform="rotate(180 12 12)"
         />
       </svg>
       <style jsx>{`
@@ -54,4 +57,4 @@ const ExpandIcon = ({ size = 30, onClick = () => {} }) => {
   );
 };
 
-export default ExpandIcon; 
+export default ExpandIcon;

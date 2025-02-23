@@ -6,10 +6,10 @@
 .color5 { color: #2bc6c8; }
 
 :root {
-  --backgroundColor1: #060606;
-  --backgroundColor2: #0c283f;
-  --backgroundColor3: #1d6188;
-  --backgroundColor4: #2b95c8;
+  --backgroundColor1: #ffffff;
+  --backgroundColor2: #0f7fff;
+  --backgroundColor3: #05a1fc;
+  --backgroundColor4: #0cf7ffce;
   --backgroundColor5: #2bc6c8;
 }
 
@@ -131,6 +131,10 @@ button:hover {
     margin-top: 0px;
 }
 
+.audioPLayerContent{
+  height: 150px;
+}
+
 /* Media query para móviles */
 @media (max-width: 768px) {
   .input-container {
@@ -143,6 +147,11 @@ button:hover {
   .spaceTopOnlyPhone {
     margin-top: '35px';
   }
+
+  .audioPLayerContent{
+    height: 230px;
+  }
+  
 }
 
 .highlight {

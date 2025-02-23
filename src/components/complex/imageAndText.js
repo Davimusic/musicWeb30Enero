@@ -29,6 +29,12 @@ const ImageAndText = ({ content, onItemClick }) => {
             marginBottom: '10px',
             cursor: 'pointer',
             borderRadius: '0.5em',
+            paddingLeft: '10px',
+            paddingRight: '10px',
+            marginRight: '10px',
+            marginLeft: '10px',
+            paddingBottom: '10px',
+            paddingTop: '10px'
           }}
           className="effectHover"
         >

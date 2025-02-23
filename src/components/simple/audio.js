@@ -17,7 +17,7 @@ const Audio = ({
   autoPlay,
   loop,
   controlsList,
-  backgroundColor = "backgroundColor4",
+  backgroundColor = "backgroundColor1",
   buttonColor = "#ffffff",
   sliderEmptyColor = "#535353",
   sliderFilledColor = "#1db954",

@@ -1,21 +1,20 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Audio from '@/components/simple/audio';
 import ImageAndText from '@/components/complex/imageAndText';
 import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
 import MidiAndPdf from '@/components/complex/midiAndPdf';
 import Video from '@/components/simple/video';
-import ToggleIconOpenAndClose from '@/components/complex/ToggleIconOpenAndClose';
+import DownloadIcon from '@/components/complex/downloadIcon';
 '../../estilos/general/general.css';
 import MainLogo from '@/components/complex/mainLogo';
 import Modal from '@/components/complex/modal';
 import ExpandIcon from '@/components/complex/expandIcon';
-import ShrinkIcon from '@/components/complex/shirnkIcon';
-import GlassIcon from '@/components/complex/glassIcon';
 import SeacrhTagInDb from '@/components/complex/searchTag';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import MenuIcon from '@/components/complex/menuIcon';
 import Menu from '@/components/complex/menu';
+import ImageAndHeart from '@/components/complex/imageAndHeart';
 
 
 
@@ -41,6 +40,26 @@ export default function Music() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [tags, setTags] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [dynamicHeight, setDynamicHeight] = useState('60vh');
+  const audioPlayerRef = useRef(null); // Referencia para el reproductor de audio
+
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (audioPlayerRef.current) {
+        const windowHeight = window.innerHeight;
+        const audioPlayerHeight = audioPlayerRef.current.offsetHeight;
+        const remainingHeight = windowHeight - audioPlayerHeight - 20;//el 20 es padding top
+        setDynamicHeight(`${remainingHeight}px`);
+      }
+    };
+
+    calculateHeight(); // Calcula la altura inicial
+    window.addEventListener('resize', calculateHeight); // Recalcula en cada resize
+
+    return () => {
+      window.removeEventListener('resize', calculateHeight); // Limpia el listener
+    };
+  }, []);
 
   useEffect(() => {
     if (content && content.length > 0) {
@@ -97,6 +116,7 @@ export default function Music() {
 
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
+    openModal()
   };
 
   const startLoading = () => {
@@ -125,25 +145,23 @@ export default function Music() {
 
   if (content && content.length > 0) {
     return (
-      <div className='backgroundColor1' style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        <Modal isOpen={isModalOpen} onClose={closeModal}>
-          <h2>Contenido Dinámico</h2>
-          <p>Este es un ejemplo de contenido dinámico dentro del modal.</p>
-          <button onClick={closeModal}>Cerrar Modal</button>
-        </Modal>
+      <div className='backgroundColor1' style={{ height: '100vh', display: 'block' }}>
+        <Modal isOpen={isModalOpen} onClose={closeModal} children={<MidiAndPdf content={content} onItemClick={handleItemClick}/>} className={'backgroundColor3'}/>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `url(${content[0].imagePrincipal.src})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(8px)', opacity: '0.5', margin: '20px', zIndex: 1, boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', borderRadius: '20px' }}></div>
-        <div className='spaceTopOnlyPhone' style={{ flex: 1, scrollbarWidth: 'thin', position: 'relative', zIndex: 2 }}>
+        <div className='spaceTopOnlyPhone' style={{ scrollbarWidth: 'thin', position: 'relative', zIndex: 2 }}>
           <div style={{ width: '100%', textAlign: 'center' }}>
             <div className="input-container-CellUP backgroundColor2" onClick={(e) => e.stopPropagation()}>
               <SeacrhTagInDb tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
             </div>
           </div>
-          <div style={{ height: '60vh', overflow: 'auto' }}>
+          <div style={{paddingTop: '20px'}}></div>
+          <div style={{height: dynamicHeight, overflow: 'auto' }}>
             <ImageAndText content={musicContent} onItemClick={handleItemClick} />
           </div>
         </div>
         <div 
-          className='backgroundColor2' 
+          ref={audioPlayerRef} // Asignamos la referencia aquí
+          className='backgroundColor2 audioPLayerContent' 
           style={{ 
             padding: '10px', 
             position: 'fixed',
@@ -159,13 +177,13 @@ export default function Music() {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <MenuIcon onClick={toggleMenu} />
-            <div style={{ maxWidth: '30vw'}}>
-              <ImageAndText content={content} onItemClick={handleItemClick} />
+            <div style={{ maxWidth: '30vw', overflowY: 'auto'}}>
+              <ImageAndHeart content={content} onItemClick={handleItemClick} />
             </div>
             <div className="input-container backgroundColor2" onClick={(e) => e.stopPropagation()}>
               <SeacrhTagInDb tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
             </div>
-            <ToggleIconOpenAndClose size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
+            <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
             <div className={isVideoFullScreen ? 'video-fullscreen' : 'video-normal'} style={{ position: isVideoFullScreen ? 'fixed' : 'relative', top: isVideoFullScreen ? '0' : 'auto', left: isVideoFullScreen ? '0' : 'auto', zIndex: isVideoFullScreen ? 9999 : 'auto' }}>
               <Video 
                 tags={tags} 
@@ -178,7 +196,7 @@ export default function Music() {
                 setComponentInUse={setComponentInUse} 
                 id={content[0].videoPrincipal.id} 
                 src={content[0].videoPrincipal.src} 
-                style={{ width: '100%', height: '100%' }} 
+                style={{ width: '100%', height: '100%', borderRadius: isVideoFullScreen ? '0em' : '0.7em' }} 
                 className={[]} 
                 onClick={() => console.log('Video clicked')} 
                 setIsLoading={setIsLoading} 
@@ -190,16 +208,10 @@ export default function Music() {
                 setMusicContent={setMusicContent} 
               />
               <div onClick={toggleVideoFullScreen} style={{ position: 'absolute', top: '0px', right: '0', zIndex: 10000, cursor: 'pointer', backgroundColor: 'none', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto' }}>
-                {isVideoFullScreen ? (
-                  <ShrinkIcon onClick={toggleVideoFullScreen} size={50} />
-                ) : (
-                  <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
-                )}
+                <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
+                
               </div>
             </div>
-          </div>
-          <div style={{ opacity: isContentVisible ? 1 : 0, maxHeight: isContentVisible ? '70vh' : '0', overflow: 'hidden', transition: 'opacity 2s ease, max-height 2s ease', display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
-            <MidiAndPdf content={content} onItemClick={handleItemClick} />
           </div>
           <Audio 
             setCurrentIndex={setCurrentIndex} 
