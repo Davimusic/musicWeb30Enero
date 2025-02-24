@@ -42,6 +42,7 @@ export default function Music() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dynamicHeight, setDynamicHeight] = useState('60vh');
   const [contentModal, setContentModal] = useState('');
+  const [isFirstTimeLoading, setIsFirstTimeLoading] = useState(true);
   const audioPlayerRef = useRef(null); // Referencia para el reproductor de audio
 
   useEffect(() => {
@@ -177,7 +178,7 @@ export default function Music() {
             boxShadow: '0px -5px 10px rgba(0, 0, 0, 0.1)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <MenuIcon onClick={toggleMenu} />
             <div style={{ maxWidth: '30vw', overflowY: 'auto'}}>
               <ImageAndHeart content={content} onItemClick={handleItemClick} />
@@ -245,6 +246,8 @@ export default function Music() {
             setIsLoading={setIsLoading} 
             isEndedVideo={isEndedVideo} 
             setIsEndedVideo={setIsEndedVideo} 
+            isFirstTimeLoading={isFirstTimeLoading}
+            setIsFirstTimeLoading={setIsFirstTimeLoading}
           />
         </div>
         <Menu isOpen={isMenuOpen} onClose={toggleMenu} className='backgroundColor2' />

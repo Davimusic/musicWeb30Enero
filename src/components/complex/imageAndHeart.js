@@ -26,7 +26,7 @@ const ImageAndHeart = ({ content, onItemClick }) => {
             overflow: 'auto',
             display: 'flex',
             alignItems: 'flex-end',
-            marginBottom: '10px',
+            
             cursor: 'pointer',
             borderRadius: '0.5em',
             paddingLeft: '10px',
@@ -34,7 +34,7 @@ const ImageAndHeart = ({ content, onItemClick }) => {
             marginRight: '10px',
             marginLeft: '10px',
             paddingBottom: '10px',
-            paddingTop: '10px'
+            
           }}
           className="effectHover"
         >

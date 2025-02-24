@@ -2,7 +2,7 @@
 
 import "./globals.css";
 import React, { useState, useEffect } from 'react';
-import {Content} from "@/components/content";
+import Content from "@/components/content";
 import Head from 'next/head';
 
 export function Root() {
