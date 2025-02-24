@@ -37,7 +37,7 @@ const Audio = ({
   tags,
   setTags,
   setMusicContent,
-  setIsModalOpen,
+  //setIsModalOpen,
   setContentModal,
   isMenuOpen,
   toggleMenu,
