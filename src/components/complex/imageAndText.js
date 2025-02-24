@@ -26,7 +26,6 @@ const ImageAndText = ({ content, onItemClick }) => {
             overflow: 'auto',
             display: 'flex',
             alignItems: 'flex-end',
-            marginBottom: '10px',
             cursor: 'pointer',
             borderRadius: '0.5em',
             paddingLeft: '10px',
@@ -34,7 +33,7 @@ const ImageAndText = ({ content, onItemClick }) => {
             marginRight: '10px',
             marginLeft: '10px',
             paddingBottom: '10px',
-            paddingTop: '10px'
+            
           }}
           className="effectHover"
         >
@@ -54,13 +53,13 @@ const ImageAndText = ({ content, onItemClick }) => {
             <Text
               id={item.text.id}
               text={item.text.textTitle}
-              style={item.text.style}
+              style={{...item.text.style, color: 'white', margin: '5px'}}
               className={[`${item.text.className}`, 'title-md']}
             />
             <Text
               id={item.text.id}
               text={item.text.textDescripcion}
-              style={item.text.style}
+              style={{...item.text.style, color: 'white', margin: '5px'}}
               className={[`${item.text.className}`, 'title-xs']}
             />
           </div>

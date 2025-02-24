@@ -31,12 +31,12 @@ const TogglePlayPause = ({ size = 30, isPlaying = false, onToggle }) => {
         {isPlaying ? (
           // Ícono de Pause
           <>
-            <rect x="6" y="4" width="4" height="16" fill="currentColor" />
-            <rect x="14" y="4" width="4" height="16" fill="currentColor" />
+            <rect x="6" y="4" width="4" height="16" fill="white" /> {/* Cambiado a blanco */}
+            <rect x="14" y="4" width="4" height="16" fill="white" /> {/* Cambiado a blanco */}
           </>
         ) : (
           // Ícono de Play
-          <polygon points="5 3 19 12 5 21" fill="currentColor" />
+          <polygon points="5 3 19 12 5 21" fill="white" /> 
         )}
       </svg>
       <style jsx>{`

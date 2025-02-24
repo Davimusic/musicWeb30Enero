@@ -1,6 +1,7 @@
 import { auth, provider } from '../../firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { useState, useEffect } from 'react';
+import '../estilos/general/general.css'
 
 export default function Content() {
   const [user, setUser] = useState(null);
@@ -41,14 +42,17 @@ export default function Content() {
 
   if (user) {
     return (
-      <div style={{ 
-        height: '100%', 
+      <div 
+      className={'backgroundColor1'}
+      style={{ 
+        height: '100vh', 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
         flexDirection: 'column',
         gap: '20px',
-        textAlign: 'center'
+        textAlign: 'center',
+        padding: '20px',
       }}>
         <img
           src={user.photoURL}
@@ -60,11 +64,11 @@ export default function Content() {
             border: '2px solid #4285F4' 
           }}
         />
-        <h2 style={{ margin: '0', color: '#333' }}>
-          Bienvenido, {user.displayName}!
+        <h2 style={{ margin: '0', color: '#333', fontSize: '24px' }}>
+          Benvingut, {user.displayName}!
         </h2>
-        <p style={{ margin: '0', color: '#666' }}>
-          Has iniciado sesión con Google.
+        <p style={{ margin: '0', color: '#666', fontSize: '16px' }}>
+          Has iniciat sessió amb Google.
         </p>
         <button 
           onClick={handleLogout}
@@ -76,17 +80,26 @@ export default function Content() {
             border: 'none',
             borderRadius: '5px',
             cursor: 'pointer',
-            marginTop: '20px'
+            marginTop: '20px',
+            width: '100%',
+            maxWidth: '200px'
           }}
         >
-          Cerrar sesión
+          Tancar sessió
         </button>
       </div>
     );
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      backgroundColor: '#f5f5f5',
+      padding: '20px'
+    }}>
       <button 
         onClick={handleLogin}
         style={{
@@ -97,9 +110,11 @@ export default function Content() {
           border: 'none',
           borderRadius: '5px',
           cursor: 'pointer',
+          width: '100%',
+          maxWidth: '300px'
         }}
       >
-        Iniciar sesión con Google
+        Iniciar sessió amb Google
       </button>
     </div>
   );

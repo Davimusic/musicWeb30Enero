@@ -44,8 +44,8 @@ const NextBeforeIcon = ({ size = 30, direction = 'right', onToggle }) => {
         fill="none"
       >
         {/* Ícono de Flecha Doble */}
-        <polygon points="4 2, 14 12, 4 22" fill="currentColor" />
-        <polygon points="10 2, 20 12, 10 22" fill="currentColor" />
+        <polygon points="4 2, 14 12, 4 22" fill="white" />
+        <polygon points="10 2, 20 12, 10 22" fill="white" />
       </svg>
       <style jsx>{`
         @keyframes pulse {

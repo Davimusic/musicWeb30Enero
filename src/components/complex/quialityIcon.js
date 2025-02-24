@@ -23,8 +23,8 @@ const QualityIcon = ({ size = 30, onClick }) => {
           cursor: 'pointer',
           transition: 'transform 0.3s ease',
         }}
-        stroke="currentColor"
-        strokeWidth="1.5"
+        stroke="white" // Cambiado a blanco
+        strokeWidth="2.5"
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -32,7 +32,7 @@ const QualityIcon = ({ size = 30, onClick }) => {
         {/* Lápiz (representa editar) */}
         <path
           d="M17 3L21 7L7 21H3V17L17 3Z"
-          stroke="currentColor"
+          stroke="white" // Cambiado a blanco
           fill="none"
         />
         {/* Línea diagonal que sugiere movimiento o ajuste */}
@@ -41,7 +41,7 @@ const QualityIcon = ({ size = 30, onClick }) => {
           y1="5"
           x2="19"
           y2="9"
-          stroke="currentColor"
+          stroke="white" // Ya está en blanco
         />
       </svg>
       <style jsx>{`

@@ -91,7 +91,6 @@ button {
 }
 
 button:hover {
-  background-color: #f0f0f0;
   transform: scale(1.1);
 }
 
@@ -132,7 +131,7 @@ button:hover {
 }
 
 .audioPLayerContent{
-  height: 150px;
+  height: 130px;
 }
 
 /* Media query para móviles */
@@ -149,7 +148,7 @@ button:hover {
   }
 
   .audioPLayerContent{
-    height: 225px;
+    height: 210px;
   }
   
 }
@@ -175,4 +174,5 @@ button:hover {
       transform: rotate(360deg);
   }
 }
+
 

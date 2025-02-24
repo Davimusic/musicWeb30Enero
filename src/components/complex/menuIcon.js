@@ -25,7 +25,7 @@ const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
           ...style, // Merge the passed style with default styles
         }}
         stroke={'white'}
-        strokeWidth="1.5"
+        strokeWidth="3"
         fill="none"
       >
         {/* Ícono de menú (tres líneas horizontales) */}

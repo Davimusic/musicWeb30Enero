@@ -50,6 +50,11 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
         }
     };
 
+    // Método para evitar que el clic se propague a los elementos hijos
+    const handleMenuClick = (e) => {
+        e.stopPropagation(); // Evita que el clic se propague al contenedor del menú
+    };
+
     return (
         <>
             {/* Menú lateral */}
@@ -60,31 +65,36 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                     left: isOpen ? 0 : '-300px', // Desplazamiento del menú
                     width: '300px',
                     height: '100vh',
-                    zIndex: 1000,
-                    transition: 'left 0.3s ease',
+                    zIndex: 9990,
+                    transition: 'left 0.3s ease, visibility 0.3s ease, opacity 0.3s ease',
                     padding: '20px',
                     boxShadow: '2px 0 5px rgba(0, 0, 0, 0.5)',
+                    visibility: isOpen ? 'visible' : 'hidden', // Ocultar completamente el menú
+                    opacity: isOpen ? 1 : 0, // Hacer el menú transparente cuando esté cerrado
                 }}
                 className={className}
+                onClick={onClose} // Cerrar el menú al hacer clic en cualquier parte del contenedor
             >
-                <p className='title-md' style={{ marginBottom: '20px' }}>Menú</p>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Inicio</a>
-                    </li>
-                    <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Explorar</a>
-                    </li>
-                    <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Favoritos</a>
-                    </li>
-                    <li style={{ marginBottom: '15px' }}>
-                        <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Configuración</a>
-                    </li>
-                    <li style={{ marginBottom: '15px' }}>
-                        <p onClick={() => setIsModalOpen(true)} className='title-sm'>Cambiar color de fondo</p>
-                    </li>
-                </ul>
+                <div onClick={handleMenuClick}> {/* Evita que el clic se propague al contenedor del menú */}
+                    <p className='title-md' style={{ marginBottom: '20px' }}>Menú</p>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                        <li style={{ marginBottom: '15px' }}>
+                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Inicio</a>
+                        </li>
+                        <li style={{ marginBottom: '15px' }}>
+                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Explorar</a>
+                        </li>
+                        <li style={{ marginBottom: '15px' }}>
+                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Favoritos</a>
+                        </li>
+                        <li style={{ marginBottom: '15px' }}>
+                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Configuración</a>
+                        </li>
+                        <li style={{ marginBottom: '15px' }}>
+                            <p onClick={() => setIsModalOpen(true)} className='title-sm'>Cambiar color de fondo</p>
+                        </li>
+                    </ul>
+                </div>
             </div>
             {/* Overlay para cerrar el menú */}
             {isOpen && (

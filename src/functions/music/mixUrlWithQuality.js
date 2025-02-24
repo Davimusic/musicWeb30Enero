@@ -5,12 +5,12 @@ export default function mixUrlWithQuality(url, quality) {
         throw new Error("Quality debe ser 25, 50, 75 o 100.");
     }
 
-    // Mapeo de ajustes exagerados (para notar diferencias)
+    // Mapeo de ajustes mejorados
     const qualitySettings = {
-        25: { q: 25, br: "100k", width: 320, fps: 10 }, // Calidad extremadamente baja
-        50: { q: 50, br: "300k", width: 480, fps: 15 }, // Calidad baja
-        75: { q: 75, br: "800k", width: 720, fps: 24 }, // Calidad media
-        100: { q: 100, br: "2000k", width: 1080, fps: 30 }, // Calidad máxima
+        25: { q: 50, br: "400k", width: 480, fps: 24 },  // Calidad baja pero decente
+        50: { q: 70, br: "800k", width: 720, fps: 24 },  // Calidad media
+        75: { q: 85, br: "1200k", width: 1080, fps: 30 }, // Calidad alta
+        100: { q: 100, br: "2500k", width: 1080, fps: 60 }, // Calidad máxima
     };
 
     // Obtener ajustes

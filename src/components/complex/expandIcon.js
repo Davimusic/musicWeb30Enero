@@ -32,7 +32,7 @@ const ExpandIcon = ({ size = 30, onClick = () => {} }) => {
         {/* Ícono de minimizar con esquinas más redondeadas */}
         <path
           d="M5 5h5v2H7v3H5V5zm12 0h-5v2h3v3h2V5zM5 19v-5h2v3h3v2H5zm12 0h-5v-2h3v-3h2v5z"
-          fill="currentColor"
+          fill="white"
           transform="rotate(180 12 12)"
         />
       </svg>

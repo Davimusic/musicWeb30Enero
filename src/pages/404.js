@@ -28,8 +28,9 @@ const NotFound = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '100vh',
+        height: '97vh',
         transition: 'background-color 1s ease', // Transición suave para el cambio de color
+        borderRadius: '0.7em'
       }}
     >
       {/* Contenedor del logo con animación */}

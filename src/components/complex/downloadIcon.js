@@ -23,7 +23,7 @@ const DownloadIcon = ({ size = 30, isOpen = false, onToggle = () => {} }) => {
           cursor: 'pointer', 
           transition: 'transform 0.3s ease',
         }}
-        stroke={'currentColor'}
+        stroke={'white'}
         strokeWidth="3"
         fill="none"
         strokeLinecap="round" // Redondea los extremos de las líneas

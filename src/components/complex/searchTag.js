@@ -23,7 +23,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
 
         if(result === false){
             setIsModalOpen(true)
-            setContentModal(<p style={{padding: '30px'}}>No results were found for the tag: {searchResults}</p>)
+            setContentModal(<p className='title-md' style={{padding: '30px', color: 'white'}}>No results were found for the tag: {searchResults}</p>)
         }
         //setShowModal(result === false);
     };

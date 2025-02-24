@@ -63,7 +63,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     //backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 1000,
+    zIndex: 10001,
   },
   modal: {
     padding: '20px',

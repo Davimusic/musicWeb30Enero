@@ -25,7 +25,7 @@ const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
           ...style, // Merge the passed style with default styles
         }}
         stroke={'white'}
-        strokeWidth="1.5"
+        strokeWidth="2.5"
         fill="none"
       >
         {/* Ícono de lupa */}

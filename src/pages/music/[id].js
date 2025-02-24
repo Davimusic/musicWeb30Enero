@@ -1,32 +1,16 @@
 "use client";
 import React, { useEffect, useState, useRef } from 'react';
-import Audio from '@/components/simple/audio';
+import '../../estilos/general/general.css';
+import SearchTagInDb from '@/components/complex/searchTag';
+import FullControlMedia from '@/components/complex/fullControlMedia';
 import ImageAndText from '@/components/complex/imageAndText';
-import mapCompositionsToMusicContent from '@/functions/music/mapCompositionsToMusicContent';
 import MidiAndPdf from '@/components/complex/midiAndPdf';
-import Video from '@/components/simple/video';
-import DownloadIcon from '@/components/complex/downloadIcon';
-'../../estilos/general/general.css';
 import MainLogo from '@/components/complex/mainLogo';
 import Modal from '@/components/complex/modal';
-import ExpandIcon from '@/components/complex/expandIcon';
-import SeacrhTagInDb from '@/components/complex/searchTag';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
-import MenuIcon from '@/components/complex/menuIcon';
-import Menu from '@/components/complex/menu';
-import ImageAndHeart from '@/components/complex/imageAndHeart';
-
-
-
-
-
-
-
-
-
-
 
 export default function Music() {
+  // Estados principales
   const [content, setContent] = useState([]);
   const [musicContent, setMusicContent] = useState([]);
   const [isContentVisible, setIsContentVisible] = useState(false);
@@ -43,31 +27,38 @@ export default function Music() {
   const [dynamicHeight, setDynamicHeight] = useState('60vh');
   const [contentModal, setContentModal] = useState('');
   const [isFirstTimeLoading, setIsFirstTimeLoading] = useState(true);
-  const audioPlayerRef = useRef(null); // Referencia para el reproductor de audio
+  const [quality, setQuality] = useState(25);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
 
+  const audioPlayerRef = useRef(null);
+
+  // Efecto para calcular altura dinámica
   useEffect(() => {
     const calculateHeight = () => {
       if (audioPlayerRef.current) {
         const windowHeight = window.innerHeight;
         const audioPlayerHeight = audioPlayerRef.current.offsetHeight;
-        const remainingHeight = windowHeight - audioPlayerHeight - 20;//el 20 es padding top
+        const remainingHeight = windowHeight - audioPlayerHeight - 20;
         setDynamicHeight(`${remainingHeight}px`);
       }
     };
 
-    calculateHeight(); // Calcula la altura inicial
-    window.addEventListener('resize', calculateHeight); // Recalcula en cada resize
-
-    return () => {
-      window.removeEventListener('resize', calculateHeight); // Limpia el listener
-    };
+    calculateHeight();
+    window.addEventListener('resize', calculateHeight);
+    return () => window.removeEventListener('resize', calculateHeight);
   }, []);
 
+  // Efecto para resaltar elementos
   useEffect(() => {
-    if (content && content.length > 0) {
+    if (content?.length > 0) {
       const idToFind = content[0].idObjeto;
-      const highlightedElements = document.querySelectorAll('.highlight');
-      highlightedElements.forEach(element => {
+      document.querySelectorAll('.highlight').forEach(element => {
         element.classList.remove('highlight');
       });
       const newElement = document.getElementById(idToFind);
@@ -78,190 +69,274 @@ export default function Music() {
     }
   }, [content]);
 
-  useEffect(() => {
-    console.log(tags);
-  }, [tags]);
-
-  useEffect(() => {
-    console.log(componentInUse);
-  }, [componentInUse]);
-
-  useEffect(() => {
-    console.log(currentIndex);
-  }, [currentIndex]);
-
-  /*useEffect(() => {
-    startLoading();
-    const loadTime = Math.random() * 1000;
-    setTimeout(() => {
-      stopLoading();
-    }, loadTime);
-
-    return () => {
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-      }
-    };
-  }, []);*/
-
+  // Efecto para carga inicial
   useEffect(() => {
     searchTagInDb('', setContent, setMusicContent, setTags);
   }, []);
 
+  // Funciones para manejar el reproductor
+  const togglePlayPause = () => {
+    if (audioPlayerRef.current) {
+      if (isPlaying) {
+        audioPlayerRef.current.pause();
+      } else {
+        audioPlayerRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioPlayerRef.current) {
+      setCurrentTime(audioPlayerRef.current.currentTime);
+      setCurrentTimeMedia(audioPlayerRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioPlayerRef.current) {
+      setDuration(audioPlayerRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e) => {
+    if (audioPlayerRef.current) {
+      const seekTime = parseFloat(e.target.value);
+      audioPlayerRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.volume = newVolume;
+    }
+    if (isMuted && newVolume > 0) setIsMuted(false);
+  };
+
+  const toggleMute = () => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.muted = !audioPlayerRef.current.muted;
+      setIsMuted(audioPlayerRef.current.muted);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setIsEndedVideo(true);
+    if (isRepeat && audioPlayerRef.current) {
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current.play();
+    } else {
+      handleNextSong();
+    }
+  };
+
+  const toggleShuffle = () => setIsShuffle(!isShuffle);
+  const toggleRepeat = () => setIsRepeat(!isRepeat);
+
+  const getNextSong = () => {
+    if (musicContent.length === 0) return null;
+    let nextIndex;
+    if (isShuffle) {
+      do {
+        nextIndex = Math.floor(Math.random() * musicContent.length);
+      } while (nextIndex === currentIndex);
+    } else {
+      nextIndex = (currentIndex + 1) % musicContent.length;
+    }
+    return musicContent[nextIndex];
+  };
+
+  const getPreviousSong = () => {
+    if (musicContent.length === 0) return null;
+    const prevIndex = (currentIndex - 1 + musicContent.length) % musicContent.length;
+    return musicContent[prevIndex];
+  };
+
+  const handleNextSong = () => {
+    const nextSong = getNextSong();
+    if (nextSong && audioPlayerRef.current) {
+      setContent([nextSong]);
+      setCurrentIndex(musicContent.findIndex(song => song.idObjeto === nextSong.idObjeto));
+      audioPlayerRef.current.src = `${nextSong.audioPrincipal.src}?quality=${quality}`;
+      audioPlayerRef.current.load();
+      audioPlayerRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePreviousSong = () => {
+    const prevSong = getPreviousSong();
+    if (prevSong && audioPlayerRef.current) {
+      setContent([prevSong]);
+      setCurrentIndex(musicContent.findIndex(song => song.idObjeto === prevSong.idObjeto));
+      audioPlayerRef.current.src = `${prevSong.audioPrincipal.src}?quality=${quality}`;
+      audioPlayerRef.current.load();
+      audioPlayerRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleItemClick = (item) => {
-    setContent([item]);
-    console.log("Item seleccionado:", item);
-  };
-
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
-    openModal()
-    setContentModal(<MidiAndPdf content={content} onItemClick={handleItemClick}/>)
+    openModal();
+    setContentModal(<MidiAndPdf content={content} onItemClick={handleItemClick} />);
   };
 
-  const startLoading = () => {
-    const timeout = setTimeout(() => {
-      setIsLoading(true);
-    }, 500);
-    setLoadingTimeout(timeout);
-  };
-
-  const stopLoading = () => {
-    if (loadingTimeout) {
-      clearTimeout(loadingTimeout);
+  const handleItemClick = (item) => {
+    setContent([item]);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.src = item.audioPrincipal.src;
+      audioPlayerRef.current.play();
+      setIsPlaying(true);
     }
-    setIsLoading(false);
   };
 
-  const toggleVideoFullScreen = () => {
-    const newFullScreenState = !isVideoFullScreen;
-    setIsVideoFullScreen(newFullScreenState);
-    setComponentInUse(newFullScreenState ? 'video' : 'audio');
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  if (content && content.length > 0) {
+  if (!content || content.length === 0) {
     return (
-      <div className='backgroundColor1' style={{ height: '100vh', display: 'block' }}>
-        <Modal isOpen={isModalOpen} onClose={closeModal} children={contentModal} className={'backgroundColor3'}/>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `url(${content[0].imagePrincipal.src})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(8px)', opacity: '0.5', margin: '20px', zIndex: 1, boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', borderRadius: '20px' }}></div>
-        <div className='spaceTopOnlyPhone' style={{ scrollbarWidth: 'thin', position: 'relative', zIndex: 2 }}>
-          <div style={{ width: '100%', textAlign: 'center' }}>
-            <div className="input-container-CellUP backgroundColor2" onClick={(e) => e.stopPropagation()}>
-              <SeacrhTagInDb setIsModalOpen={setIsModalOpen} setContentModal={setContentModal} tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
-            </div>
-          </div>
-          <div style={{paddingTop: '20px'}}></div>
-          <div style={{height: dynamicHeight, overflow: 'auto' }}>
-            <ImageAndText content={musicContent} onItemClick={handleItemClick} />
-          </div>
-        </div>
-        <div 
-          ref={audioPlayerRef} // Asignamos la referencia aquí
-          className='backgroundColor2 audioPLayerContent' 
-          style={{ 
-            padding: '10px', 
-            position: 'fixed',
-            bottom: '0',
-            left: '0',
-            right: '0',
-            zIndex: 2, 
-            borderRadius: '20px',
-            margin: '10px', 
-            maxHeight: '80vh', 
-            boxShadow: '0px -5px 10px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <MenuIcon onClick={toggleMenu} />
-            <div style={{ maxWidth: '30vw', overflowY: 'auto'}}>
-              <ImageAndHeart content={content} onItemClick={handleItemClick} />
-            </div>
-            <div className="input-container backgroundColor2" onClick={(e) => e.stopPropagation()}>
-              <SeacrhTagInDb setIsModalOpen={setIsModalOpen} setContentModal={setContentModal} tags={tags} setTags={setTags} setContent={setContent} setMusicContent={setMusicContent} />
-            </div>
-            <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
-            <div className={isVideoFullScreen ? 'video-fullscreen' : 'video-normal'} style={{ position: isVideoFullScreen ? 'fixed' : 'relative', top: isVideoFullScreen ? '0' : 'auto', left: isVideoFullScreen ? '0' : 'auto', zIndex: isVideoFullScreen ? 9999 : 'auto' }}>
-              <Video 
-                tags={tags} 
-                setTags={setTags} 
-                setCurrentIndex={setCurrentIndex} 
-                currentIndex={currentIndex} 
-                currentTimeMedia={currentTimeMedia} 
-                setCurrentTimeMedia={setCurrentTimeMedia} 
-                componentInUse={componentInUse} 
-                setComponentInUse={setComponentInUse} 
-                id={content[0].videoPrincipal.id} 
-                src={content[0].videoPrincipal.src} 
-                style={{ width: '100%', height: '100%', borderRadius: isVideoFullScreen ? '0em' : '0.7em' }} 
-                className={[]} 
-                onClick={() => console.log('Video clicked')} 
-                setIsLoading={setIsLoading} 
-                isVideoFullScreen={isVideoFullScreen} 
-                allMusicProyects={musicContent} 
-                setContent={setContent} 
-                isEndendVideo={isEndedVideo} 
-                setIsEndedVideo={setIsEndedVideo} 
-                setMusicContent={setMusicContent} 
-                setIsModalOpen={setIsModalOpen}
-                isModalOpen={isModalOpen} 
-                setContentModal={setContentModal}
-              />
-              <div onClick={toggleVideoFullScreen} style={{ position: 'absolute', top: '0px', right: '0', zIndex: 10000, cursor: 'pointer', backgroundColor: 'none', padding: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto' }}>
-                <ExpandIcon onClick={toggleVideoFullScreen} size={50} />
-                
-              </div>
-            </div>
-          </div>
-          <Audio 
-            setCurrentIndex={setCurrentIndex} 
-            currentIndex={currentIndex} 
-            id={content[0].audioPrincipal.id} 
-            src={content[0].audioPrincipal.src} 
-            autoPlay={content[0].audioPrincipal.autoPlay} 
-            loop={content[0].audioPrincipal.loop} 
-            controlsList={content[0].audioPrincipal.controlsList} 
-            backgroundColor={content[0].audioPrincipal.backgroundColor} 
-            buttonColor={content[0].audioPrincipal.buttonColor} 
-            sliderEmptyColor={content[0].audioPrincipal.sliderEmptyColor} 
-            sliderFilledColor={content[0].audioPrincipal.sliderFilledColor} 
-            showPlayButton={content[0].audioPrincipal.showPlayButton} 
-            showVolumeButton={content[0].audioPrincipal.showVolumeButton} 
-            playIcon={content[0].audioPrincipal.playIcon} 
-            pauseIcon={content[0].audioPrincipal.pauseIcon} 
-            volumeIcon={content[0].audioPrincipal.volumeIcon} 
-            width={content[0].audioPrincipal.width} 
-            allMusicProyects={musicContent} 
-            setContent={setContent} 
-            setCurrentTimeMedia={setCurrentTimeMedia} 
-            currentTimeMedia={currentTimeMedia} 
-            setComponentInUse={setComponentInUse} 
-            componentInUse={componentInUse} 
-            setIsLoading={setIsLoading} 
-            isEndedVideo={isEndedVideo} 
-            setIsEndedVideo={setIsEndedVideo} 
-            isFirstTimeLoading={isFirstTimeLoading}
-            setIsFirstTimeLoading={setIsFirstTimeLoading}
-          />
-        </div>
-        <Menu isOpen={isMenuOpen} onClose={toggleMenu} className='backgroundColor2' />
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, opacity: isLoading ? 1 : 0, visibility: isLoading ? 'visible' : 'hidden', transition: 'opacity 0.5s ease, visibility 0.5s ease', }}>
-          <MainLogo animate={true} size={'40vh'} />
-        </div>
+      <div style={{ 
+        height: '97vh', 
+        background: 'black', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        color: 'white', 
+        borderRadius: '0.7em' 
+      }}>
+        <MainLogo animate={true} size={'40vh'} />
       </div>
     );
   }
 
   return (
-    <div style={{ height: '100vh', background: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
-      <MainLogo animate={true} size={'40vh'}/>
+    <div className='backgroundColor1' style={{ height: '97vh', display: 'block' }}>
+      <Modal isOpen={isModalOpen} onClose={closeModal} children={contentModal} className={'backgroundColor3'} />
+      
+      {/* Fondo difuminado */}
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundImage: `url(${content[0].imagePrincipal.src})`, 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center', 
+        filter: 'blur(8px)', 
+        opacity: '0.5', 
+        margin: '20px', 
+        zIndex: 1, 
+        boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', 
+        borderRadius: '20px' 
+      }}></div>
+
+      {/* Contenido principal */}
+      <div className='spaceTopOnlyPhone' style={{ 
+        scrollbarWidth: 'thin', 
+        position: 'relative', 
+        zIndex: 2 
+      }}>
+        <div style={{ width: '100%', textAlign: 'center' }}>
+          <div className="input-container-CellUP backgroundColor2" onClick={(e) => e.stopPropagation()}>
+            <SearchTagInDb 
+              setIsModalOpen={setIsModalOpen} 
+              setContentModal={setContentModal} 
+              tags={tags} 
+              setTags={setTags} 
+              setContent={setContent} 
+              setMusicContent={setMusicContent} 
+            />
+          </div>
+        </div>
+        
+        <div style={{ paddingTop: '20px' }}></div>
+        
+        <div style={{ height: dynamicHeight, overflow: 'auto' }}>
+          <ImageAndText content={musicContent} onItemClick={handleItemClick} />
+        </div>
+      </div>
+
+      {/* Reproductor de audio */}
+      <FullControlMedia
+        ref={audioPlayerRef}
+        src={content[0].audioPrincipal.src}
+        isPlaying={isPlaying}
+        togglePlayPause={togglePlayPause}
+        isShuffle={isShuffle}
+        toggleShuffle={toggleShuffle}
+        isRepeat={isRepeat}
+        toggleRepeat={toggleRepeat}
+        handleNextSong={handleNextSong}
+        handlePreviousSong={handlePreviousSong}
+        handleTimeUpdate={handleTimeUpdate}
+        handleLoadedMetadata={handleLoadedMetadata}
+        handleSeek={handleSeek}
+        handleVolumeChange={handleVolumeChange}
+        toggleMute={toggleMute}
+        handleEnded={handleEnded}
+        formatTime={formatTime}
+        currentTime={currentTime}
+        duration={duration}
+        isMuted={isMuted}
+        volume={volume}
+        buttonColor={'white'}
+        showPlayButton={true}
+        showVolumeButton={true}
+        isModalOpen={isModalOpen}
+        openQualityModal={() => setIsModalOpen(true)}
+        closeQualityModal={() => setIsModalOpen(false)}
+        handleQualityChange={(newQuality) => {
+          setQuality(newQuality);
+          setIsModalOpen(false);
+        }}
+        quality={quality}
+        tags={tags}
+        setTags={setTags}
+        setContent={setContent}
+        setMusicContent={setMusicContent}
+        setIsModalOpen={setIsModalOpen}
+        setContentModal={setContentModal}
+        isMenuOpen={isMenuOpen}
+        toggleMenu={toggleMenu}
+        content={content}
+        handleItemClick={handleItemClick}
+        toggleContentVisibility={toggleContentVisibility}
+        isContentVisible={isContentVisible}
+      />
+
+      {/* Overlay de carga */}
+      <div style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backdropFilter: 'blur(10px)', 
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        zIndex: 9999, 
+        opacity: isLoading ? 1 : 0, 
+        visibility: isLoading ? 'visible' : 'hidden', 
+        transition: 'opacity 0.5s ease, visibility 0.5s ease' 
+      }}>
+        <MainLogo animate={true} size={'40vh'} />
+      </div>
     </div>
   );
 }
-
