@@ -1,0 +1,53 @@
+  :root {
+    --audioPlayerHeight: 115px;
+  }
+  
+  .audioPlayerContent {
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    border-radius: 20px;
+    margin: 10px;
+    max-height: 80vh;
+    box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1);
+    height: var(--audioPlayerHeight);
+  }
+  
+  /* Clase para el contenedor flexible que contiene el ícono de menú, la imagen y el corazón, y el ícono de descarga */
+  .flexContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  /* Clase para el contenedor de la imagen y el corazón */
+  .imageHeartContainer {
+    max-width: 30vw;
+    overflow-y: auto;
+  }
+  
+  
+  
+  /* Clase para el contenedor de los controles de medios */
+  .mediaControlContainer {
+    display: flex;
+    justify-content: center;
+  }
+
+  .changeModeView {
+    display: flex;
+  }
+  
+  
+  @media (max-width: 767px) {
+    :root {
+      --audioPlayerHeight: 190px;
+    }
+    .changeModeView {
+      display: none;
+    }
+  }

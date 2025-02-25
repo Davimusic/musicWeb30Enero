@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import '../../estilos/general/general.css';
 import SearchTagInDb from '@/components/complex/searchTag';
 import FullControlMedia from '@/components/complex/fullControlMedia';
@@ -8,6 +8,14 @@ import MidiAndPdf from '@/components/complex/midiAndPdf';
 import MainLogo from '@/components/complex/mainLogo';
 import Modal from '@/components/complex/modal';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
+import getCSSVariableValue from '@/functions/music/getCSSVariableValue';
+
+
+
+
+
+
+
 
 export default function Music() {
   // Estados principales
@@ -38,20 +46,28 @@ export default function Music() {
 
   const audioPlayerRef = useRef(null);
 
-  // Efecto para calcular altura dinámica
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateHeight = () => {
-      if (audioPlayerRef.current) {
-        const windowHeight = window.innerHeight;
-        const audioPlayerHeight = audioPlayerRef.current.offsetHeight;
-        const remainingHeight = windowHeight - audioPlayerHeight - 20;
+      const windowHeight = window.innerHeight;
+      const audioPlayerHeight = parseInt(getCSSVariableValue('--audioPlayerHeight'), 10);
+      if (!isNaN(audioPlayerHeight)) {
+        const remainingHeight = windowHeight - audioPlayerHeight - 30; // 30 es para que quede un buen espacio
         setDynamicHeight(`${remainingHeight}px`);
+      } else {
+        console.error('El valor de --audioPlayerHeight no es un número válido.');
       }
     };
 
-    calculateHeight();
+    const timeoutId = setTimeout(() => {
+      calculateHeight();
+    }, 100); // Retraso de 100ms
+
     window.addEventListener('resize', calculateHeight);
-    return () => window.removeEventListener('resize', calculateHeight);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', calculateHeight);
+    };
   }, []);
 
   // Efecto para resaltar elementos
@@ -67,7 +83,7 @@ export default function Music() {
         newElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
-  }, [content]);
+  }, [content, currentIndex]);
 
   // Efecto para carga inicial
   useEffect(() => {
@@ -134,8 +150,19 @@ export default function Music() {
     }
   };
 
-  const toggleShuffle = () => setIsShuffle(!isShuffle);
-  const toggleRepeat = () => setIsRepeat(!isRepeat);
+  const toggleShuffle = () => {
+    if (isRepeat) {
+      setIsRepeat(false); 
+    }
+    setIsShuffle(!isShuffle); 
+  };
+
+  const toggleRepeat = () => {
+    if (isShuffle) {
+      setIsShuffle(false); 
+    }
+    setIsRepeat(!isRepeat); 
+  };
 
   const getNextSong = () => {
     if (musicContent.length === 0) return null;
@@ -152,7 +179,14 @@ export default function Music() {
 
   const getPreviousSong = () => {
     if (musicContent.length === 0) return null;
-    const prevIndex = (currentIndex - 1 + musicContent.length) % musicContent.length;
+    let prevIndex;
+    if (isShuffle) {
+      do {
+        prevIndex = Math.floor(Math.random() * musicContent.length);
+      } while (prevIndex === currentIndex);
+    } else {
+      prevIndex = (currentIndex - 1 + musicContent.length) % musicContent.length;
+    }
     return musicContent[prevIndex];
   };
 
@@ -169,6 +203,7 @@ export default function Music() {
   };
 
   const handlePreviousSong = () => {
+    alert(isShuffle)
     const prevSong = getPreviousSong();
     if (prevSong && audioPlayerRef.current) {
       setContent([prevSong]);
@@ -223,26 +258,36 @@ export default function Music() {
   }
 
   return (
-    <div className='backgroundColor1' style={{ height: '97vh', display: 'block' }}>
+    <div className='backgroundColor1' style={{ height: '97vh', display: 'block', borderRadius: '20px' }}>
       <Modal isOpen={isModalOpen} onClose={closeModal} children={contentModal} className={'backgroundColor3'} />
       
       {/* Fondo difuminado */}
       <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        backgroundImage: `url(${content[0].imagePrincipal.src})`, 
-        backgroundSize: 'cover', 
-        backgroundPosition: 'center', 
-        filter: 'blur(8px)', 
-        opacity: '0.5', 
-        margin: '20px', 
-        zIndex: 1, 
-        boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)', 
-        borderRadius: '20px' 
-      }}></div>
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundImage: `url(${content[0].imagePrincipal.src})`, 
+          backgroundSize: 'cover', 
+          backgroundPosition: 'center', 
+          filter: 'blur(8px)', 
+          opacity: '0.5', 
+          margin: '20px', 
+          zIndex: 1, 
+          borderRadius: '20px',
+          overflow: 'hidden'
+      }}>
+          <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'radial-gradient(circle, rgba(0, 0, 0, 0.9) 20%, rgba(0, 0, 0, 0.6) 70%, rgba(255, 255, 255, 0.1) 100%)',
+              zIndex: 2
+          }}></div>
+      </div>
 
       {/* Contenido principal */}
       <div className='spaceTopOnlyPhone' style={{ 
@@ -250,21 +295,6 @@ export default function Music() {
         position: 'relative', 
         zIndex: 2 
       }}>
-        <div style={{ width: '100%', textAlign: 'center' }}>
-          <div className="input-container-CellUP backgroundColor2" onClick={(e) => e.stopPropagation()}>
-            <SearchTagInDb 
-              setIsModalOpen={setIsModalOpen} 
-              setContentModal={setContentModal} 
-              tags={tags} 
-              setTags={setTags} 
-              setContent={setContent} 
-              setMusicContent={setMusicContent} 
-            />
-          </div>
-        </div>
-        
-        <div style={{ paddingTop: '20px' }}></div>
-        
         <div style={{ height: dynamicHeight, overflow: 'auto' }}>
           <ImageAndText content={musicContent} onItemClick={handleItemClick} />
         </div>
@@ -276,8 +306,10 @@ export default function Music() {
         src={content[0].audioPrincipal.src}
         isPlaying={isPlaying}
         togglePlayPause={togglePlayPause}
+        setIsShuffle={setIsShuffle}
         isShuffle={isShuffle}
         toggleShuffle={toggleShuffle}
+        setIsRepeat={setIsRepeat}
         isRepeat={isRepeat}
         toggleRepeat={toggleRepeat}
         handleNextSong={handleNextSong}

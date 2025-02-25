@@ -6,6 +6,8 @@ import DownloadIcon from './downloadIcon';
 import ImageAndHeart from './imageAndHeart';
 import Menu from './menu';
 import '../../estilos/general/general.css';
+import '../../estilos/music/fullControlMedia.css'
+import NextBeforeIcon from './nextBeforeIcon';
 
 const FullControlMedia = forwardRef((props, ref) => {
   const {
@@ -25,7 +27,7 @@ const FullControlMedia = forwardRef((props, ref) => {
   } = props;
 
   return (
-    <div className='backgroundColor2 audioPLayerContent' style={{ 
+    <div className='backgroundColor2 audioPlayerContent' style={{ 
       padding: '10px', 
       position: 'fixed',
       bottom: '0',
@@ -37,14 +39,14 @@ const FullControlMedia = forwardRef((props, ref) => {
       maxHeight: '80vh', 
       boxShadow: '0px -5px 10px rgba(0, 0, 0, 0.1)'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <div className="flexContainer">
         <MenuIcon onClick={toggleMenu} />
         
-        <div style={{ maxWidth: '30vw', overflowY: 'auto' }}>
+        <div className="imageHeartContainer">
           <ImageAndHeart content={content} onItemClick={handleItemClick} />
         </div>
-
-        <div className="input-container backgroundColor2" onClick={(e) => e.stopPropagation()}>
+  
+        <div className="inputContainer backgroundColor2" onClick={(e) => e.stopPropagation()}>
           <SearchTagInDb 
             setIsModalOpen={setIsModalOpen} 
             setContentModal={setContentModal} 
@@ -54,14 +56,20 @@ const FullControlMedia = forwardRef((props, ref) => {
             setMusicContent={setMusicContent} 
           />
         </div>
-
+  
         <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
+        <div className='changeModeView'>
+          <NextBeforeIcon onToggle={()=>alert('si')} direction={"top"} />
+        </div>
       </div>
-
-      <MediaControl ref={ref} {...restProps} />
+  
+      <div className="mediaControlContainer">
+        <MediaControl ref={ref} {...restProps} />
+      </div>
       <Menu isOpen={isMenuOpen} onClose={toggleMenu} className='backgroundColor2' />
     </div>
   );
+  
 });
 
 FullControlMedia.displayName = 'FullControlMedia';

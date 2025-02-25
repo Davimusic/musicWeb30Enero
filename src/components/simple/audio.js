@@ -1,6 +1,9 @@
-// components/simple/audio.js
 import React, { useState, useRef, useEffect } from 'react';
 import FullControlMedia from '../complex/fullControlMedia';
+
+
+
+
 
 const Audio = ({
   src,
@@ -37,7 +40,6 @@ const Audio = ({
   tags,
   setTags,
   setMusicContent,
-  //setIsModalOpen,
   setContentModal,
   isMenuOpen,
   toggleMenu,
@@ -45,13 +47,14 @@ const Audio = ({
   handleItemClick,
   toggleContentVisibility,
   isContentVisible,
+  setIsShuffle, // Recibimos setIsShuffle desde el componente padre
+  isShuffle, // Recibimos isShuffle desde el componente padre
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [isRepeat, setIsRepeat] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false); // Estado para el modo de repetición
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Efecto para inicializar currentIndex cuando cambia la lista de canciones
@@ -235,7 +238,9 @@ const Audio = ({
   };
 
   // Función para alternar el modo aleatorio
-  const toggleShuffle = () => setIsShuffle(!isShuffle);
+  const toggleShuffle = () => {
+    setIsShuffle(!isShuffle); // Actualizamos el estado isShuffle
+  };
 
   // Función para alternar el modo de repetición
   const toggleRepeat = () => setIsRepeat(!isRepeat);
@@ -299,6 +304,7 @@ const Audio = ({
 
   // Función para manejar el final de la reproducción
   const handleEnded = () => {
+    alert('gio')
     if (isRepeat && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play();
@@ -363,6 +369,8 @@ const Audio = ({
     />
   );
 };
+
+
 
 export default Audio;
 
