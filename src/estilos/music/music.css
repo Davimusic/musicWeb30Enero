@@ -1,0 +1,70 @@
+/* Estilos generales para el componente Music */
+.music-container {
+    height: 97vh;
+    display: block;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Fondo difuminado */
+  .background-blur {
+    position: absolute;
+    background-size: cover;
+    background-position: center;
+    filter: blur(8px) opacity(0.5);
+    inset: 0;
+    margin: 20px;
+    border-radius: 20px;
+    z-index: 1;
+  }
+  
+  .background-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle,
+      rgba(0, 0, 0, 0.9) 20%,
+      rgba(0, 0, 0, 0.6) 70%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    z-index: 2;
+  }
+  
+  /* Lista de contenido */
+  .content-list {
+    position: relative;
+    z-index: 2;
+    margin-top: 20px; /* Espacio superior para dispositivos móviles */
+  }
+  
+  .content-list-inner {
+    height: var(--dynamic-height); /* Altura dinámica calculada en JS */
+    overflow: auto;
+    padding: 10px;
+  }
+  
+  /* Overlay de carga */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 1;
+    transition: all 0.5s ease;
+  }
+  
+  /* Estilos responsivos */
+  @media (max-width: 768px) {
+    .content-list {
+      margin-top: 10px; /* Menos espacio en dispositivos móviles */
+    }
+  
+    .content-list-inner {
+      padding: 5px; /* Menos padding en dispositivos móviles */
+    }
+  }
