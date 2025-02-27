@@ -43,7 +43,8 @@ const MediaControl = forwardRef(
       setComponentInUse,
       componentInUse,
       setShowComponent,
-      showComponent
+      showComponent,
+      
     },
     ref
   ) => {

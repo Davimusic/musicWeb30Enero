@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import MediaControl from '../complex/mediaControl';
 import FullControlMedia from '../complex/fullControlMedia';
+import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
 
 const Audio = ({
   src,
@@ -26,17 +27,25 @@ const Audio = ({
   showComponent,
   setCurrentTimeMedia,
   currentTimeMedia,
-  changeStateMenu
+  changeStateMenu,
+  setVolumeMedia,
+  volumeMedia,
+  setQualityMedia,
+  qualityMedia,
+  setIsRepeatMedia,
+  isRepeatMedia,
+  setIsShuffleMedia,
+  isShuffleMedia
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  //const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isRepeat, setIsRepeat] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
+  //const [isRepeat, setIsRepeat] = useState(false);
+  //const [isShuffle, setIsShuffle] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [quality, setQuality] = useState(25);
+  //const [volume, setVolume] = useState(1);
+  //const [quality, setQuality] = useState(25);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Función auxiliar para manejar la reproducción del audio
@@ -47,17 +56,17 @@ const Audio = ({
     setIsPlaying(true);
   };
 
-  // Efecto para manejar cambios en `src`
-  /*useEffect(() => {
-    console.log('acaca');
-    
-    if (!isFirstTimeLoading && componentInUse === 'audio') {
-      playAudio();
-      setComponentInUse('audio')
-    } else {
-      setIsFirstTimeLoading(false);
-    }
-  }, [src]);*/
+  useEffect(() => {
+      console.log(qualityMedia);
+      console.log(mixUrlWithQuality(src, qualityMedia));
+      if (audioRef.current) {
+        audioRef.current.src = mixUrlWithQuality(src, qualityMedia);
+        audioRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
+        audioRef.current.volume = volumeMedia
+        playAudio();
+      }
+  }, [qualityMedia]);
+
 
   useEffect(() => {
     if (!isFirstTimeLoading && componentInUse === 'audio') {
@@ -75,6 +84,7 @@ const Audio = ({
       if (audioRef.current) {
         audioRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
         playAudio();
+        audioRef.current.volume = volumeMedia;
       }
     } else {
       if (audioRef.current) {
@@ -83,19 +93,6 @@ const Audio = ({
       }
     }
   }, [componentInUse]);
-  
-
-  /*/ Efecto para manejar cambios en `componentInUse`
-  useEffect(() => {
-    console.log('Componente en uso:', componentInUse);
-
-    if (componentInUse === 'audio') {
-      playAudio();
-    } else {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
-  }, [componentInUse]);*/
 
   // Función para alternar entre play y pause
   const togglePlayPause = () => {
@@ -108,7 +105,7 @@ const Audio = ({
 
   // Función para manejar el final de la reproducción
   const handleEnded = () => {
-    if (isRepeat) {
+    if (isRepeatMedia) {
       //audioRef.current.currentTime = 0;
       playAudio();
     } else {
@@ -143,7 +140,7 @@ const Audio = ({
   // Función para manejar el cambio de volumen
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
+    setVolumeMedia(newVolume);
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
     }
@@ -162,24 +159,24 @@ const Audio = ({
 
   const toggleShuffle = () => {
     // Si el modo de repetición está activo, lo desactivo antes de activar el modo aleatorio
-    if (isRepeat) {
-      setIsRepeat(false);
+    if (isRepeatMedia) {
+      setIsRepeatMedia(false);
     }
-    setIsShuffle(!isShuffle);
+    setIsShuffleMedia(!isShuffleMedia);
   };
   
   const toggleRepeat = () => {
     // Si el modo aleatorio está activo, lo desactivo antes de activar el modo de repetición
-    if (isShuffle) {
-      setIsShuffle(false);
+    if (isShuffleMedia) {
+      setIsShuffleMedia(false);
     }
-    setIsRepeat(!isRepeat);
+    setIsRepeatMedia(!isRepeatMedia);
   };
 
   // Función para obtener la siguiente canción
   const getNextSong = () => {
     if (allMusicProyects.length === 0) return null;
-    if (isShuffle) {
+    if (isShuffleMedia) {
       let randomIndex;
       do {
         randomIndex = Math.floor(Math.random() * allMusicProyects.length);
@@ -195,7 +192,7 @@ const Audio = ({
   const getPreviousSong = () => {
     if (allMusicProyects.length === 0) return null;
   
-    if (isShuffle) {
+    if (isShuffleMedia) {
       let randomIndex;
       do {
         randomIndex = Math.floor(Math.random() * allMusicProyects.length);
@@ -218,6 +215,7 @@ const Audio = ({
           (project) => project.audioPrincipal?.src === nextSong.audioPrincipal.src
         )
       );
+      setCurrentTimeMedia(0)
     }
   };
 
@@ -231,6 +229,7 @@ const Audio = ({
           (project) => project.audioPrincipal?.src === previousSong.audioPrincipal.src
         )
       );
+      setCurrentTimeMedia(0)
     }
   };
 
@@ -246,12 +245,12 @@ const Audio = ({
       {/* Elemento de audio */}
       <audio
         ref={audioRef}
-        src={src}
+        src={mixUrlWithQuality(src, qualityMedia)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
         muted={isMuted}
-        loop={isRepeat}
+        loop={isRepeatMedia}
       >
         Tu navegador no admite el elemento de audio.
       </audio>
@@ -269,18 +268,18 @@ const Audio = ({
         currentTime={currentTimeMedia}
         duration={duration}
         isMuted={isMuted}
-        volume={volume}
+        //volume={volumeMedia}
         isModalOpen={isModalOpen}
         openQualityModal={() => setIsModalOpen(true)}
         closeQualityModal={() => setIsModalOpen(false)}
         handleQualityChange={(newQuality) => {
-          setQuality(newQuality);
+          setQualityMedia(newQuality);
           setIsModalOpen(false);
         }}
-        quality={quality}
-        isRepeat={isRepeat}
+        //quality={qualityMedia}
+        isRepeat={isRepeatMedia}
         toggleShuffle={toggleShuffle}
-        isShuffle={isShuffle}
+        isShuffle={isShuffleMedia}
         toggleRepeat={toggleRepeat}
         isMenuOpen={isMenuOpen}
         toggleMenu={toggleMenu}

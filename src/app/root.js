@@ -8,13 +8,8 @@ import './globals.css';
 import Login from '@/components/content';
 
 export function Root({ children }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter(); // Usa useRouter para redirecciones
 
-  // Ejemplo de redirección (puedes adaptarlo a tu lógica)
-  const handleRedirect = () => {
-    router.push('/music/hi'); // Redirige a /music/hi
-  };
 
   return (
     <html>
@@ -34,7 +29,6 @@ export function Root({ children }) {
         <div>
           {children} {/* Renderiza las páginas aquí */}
           <Login/>
-          <button onClick={handleRedirect}>Ir a /music/hi</button> {/* Ejemplo de redirección */}
         </div>
       </body>
     </html>

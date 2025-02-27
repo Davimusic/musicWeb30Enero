@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import FullControlMedia from '../complex/fullControlMedia';
 import '../../estilos/music/video.css'
+import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
 
 const Video = ({
   src,
@@ -37,14 +38,22 @@ const Video = ({
   setCurrentTimeMedia,
   currentTimeMedia,
   changeStateMenu,
+  setVolumeMedia,
+  volumeMedia,
+  setQualityMedia,
+  qualityMedia,
+  setIsRepeatMedia,
+  isRepeatMedia,
+  setIsShuffleMedia,
+  isShuffleMedia
 }) => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isRepeat, setIsRepeat] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-
+  //const [isRepeat, setIsRepeat] = useState(false);
+  //const [isShuffle, setIsShuffle] = useState(false);
+  
   // Función para manejar la reproducción del video
   const playVideo = () => {
     if (videoRef.current) {
@@ -56,10 +65,23 @@ const Video = ({
   };
 
   useEffect(() => {
+    console.log(qualityMedia);
+    console.log(mixUrlWithQuality(src, qualityMedia));
+    if (videoRef.current) {
+      videoRef.current.src = mixUrlWithQuality(src, qualityMedia);
+      videoRef.current.load();
+      videoRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
+      videoRef.current.volume = volumeMedia
+      playVideo();
+    }
+  }, [qualityMedia]);
+
+  useEffect(() => {
     if (componentInUse === 'video') {
       if (videoRef.current) {
         videoRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
         playVideo();
+        videoRef.current.volume = volumeMedia
       }
     } else {
       if (videoRef.current) {
@@ -72,13 +94,18 @@ const Video = ({
   useEffect(() => {
     if (componentInUse === 'video') {
       if (videoRef.current) {
-        videoRef.current.src = src;
+        videoRef.current.src = mixUrlWithQuality(src, qualityMedia);
         videoRef.current.load();
         videoRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
         playVideo();
       }
     }
   }, [src]);
+
+  useEffect(() => {
+    console.log(volumeMedia);
+    
+  }, [volumeMedia]);
 
   /*/ Efecto para manejar cambios en `src`
   useEffect(() => {
@@ -126,7 +153,7 @@ const Video = ({
 
   // Función para manejar el final de la reproducción
   const handleEnded = () => {
-    if (isRepeat) {
+    if (isRepeatMedia) {
       //videoRef.current.currentTime = 0;
       playVideo();
     } else {
@@ -161,7 +188,7 @@ const Video = ({
   // Función para manejar el cambio de volumen
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
+    setVolumeMedia(newVolume);
     if (videoRef.current) {
       videoRef.current.volume = newVolume;
     }
@@ -180,24 +207,24 @@ const Video = ({
 
   // Función para alternar el modo shuffle
   const toggleShuffle = () => {
-    if (isRepeat) {
-      setIsRepeat(false);
+    if (isRepeatMedia) {
+      setIsRepeatMedia(false);
     }
-    setIsShuffle(!isShuffle);
+    setIsShuffleMedia(!isShuffleMedia);
   };
 
   // Función para alternar el modo repeat
   const toggleRepeat = () => {
-    if (isShuffle) {
-      setIsShuffle(false);
+    if (isShuffleMedia) {
+      setIsShuffleMedia(false);
     }
-    setIsRepeat(!isRepeat);
+    setIsRepeatMedia(!isRepeatMedia);
   };
 
   // Función para obtener el siguiente video
   const getNextVideo = () => {
     if (allMusicProyects.length === 0) return null;
-    if (isShuffle) {
+    if (isShuffleMedia) {
       let randomIndex;
       do {
         randomIndex = Math.floor(Math.random() * allMusicProyects.length);
@@ -212,7 +239,7 @@ const Video = ({
   // Función para obtener el video anterior
   const getPreviousVideo = () => {
     if (allMusicProyects.length === 0) return null;
-    if (isShuffle) {
+    if (isShuffleMedia) {
       let randomIndex;
       do {
         randomIndex = Math.floor(Math.random() * allMusicProyects.length);
@@ -234,6 +261,7 @@ const Video = ({
           (project) => project.videoPrincipal?.src === nextVideo.videoPrincipal.src
         )
       );
+      setCurrentTimeMedia(0)
     }
   };
 
@@ -247,6 +275,7 @@ const Video = ({
           (project) => project.videoPrincipal?.src === previousVideo.videoPrincipal.src
         )
       );
+      setCurrentTimeMedia(0)
     }
   };
 
@@ -262,12 +291,12 @@ const Video = ({
       {/* Elemento de video */}
       <video className="video-container"
         ref={videoRef}
-        src={src}
+        src={mixUrlWithQuality(src, qualityMedia)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
         muted={isMuted}
-        loop={isRepeat}
+        loop={isRepeatMedia}
       >
         Tu navegador no admite el elemento de video.
       </video>
@@ -285,18 +314,18 @@ const Video = ({
         currentTime={currentTimeMedia}
         duration={duration}
         isMuted={isMuted}
-        volume={volume}
+        //volume={volumeMedia}
         isModalOpen={isModalOpen}
         openQualityModal={() => setIsModalOpen(true)}
         closeQualityModal={() => setIsModalOpen(false)}
         handleQualityChange={(newQuality) => {
-          setQuality(newQuality);
+          setQualityMedia(newQuality);
           setIsModalOpen(false);
         }}
-        quality={quality}
-        isRepeat={isRepeat}
+        quality={qualityMedia}
+        isRepeat={isRepeatMedia}
         toggleShuffle={toggleShuffle}
-        isShuffle={isShuffle}
+        isShuffle={isShuffleMedia}
         toggleRepeat={toggleRepeat}
         isMenuOpen={isMenuOpen}
         toggleMenu={toggleMenu}
@@ -309,6 +338,8 @@ const Video = ({
         setShowComponent={setShowComponent}
         showComponent={showComponent}
         changeStateMenu={changeStateMenu}
+        //setVolumeMedia={setVolumeMedia}
+        //volumeMedia={volumeMedia}
       />
     </>
   );

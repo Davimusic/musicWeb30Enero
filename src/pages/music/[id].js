@@ -31,6 +31,12 @@ export default function Music() {
   const [isFirstTimeLoading, setIsFirstTimeLoading] = useState(true);
   const [showComponent, setShowComponent] = useState('audio');
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para controlar la clase de transición
+  const [volumeMedia, setVolumeMedia] = useState(1);
+  const [qualityMedia, setQualityMedia] = useState(25);
+  const [isRepeatMedia, setIsRepeatMedia] = useState(false);
+  const [isShuffleMedia, setIsShuffleMedia] = useState(false);
+
+
 
   const messages = [
     'Tuning the strings of the universe...',
@@ -92,8 +98,8 @@ export default function Music() {
   }, []);
 
   useEffect(() => {
-    console.log(isLoading);
-  }, [isLoading]);
+    console.log(qualityMedia);
+  }, [qualityMedia]);
 
   useEffect(() => {
     console.log(`showComponent: ${showComponent}`);
@@ -170,6 +176,14 @@ export default function Music() {
                 currentTimeMedia={currentTimeMedia}
                 changeStateMenu={changeStateMenu}
                 isMenuOpen={isMenuOpen}
+                setVolumeMedia={setVolumeMedia}
+                volumeMedia={volumeMedia}
+                setQualityMedia={setQualityMedia}
+                qualityMedia={qualityMedia}
+                setIsRepeatMedia={setIsRepeatMedia}
+                isRepeatMedia={isRepeatMedia}
+                setIsShuffleMedia={setIsShuffleMedia}
+                isShuffleMedia={isShuffleMedia}
               />
             </>
           )}
@@ -202,6 +216,14 @@ export default function Music() {
               currentTimeMedia={currentTimeMedia}
               changeStateMenu={changeStateMenu}
               isMenuOpen={isMenuOpen}
+              setVolumeMedia={setVolumeMedia}
+              volumeMedia={volumeMedia}
+              setQualityMedia={setQualityMedia}
+              qualityMedia={qualityMedia}
+              setIsRepeatMedia={setIsRepeatMedia}
+              isRepeatMedia={isRepeatMedia}
+              setIsShuffleMedia={setIsShuffleMedia}
+              isShuffleMedia={isShuffleMedia}
             />
           )}
         </div>
