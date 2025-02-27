@@ -44,19 +44,16 @@
     padding: 10px;
   }
   
-  /* Overlay de carga */
-  .loading-overlay {
-    position: fixed;
-    inset: 0;
-    backdrop-filter: blur(10px);
-    background-color: rgba(0, 0, 0, 0.5);
+  .background-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
-    opacity: 1;
-    transition: all 0.5s ease;
+    transition: background-color 1s ease; 
+    width: 98vw;
+    height: 97vh;
+    border-radius: 0.7em;
   }
+  
   
   /* Estilos responsivos */
   @media (max-width: 768px) {
@@ -67,4 +64,33 @@
     .content-list-inner {
       padding: 5px; /* Menos padding en dispositivos móviles */
     }
+  }
+
+
+  /*para is loading
+  .background-container {
+    width: 96vw;
+    height: 96vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }*/
+  
+  .text-container {
+    background: rgba(0, 0, 0, 0.562); /* Fondo blanco con 50% de opacidad */
+    backdrop-filter: blur(10px); /* Efecto de difuminado */
+    width: 80vw;
+    padding: 20px;
+    border-radius: 0.7em;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.281); /* Borde sutil */
+    color: white
+  }
+  
+  .title-lg {
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    font-weight: bold;
+    color: black; /* Color del texto */
   }

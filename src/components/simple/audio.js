@@ -20,6 +20,13 @@ const Audio = ({
   handleItemClick,
   toggleContentVisibility,
   isContentVisible,
+  setComponentInUse,
+  componentInUse,
+  setShowComponent,
+  showComponent,
+  setCurrentTimeMedia,
+  currentTimeMedia,
+  changeStateMenu
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -32,24 +39,88 @@ const Audio = ({
   const [quality, setQuality] = useState(25);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Función auxiliar para manejar la reproducción del audio
+  const playAudio = () => {
+    audioRef.current.play().catch((error) => {
+      console.error('Error al reproducir el audio:', error);
+    });
+    setIsPlaying(true);
+  };
+
+  // Efecto para manejar cambios en `src`
+  /*useEffect(() => {
+    console.log('acaca');
+    
+    if (!isFirstTimeLoading && componentInUse === 'audio') {
+      playAudio();
+      setComponentInUse('audio')
+    } else {
+      setIsFirstTimeLoading(false);
+    }
+  }, [src]);*/
+
+  useEffect(() => {
+    if (!isFirstTimeLoading && componentInUse === 'audio') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
+        playAudio();
+      }
+    } else {
+      setIsFirstTimeLoading(false);
+    }
+  }, [src]);
+
+  useEffect(() => {
+    if (componentInUse === 'audio') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = currentTimeMedia; // Aplicar el tiempo actual
+        playAudio();
+      }
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [componentInUse]);
+  
+
+  /*/ Efecto para manejar cambios en `componentInUse`
+  useEffect(() => {
+    console.log('Componente en uso:', componentInUse);
+
+    if (componentInUse === 'audio') {
+      playAudio();
+    } else {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [componentInUse]);*/
+
   // Función para alternar entre play y pause
   const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch((error) => {
-          console.error('Error al reproducir el audio:', error);
-        });
-      }
-      setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      setComponentInUse(''); // Pausa el audio y desactiva el componente
+    } else {
+      setComponentInUse('audio'); // Activa el componente y reproduce el audio
     }
+  };
+
+  // Función para manejar el final de la reproducción
+  const handleEnded = () => {
+    if (isRepeat) {
+      //audioRef.current.currentTime = 0;
+      playAudio();
+    } else {
+      handleNextSong();
+    }
+    setCurrentTimeMedia(0)
   };
 
   // Función para manejar la actualización del tiempo
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      setCurrentTimeMedia(audioRef.current.currentTime);
     }
   };
 
@@ -65,7 +136,7 @@ const Audio = ({
     if (audioRef.current) {
       const seekTime = parseFloat(e.target.value);
       audioRef.current.currentTime = seekTime;
-      setCurrentTime(seekTime);
+      setCurrentTimeMedia(seekTime);
     }
   };
 
@@ -89,11 +160,21 @@ const Audio = ({
     }
   };
 
-  // Función para alternar el modo aleatorio
-  const toggleShuffle = () => setIsShuffle(!isShuffle);
-
-  // Función para alternar el modo de repetición
-  const toggleRepeat = () => setIsRepeat(!isRepeat);
+  const toggleShuffle = () => {
+    // Si el modo de repetición está activo, lo desactivo antes de activar el modo aleatorio
+    if (isRepeat) {
+      setIsRepeat(false);
+    }
+    setIsShuffle(!isShuffle);
+  };
+  
+  const toggleRepeat = () => {
+    // Si el modo aleatorio está activo, lo desactivo antes de activar el modo de repetición
+    if (isShuffle) {
+      setIsShuffle(false);
+    }
+    setIsRepeat(!isRepeat);
+  };
 
   // Función para obtener la siguiente canción
   const getNextSong = () => {
@@ -113,9 +194,18 @@ const Audio = ({
   // Función para obtener la canción anterior
   const getPreviousSong = () => {
     if (allMusicProyects.length === 0) return null;
-    const previousIndex =
-      (currentIndex - 1 + allMusicProyects.length) % allMusicProyects.length;
-    return allMusicProyects[previousIndex];
+  
+    if (isShuffle) {
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * allMusicProyects.length);
+      } while (randomIndex === currentIndex); // Asegura que no se repita la canción actual
+      return allMusicProyects[randomIndex];
+    } else {
+      const previousIndex =
+        (currentIndex - 1 + allMusicProyects.length) % allMusicProyects.length;
+      return allMusicProyects[previousIndex];
+    }
   };
 
   // Función para manejar el cambio a la siguiente canción
@@ -141,16 +231,6 @@ const Audio = ({
           (project) => project.audioPrincipal?.src === previousSong.audioPrincipal.src
         )
       );
-    }
-  };
-
-  // Función para manejar el final de la reproducción
-  const handleEnded = () => {
-    if (isRepeat) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
-    } else {
-      handleNextSong();
     }
   };
 
@@ -186,7 +266,7 @@ const Audio = ({
         handleVolumeChange={handleVolumeChange}
         toggleMute={toggleMute}
         formatTime={formatTime}
-        currentTime={currentTime}
+        currentTime={currentTimeMedia}
         duration={duration}
         isMuted={isMuted}
         volume={volume}
@@ -208,6 +288,11 @@ const Audio = ({
         handleItemClick={handleItemClick}
         toggleContentVisibility={toggleContentVisibility}
         isContentVisible={isContentVisible}
+        setComponentInUse={setComponentInUse}
+        componentInUse={componentInUse}
+        setShowComponent={setShowComponent}
+        showComponent={showComponent}
+        changeStateMenu={changeStateMenu}
       />
     </>
   );

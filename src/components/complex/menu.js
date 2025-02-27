@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful'; // Importar el selector de colores
 import Modal from './modal';
+import { useRouter } from 'next/navigation'; // Importa useRouter de Next.js
+import { signOut } from 'firebase/auth'; // Importa signOut de Firebase
+import { auth } from '../../../firebase'
 import '../../estilos/general/general.css';
 
 const Menu = ({ isOpen, onClose, className = '' }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedColorClass, setSelectedColorClass] = useState('backgroundColor1');
     const [selectedColor, setSelectedColor] = useState('#060606'); // Color seleccionado
+    const [userName, setUserName] = useState('');
+    const [userImage, setUserImage] = useState('');
+    const router = useRouter(); // Usa useRouter para redirecciones
 
     // Objeto para manejar los colores de fondo
     const [colors, setColors] = useState({
@@ -16,6 +22,31 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
         backgroundColor4: '#2b95c8',
         backgroundColor5: '#2bc6c8',
     });
+
+    // Efecto para cargar los datos del usuario desde sessionStorage
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const name = sessionStorage.getItem('userName') || '';
+            const image = sessionStorage.getItem('userImage') || '';
+            setUserName(name);
+            setUserImage(image);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Función para manejar el logout
+    const handleLogout = async () => {
+        try {
+            await signOut(auth); // Cierra la sesión en Firebase
+            sessionStorage.removeItem('userName'); // Limpiar sessionStorage al cerrar sesión
+            sessionStorage.removeItem('userImage');
+            router.push('/'); // Redirige a la página de login
+            onClose(); // Cierra el menú
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
 
     // Método para obtener el valor actual de una variable CSS
     const getCurrentColorValue = (colorClass) => {
@@ -77,6 +108,19 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
             >
                 <div onClick={handleMenuClick}> {/* Evita que el clic se propague al contenedor del menú */}
                     <p className='title-md' style={{ marginBottom: '20px' }}>Menú</p>
+                    {/* Mostrar nombre e imagen del usuario si están disponibles */}
+                    {userName && (
+                        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+                            {userImage && (
+                                <img 
+                                    src={userImage} 
+                                    alt="User" 
+                                    style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+                                />
+                            )}
+                            <p className='title-sm' style={{ margin: 0 }}>{userName}</p>
+                        </div>
+                    )}
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         <li style={{ marginBottom: '15px' }}>
                             <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Inicio</a>
@@ -92,6 +136,12 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                         </li>
                         <li style={{ marginBottom: '15px' }}>
                             <p onClick={() => setIsModalOpen(true)} className='title-sm'>Cambiar color de fondo</p>
+                        </li>
+                        {/* Botón de Logout */}
+                        <li style={{ marginBottom: '15px' }}>
+                            <p onClick={handleLogout} className='title-sm' style={{ cursor: 'pointer', color: 'white' }}>
+                                Cerrar sesión
+                            </p>
                         </li>
                     </ul>
                 </div>

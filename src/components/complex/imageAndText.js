@@ -32,7 +32,7 @@ const ImageAndText = ({ content, onItemClick }) => {
             marginRight: '10px',
             marginLeft: '10px',            
           }}
-          className="effectHover"
+          className=""//effectHover
         >
           {/* Renderiza solo la imagen principal */}
           {item.imagePrincipal && (

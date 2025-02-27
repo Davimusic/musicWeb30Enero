@@ -1,0 +1,6 @@
+/* styles.css */
+.background-container {
+    transition: background-color 1s ease;
+    width: 100vw;
+    height: 100vh;
+}

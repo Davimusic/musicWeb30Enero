@@ -10,6 +10,7 @@ import QualitySelectorModal from './qualitySelectorModal';
 import getCSSVariableValue from '@/functions/music/getCSSVariableValue';
 import '../../estilos/music/mediaControl.css';
 import ExpandIcon from './expandIcon';
+import ShowComponentButton from './showComponentButton';
 
 const MediaControl = forwardRef(
   (
@@ -39,6 +40,10 @@ const MediaControl = forwardRef(
       isShuffle,
       toggleRepeat,
       toggleComponentInUse,
+      setComponentInUse,
+      componentInUse,
+      setShowComponent,
+      showComponent
     },
     ref
   ) => {
@@ -136,7 +141,7 @@ const MediaControl = forwardRef(
                 />
               </div>
               <div className="changeModePhoneView">
-                <ExpandIcon size={50} onClick={toggleComponentInUse} />
+                  <ShowComponentButton showComponent={showComponent} setShowComponent={setShowComponent}/>
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ import Menu from './menu';
 import '../../estilos/general/general.css';
 import '../../estilos/music/fullControlMedia.css';
 import ExpandIcon from './expandIcon';
+import ShowComponentButton from './showComponentButton';
 
 const FullControlMedia = forwardRef((props, ref) => {
   const {
@@ -24,6 +25,11 @@ const FullControlMedia = forwardRef((props, ref) => {
     setIsModalOpen,
     setContentModal,
     toggleComponentInUse,
+    setComponentInUse,
+    componentInUse,
+    setShowComponent,
+    showComponent,
+    changeStateMenu,
     ...restProps
   } = props;
 
@@ -31,9 +37,10 @@ const FullControlMedia = forwardRef((props, ref) => {
     <div
       className="backgroundColor2 audioPlayerContent"
       style={{
-        padding: '10px',
+        paddingRight: '10px',
+        paddingLeft: '10px',
         position: 'fixed',
-        bottom: '0',
+        bottom: '-10px',
         left: '0',
         right: '0',
         zIndex: 2,
@@ -44,7 +51,7 @@ const FullControlMedia = forwardRef((props, ref) => {
       }}
     >
       <div className="flexContainer">
-        <MenuIcon onClick={toggleMenu} />
+        <MenuIcon onClick={changeStateMenu} />
 
         <div className="imageHeartContainer">
           <ImageAndHeart content={content} onItemClick={handleItemClick} />
@@ -63,17 +70,18 @@ const FullControlMedia = forwardRef((props, ref) => {
 
         <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
         <div className="changeModeView">
-          <ExpandIcon size={50} onClick={toggleComponentInUse} />
+          <ShowComponentButton showComponent={showComponent} setShowComponent={setShowComponent}/>
         </div>
       </div>
-
+      <Menu isOpen={isMenuOpen} onClose={changeStateMenu} className="backgroundColor2" />
       <div className="mediaControlContainer">
-        <MediaControl ref={ref} {...restProps} />
+        <MediaControl ref={ref} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} {...restProps} />
       </div>
-      <Menu isOpen={isMenuOpen} onClose={toggleMenu} className="backgroundColor2" />
+      
     </div>
   );
 });
 
 FullControlMedia.displayName = 'FullControlMedia';
 export default FullControlMedia;
+
