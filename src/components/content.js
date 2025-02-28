@@ -15,11 +15,10 @@ import '../estilos/music/login.css';
 import BackgroundGeneric from './complex/backgroundGeneric';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa'; // Importar iconos
+import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login = () => {
-  const router = useRouter(); 
-  
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -56,6 +55,42 @@ const Login = () => {
       router.push('/music/hi');
     }
   }, [user]);
+
+  const handleUserAfterAuth = async (uid, email, authType) => {
+    try {
+      const response = await fetch('/api/handleUserAfterAuth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uid, email, authType }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.details || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setModalMessage(data.message);
+        setIsModalOpen(true);
+
+        const user = auth.currentUser;
+        if (user) {
+          sessionStorage.setItem('userName', user.displayName || 'User');
+          sessionStorage.setItem('userImage', user.photoURL || '');
+        }
+
+        router.push('/music/hi');
+      } else {
+        setError(data.message);
+      }
+    } catch (error) {
+      console.error('Error calling handleUserAfterAuth:', error);
+      setError(`An error occurred while handling user data: ${error.message}`);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +136,7 @@ const Login = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const email = getUserEmail(user);
+      const email = user.email;
 
       setUser(user);
       await handleUserAfterAuth(user.uid, email, 'google');
@@ -143,7 +178,7 @@ const Login = () => {
     return (
       <BackgroundGeneric isLoading={true}>
         <div className="login-container">
-          <Image src={user.photoURL} alt={`${user.name}'s profile picture`} width={150} height={150} style={{ borderRadius: '50%' }} />
+          <Image src={user.photoURL || '/default-profile.png'} alt={`${user.name}'s profile picture`} width={150} height={150} style={{ borderRadius: '50%' }} />
           <p className='title-xs'>Welcome, {user.displayName || user.email}!</p>
         </div>
       </BackgroundGeneric>
@@ -200,19 +235,12 @@ const Login = () => {
             {isForgotPassword ? 'Send Reset Email' : isSignIn ? 'Sign In' : 'Login'}
           </button>
           {!isForgotPassword && (
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="google-button"
-            >
+            <button type="button" onClick={handleGoogleLogin} className="google-button">
               <FaGoogle className="google-icon" /> Login with Google
             </button>
           )}
           {!isForgotPassword && (
-            <p
-              className="forgot-password-link"
-              onClick={() => setIsSignIn((prev) => !prev)}
-            >
+            <p className="forgot-password-link" onClick={() => setIsSignIn((prev) => !prev)}>
               {isSignIn ? 'Already have an account? Login' : 'Create an account'}
             </p>
           )}
