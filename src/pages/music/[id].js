@@ -13,6 +13,7 @@ import ShowComponentButton from '@/components/complex/showComponentButton';
 import Video from '@/components/simple/video';
 import BackgroundGeneric from '@/components/complex/backgroundGeneric';
 import RotatingContentLoader from '@/components/complex/rotatingContentLoader';
+import QualitySelectorModal from '@/components/complex/qualitySelectorModal';
 
 
 export default function Music() {
@@ -36,7 +37,7 @@ export default function Music() {
   const [isRepeatMedia, setIsRepeatMedia] = useState(false);
   const [isShuffleMedia, setIsShuffleMedia] = useState(false);
   const [isMutedMedia, setIsMutedMedia] = useState(false);
-
+  const [modalContent, setModalContent] = useState(<MidiAndPdf content={content[0]}/>);
 
 
   const messages = [
@@ -124,8 +125,30 @@ export default function Music() {
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
     setIsModalOpen(true)
+    setModalContent(<MidiAndPdf content={content[0]}/>)
   };
 
+  const handleQualityChange= (newQuality) =>{
+    setQualityMedia(newQuality);
+    setIsModalOpen(false);
+  }
+
+  const openQualityModal = () => {
+    setModalContent(
+      <QualitySelectorModal
+        isOpen={true}
+        onClose={() => setIsModalOpen(false)}  // Aquí pasas una función anónima
+        onQualityChange={handleQualityChange}
+        quality={qualityMedia}
+      />
+    );
+    setIsModalOpen(true);
+  };
+
+  
+
+
+  
   const handleItemClick = item => {
     setContent([item]);
     const index = musicContent.findIndex(c => c.idObjeto === item.idObjeto);
@@ -133,6 +156,7 @@ export default function Music() {
     setComponentInUse('audio')
     setCurrentTimeMedia(0)
   };
+
 
   
 
@@ -192,6 +216,7 @@ export default function Music() {
                 isShuffleMedia={isShuffleMedia}
                 setIsMutedMedia={setIsMutedMedia}
                 isMutedMedia={isMutedMedia}
+                openQualityModal={openQualityModal}
               />
             </>
           )}
@@ -234,10 +259,11 @@ export default function Music() {
               isShuffleMedia={isShuffleMedia}
               setIsMutedMedia={setIsMutedMedia}
               isMutedMedia={isMutedMedia}
+              openQualityModal={openQualityModal}
             />
           )}
           {isModalOpen && (
-            <Modal isOpen={true} onClose={()=>setIsModalOpen(false)} children={<MidiAndPdf content={content[0]}/>} className={'backgroundColor3'}/>
+            <Modal isOpen={true} onClose={()=>setIsModalOpen(false)} children={modalContent} className={'backgroundColor3'}/>
           )}
         </div>
        

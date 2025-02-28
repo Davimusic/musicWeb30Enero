@@ -37,7 +37,8 @@ const Audio = ({
   setIsShuffleMedia,
   isShuffleMedia,
   setIsMutedMedia,
-  isMutedMedia
+  isMutedMedia,
+  openQualityModal
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -272,12 +273,9 @@ const Audio = ({
         isMuted={isMutedMedia}
         volume={volumeMedia}
         isModalOpen={isModalOpen}
-        openQualityModal={() => setIsModalOpen(true)}
+        openQualityModal={openQualityModal}
         closeQualityModal={() => setIsModalOpen(false)}
-        handleQualityChange={(newQuality) => {
-          setQualityMedia(newQuality);
-          setIsModalOpen(false);
-        }}
+        
         quality={qualityMedia}
         isRepeat={isRepeatMedia}
         toggleShuffle={toggleShuffle}

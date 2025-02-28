@@ -30,6 +30,7 @@ const FullControlMedia = forwardRef((props, ref) => {
     setShowComponent,
     showComponent,
     changeStateMenu,
+    openQualityModal,
     ...restProps
   } = props;
 
@@ -75,7 +76,9 @@ const FullControlMedia = forwardRef((props, ref) => {
       </div>
       <Menu isOpen={isMenuOpen} onClose={changeStateMenu} className="backgroundColor2" />
       <div className="mediaControlContainer">
-        <MediaControl ref={ref} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} {...restProps} />
+       
+
+      <MediaControl ref={ref} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} openQualityModal={openQualityModal}   {...restProps} />
       </div>
       
     </div>

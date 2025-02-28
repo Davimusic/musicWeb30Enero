@@ -59,6 +59,9 @@ const QualitySelectorModal = ({ isOpen, onClose, onQualityChange, quality }) => 
     return baseStyle;
   };
 
+
+ 
+
   return (
     <div style={styles.modalOverlay}>
       <div className='backgroundColor2' style={styles.modalContent}>

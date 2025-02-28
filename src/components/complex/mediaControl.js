@@ -44,6 +44,7 @@ const MediaControl = forwardRef(
       componentInUse,
       setShowComponent,
       showComponent,
+
       
     },
     ref
@@ -149,12 +150,7 @@ const MediaControl = forwardRef(
         </div>
 
         {/* Modal de calidad */}
-        <QualitySelectorModal
-          isOpen={isModalOpen}
-          onClose={closeQualityModal}
-          onQualityChange={handleQualityChange}
-          quality={quality}
-        />
+        
       </div>
     );
   }
@@ -162,3 +158,13 @@ const MediaControl = forwardRef(
 
 MediaControl.displayName = 'MediaControl';
 export default MediaControl;
+
+
+/**
+<QualitySelectorModal
+          isOpen={isModalOpen}
+          onClose={closeQualityModal}
+          onQualityChange={handleQualityChange}
+          quality={quality}
+        />
+ */
