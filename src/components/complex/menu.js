@@ -76,6 +76,7 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
             // Actualizar la variable CSS correspondiente en el DOM
             document.documentElement.style.setProperty(`--${selectedColorClass}`, selectedColor);
             setIsModalOpen(false);
+            onClose()
         } else {
             alert('Error: Valor hexadecimal no válido.');
         }

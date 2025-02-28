@@ -35,6 +35,7 @@ export default function Music() {
   const [qualityMedia, setQualityMedia] = useState(25);
   const [isRepeatMedia, setIsRepeatMedia] = useState(false);
   const [isShuffleMedia, setIsShuffleMedia] = useState(false);
+  const [isMutedMedia, setIsMutedMedia] = useState(false);
 
 
 
@@ -184,6 +185,8 @@ export default function Music() {
                 isRepeatMedia={isRepeatMedia}
                 setIsShuffleMedia={setIsShuffleMedia}
                 isShuffleMedia={isShuffleMedia}
+                setIsMutedMedia={setIsMutedMedia}
+                isMutedMedia={isMutedMedia}
               />
             </>
           )}
@@ -224,6 +227,8 @@ export default function Music() {
               isRepeatMedia={isRepeatMedia}
               setIsShuffleMedia={setIsShuffleMedia}
               isShuffleMedia={isShuffleMedia}
+              setIsMutedMedia={setIsMutedMedia}
+              isMutedMedia={isMutedMedia}
             />
           )}
         </div>

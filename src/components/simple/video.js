@@ -45,7 +45,9 @@ const Video = ({
   setIsRepeatMedia,
   isRepeatMedia,
   setIsShuffleMedia,
-  isShuffleMedia
+  isShuffleMedia,
+  setIsMutedMedia,
+  isMutedMedia
 }) => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -192,16 +194,16 @@ const Video = ({
     if (videoRef.current) {
       videoRef.current.volume = newVolume;
     }
-    if (isMuted && newVolume > 0) {
-      setIsMuted(false);
+    if (isMutedMedia && newVolume > 0) {
+      setIsMutedMedia(false);
     }
   };
 
   // Función para alternar el silencio
   const toggleMute = () => {
     if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      videoRef.current.muted = !isMutedMedia;
+      setIsMutedMedia(!isMutedMedia);
     }
   };
 
@@ -295,7 +297,7 @@ const Video = ({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        muted={isMuted}
+        muted={isMutedMedia}
         loop={isRepeatMedia}
       >
         Tu navegador no admite el elemento de video.
@@ -313,8 +315,8 @@ const Video = ({
         formatTime={formatTime}
         currentTime={currentTimeMedia}
         duration={duration}
-        isMuted={isMuted}
-        //volume={volumeMedia}
+        isMuted={isMutedMedia}
+        volume={volumeMedia}
         isModalOpen={isModalOpen}
         openQualityModal={() => setIsModalOpen(true)}
         closeQualityModal={() => setIsModalOpen(false)}

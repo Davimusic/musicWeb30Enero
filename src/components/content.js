@@ -1,5 +1,174 @@
 import React, { useState, useEffect } from 'react';
 import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+} from 'firebase/auth';
+import { auth } from '../../firebase'; // Asegúrate de que Firebase esté correctamente configurado
+import { useRouter } from 'next/navigation'; // Importa useRouter de Next.js
+
+const Login = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState('');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isSignIn, setIsSignIn] = useState(false);
+
+  // Configura el proveedor de Google
+  const googleProvider = new GoogleAuthProvider();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        router.push('/music/hi'); // Redirige al usuario después del login
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  // Función para manejar el login con correo y contraseña
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      if (isSignIn) {
+        // Modo Sign In: Registrar un nuevo usuario
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        // Modo Login: Iniciar sesión
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  // Función para manejar el login con Google
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      setUser(user);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  // Función para manejar "Forgot Password"
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setError('A password reset email has been sent. Please check your inbox.');
+      setIsForgotPassword(false);
+    } catch (error) {
+      setError('Error sending reset email. Please try again.');
+    }
+  };
+
+  // Función para manejar el cierre de sesión
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      setError('Error logging out.');
+    }
+  };
+
+  // Si el usuario está logueado, mostrar mensaje de bienvenida
+  if (user) {
+    return (
+      <div>
+        <p>Welcome, {user.email}!</p>
+        <button onClick={handleLogout}>Logout</button>
+      </div>
+    );
+  }
+
+  // Si no hay usuario, mostrar el formulario de Login o Sign In
+  return (
+    <div>
+      <form onSubmit={isForgotPassword ? handleForgotPassword : handleEmailLogin}>
+        <h2>{isForgotPassword ? 'Forgot Password' : isSignIn ? 'Sign In' : 'Login'}</h2>
+        {error && <p>{error}</p>}
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+        {!isForgotPassword && (
+          <div>
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+        )}
+        <button type="submit">
+          {isForgotPassword ? 'Send Reset Email' : isSignIn ? 'Sign In' : 'Login'}
+        </button>
+        {!isForgotPassword && (
+          <button type="button" onClick={handleGoogleLogin}>
+            Login with Google
+          </button>
+        )}
+        {!isForgotPassword && (
+          <button type="button" onClick={() => setIsSignIn((prev) => !prev)}>
+            {isSignIn ? 'Already have an account? Login' : 'Create an account'}
+          </button>
+        )}
+        {!isForgotPassword && (
+          <button type="button" onClick={() => setIsForgotPassword(true)}>
+            Forgot your password?
+          </button>
+        )}
+        {isForgotPassword && (
+          <button type="button" onClick={() => setIsForgotPassword(false)}>
+            Back to Login
+          </button>
+        )}
+      </form>
+    </div>
+  );
+};
+
+export default Login;
+
+
+
+
+
+
+
+
+/**
+import React, { useState, useEffect } from 'react';
+import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
@@ -209,107 +378,106 @@ const Login = () => {
         <div className="login-container">
         <Image src={user.photoURL} alt={`${user.name}'s profile picture`} width={150} height={150} style={{ borderRadius: '50%' }} />
           <p className='title-xs'>Welcome, {user.displayName || user.email}!</p>
-          {/*<button onClick={handleLogout} className="submit-button">
-            Logout
-          </button>*/}
-        </div>
-      </BackgroundGeneric>
-    );
-  }
-
-  // Si no hay usuario, mostrar el formulario de Login o Sign In
-  return (
-    <BackgroundGeneric isLoading={true}>
-      <div className="login-container">
-        {loginSuccess && ( // Mostrar "Login successful" si el estado es true
-          <div className="login-success-message">
-            <p>Login successful! Redirecting...</p>
+          
           </div>
-        )}
-        <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="login-form">
-          <h2 className="login-title">{isForgotPassword ? 'Forgot Password' : isSignIn ? 'Sign In' : 'Login'}</h2>
-          {error && <p className="error-message">{error}</p>}
-          <div className="input-group">
-            <label htmlFor="email" className="input-label">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          {!isForgotPassword && (
-            <div className="input-group">
-              <label htmlFor="password" className="input-label">Password</label>
-              <div className="password-input-container">
+          </BackgroundGeneric>
+        );
+      }
+    
+      // Si no hay usuario, mostrar el formulario de Login o Sign In
+      return (
+        <BackgroundGeneric isLoading={true}>
+          <div className="login-container">
+            {loginSuccess && ( // Mostrar "Login successful" si el estado es true
+              <div className="login-success-message">
+                <p>Login successful! Redirecting...</p>
+              </div>
+            )}
+            <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="login-form">
+              <h2 className="login-title">{isForgotPassword ? 'Forgot Password' : isSignIn ? 'Sign In' : 'Login'}</h2>
+              {error && <p className="error-message">{error}</p>}
+              <div className="input-group">
+                <label htmlFor="email" className="input-label">Email</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="input-field"
-                  placeholder="Enter your password"
+                  placeholder="Enter your email"
                   required
                 />
-                <div className="show-hide-icon">
-                  <ShowHide
-                    isVisible={!showPassword}
-                    onClick={() => setShowPassword(!showPassword)}
-                    size={20}
-                    style={{ color: 'black' }}
-                  />
-                </div>
               </div>
-            </div>
-          )}
-          <button type="submit" className="submit-button">
-            {isForgotPassword ? 'Send Reset Email' : isSignIn ? 'Sign In' : 'Login'}
-          </button>
-          {!isForgotPassword && (
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="google-button"
-            >
-              Login with Google
-            </button>
-          )}
-          {!isForgotPassword && (
-            <p
-              className="forgot-password-link"
-              onClick={() => setIsSignIn((prev) => !prev)}
-            >
-              {isSignIn ? 'Already have an account? Login' : 'Create an account'}
-            </p>
-          )}
-          {!isForgotPassword && (
-            <p className="forgot-password-link" onClick={() => setIsForgotPassword(true)}>
-              Forgot your password?
-            </p>
-          )}
-          {isForgotPassword && (
-            <p className="forgot-password-link" onClick={() => setIsForgotPassword(false)}>
-              Back to Login
-            </p>
-          )}
-        </form>
-
-        {/* Modal para mensajes */}
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-          <p className="modal-content">{modalMessage}</p>
-          <button onClick={() => setIsModalOpen(false)} className="modal-button">
-            Close
-          </button>
-        </Modal>
-      </div>
-    </BackgroundGeneric>
-  );
-};
-
-export default Login;
+              {!isForgotPassword && (
+                <div className="input-group">
+                  <label htmlFor="password" className="input-label">Password</label>
+                  <div className="password-input-container">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="input-field"
+                      placeholder="Enter your password"
+                      required
+                    />
+                    <div className="show-hide-icon">
+                      <ShowHide
+                        isVisible={!showPassword}
+                        onClick={() => setShowPassword(!showPassword)}
+                        size={20}
+                        style={{ color: 'black' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <button type="submit" className="submit-button">
+                {isForgotPassword ? 'Send Reset Email' : isSignIn ? 'Sign In' : 'Login'}
+              </button>
+              {!isForgotPassword && (
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="google-button"
+                >
+                  Login with Google
+                </button>
+              )}
+              {!isForgotPassword && (
+                <p
+                  className="forgot-password-link"
+                  onClick={() => setIsSignIn((prev) => !prev)}
+                >
+                  {isSignIn ? 'Already have an account? Login' : 'Create an account'}
+                </p>
+              )}
+              {!isForgotPassword && (
+                <p className="forgot-password-link" onClick={() => setIsForgotPassword(true)}>
+                  Forgot your password?
+                </p>
+              )}
+              {isForgotPassword && (
+                <p className="forgot-password-link" onClick={() => setIsForgotPassword(false)}>
+                  Back to Login
+                </p>
+              )}
+            </form>
+    
+            
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+              <p className="modal-content">{modalMessage}</p>
+              <button onClick={() => setIsModalOpen(false)} className="modal-button">
+                Close
+              </button>
+            </Modal>
+          </div>
+        </BackgroundGeneric>
+      );
+    };
+    
+    export default Login;
+ */
 
 
 

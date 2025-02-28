@@ -35,7 +35,9 @@ const Audio = ({
   setIsRepeatMedia,
   isRepeatMedia,
   setIsShuffleMedia,
-  isShuffleMedia
+  isShuffleMedia,
+  setIsMutedMedia,
+  isMutedMedia
 }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -144,16 +146,16 @@ const Audio = ({
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
     }
-    if (isMuted && newVolume > 0) {
-      setIsMuted(false);
+    if (isMutedMedia && newVolume > 0) {
+      setIsMutedMedia(false);
     }
   };
 
   // Función para alternar el silencio
   const toggleMute = () => {
     if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      audioRef.current.muted = !isMutedMedia;
+      setIsMutedMedia(!isMutedMedia);
     }
   };
 
@@ -249,7 +251,7 @@ const Audio = ({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        muted={isMuted}
+        muted={isMutedMedia}
         loop={isRepeatMedia}
       >
         Tu navegador no admite el elemento de audio.
@@ -267,8 +269,8 @@ const Audio = ({
         formatTime={formatTime}
         currentTime={currentTimeMedia}
         duration={duration}
-        isMuted={isMuted}
-        //volume={volumeMedia}
+        isMuted={isMutedMedia}
+        volume={volumeMedia}
         isModalOpen={isModalOpen}
         openQualityModal={() => setIsModalOpen(true)}
         closeQualityModal={() => setIsModalOpen(false)}
@@ -276,7 +278,7 @@ const Audio = ({
           setQualityMedia(newQuality);
           setIsModalOpen(false);
         }}
-        //quality={qualityMedia}
+        quality={qualityMedia}
         isRepeat={isRepeatMedia}
         toggleShuffle={toggleShuffle}
         isShuffle={isShuffleMedia}
