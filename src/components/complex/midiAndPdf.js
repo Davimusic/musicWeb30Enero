@@ -3,7 +3,7 @@ import getFileIcon from '@/functions/music/getFileIcon';
 import Text from '../simple/text';
 
 const MidiAndPdf = ({ content, onItemClick }) => {
-  //console.log(content);
+  console.log(content);
 
   const handleDownload = (url, filename) => {
     const attachmentUrl = url.replace('/upload/', '/upload/fl_attachment/');

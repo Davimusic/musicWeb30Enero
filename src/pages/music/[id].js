@@ -120,6 +120,7 @@ export default function Music() {
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
     setIsModalOpen(true)
+
     alert('si')
   };
 
@@ -233,7 +234,11 @@ export default function Music() {
               isMutedMedia={isMutedMedia}
             />
           )}
+          {isModalOpen && (
+            <Modal isOpen={true} onClose={()=>setIsModalOpen(false)} children={<MidiAndPdf content={content[0]}/>} className={'backgroundColor3'}/>
+          )}
         </div>
+       
       )}
     </>
   );
