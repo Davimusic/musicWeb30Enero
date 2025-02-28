@@ -119,6 +119,8 @@ export default function Music() {
   // ============== FUNCIONES DE INTERFAZ ==============
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
+    setIsModalOpen(true)
+    alert('si')
   };
 
   const handleItemClick = item => {

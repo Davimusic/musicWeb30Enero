@@ -9,7 +9,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { auth } from '../../firebase'; // Asegúrate de que Firebase esté correctamente configurado
-import { useRouter } from 'next/navigation'; // Importa useRouter de Next.js
+import { useRouter } from 'next/navigation'; // Usamos useRouter de next/navigation
 
 const Login = () => {
   const router = useRouter();
@@ -23,17 +23,18 @@ const Login = () => {
   // Configura el proveedor de Google
   const googleProvider = new GoogleAuthProvider();
 
+  // Efecto para escuchar cambios en la autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUser(user);
-        router.push('/music/hi'); // Redirige al usuario después del login
+        setUser(user); // Establece el usuario si está autenticado
+        router.push('/music/hi'); // Redirige solo si el usuario está autenticado
       } else {
-        setUser(null);
+        setUser(null); // Limpia el usuario si no está autenticado
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Limpia la suscripción al desmontar el componente
   }, [router]);
 
   // Función para manejar el login con correo y contraseña
@@ -59,7 +60,7 @@ const Login = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      setUser(user);
+      setUser(user); // Establece el usuario después de un login exitoso
     } catch (error) {
       setError(error.message);
     }
@@ -85,7 +86,7 @@ const Login = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setUser(null);
+      setUser(null); // Limpia el usuario al cerrar sesión
     } catch (error) {
       setError('Error logging out.');
     }
