@@ -87,7 +87,7 @@ const Login = () => {
         setError(data.message);
       }
     } catch (error) {
-      console.error('Error calling handleUserAfterAuth:', error);
+      console.error('Error  calling handleUserAfterAuth:', error);
       setError(`An error occurred while handling user data: ${error.message}`);
     }
   };
