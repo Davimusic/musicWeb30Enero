@@ -340,8 +340,10 @@ const Video = ({
         setShowComponent={setShowComponent}
         showComponent={showComponent}
         changeStateMenu={changeStateMenu}
-        //setVolumeMedia={setVolumeMedia}
-        //volumeMedia={volumeMedia}
+        tags={tags}
+        setTags={setTags}
+        setContent={setContent}
+        setMusicContent={setMusicContent}
       />
     </>
   );

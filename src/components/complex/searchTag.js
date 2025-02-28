@@ -12,6 +12,9 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
 
+    console.log(tags);
+    
+
     const handleSearch = async (tag, setContent, setMusicContent) => {
         setIsSearching(true);
         const result = await searchTagInDb(tag, setContent, setMusicContent, setTags);

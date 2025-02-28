@@ -86,13 +86,17 @@ export default function Music() {
       document.querySelectorAll('.highlight').forEach(element => {
         element.classList.remove('highlight');
       });
-      const newElement = document.getElementById(idToFind);
-      if (newElement) {
-        newElement.classList.add('highlight');
-        newElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+
+      setTimeout(() => {
+        const newElement = document.getElementById(idToFind);
+        if (newElement) {
+          newElement.classList.add('highlight');
+          newElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 500);
     }
-  }, [content, currentIndex]);
+  }, [content, currentIndex, musicContent, componentInUse]);
+
 
   useEffect(() => {
     searchTagInDb('', setContent, setMusicContent, setTags)
@@ -120,8 +124,6 @@ export default function Music() {
   const toggleContentVisibility = () => {
     setIsContentVisible(!isContentVisible);
     setIsModalOpen(true)
-
-    alert('si')
   };
 
   const handleItemClick = item => {

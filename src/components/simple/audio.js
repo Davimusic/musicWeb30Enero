@@ -294,6 +294,10 @@ const Audio = ({
         setShowComponent={setShowComponent}
         showComponent={showComponent}
         changeStateMenu={changeStateMenu}
+        tags={tags}
+        setTags={setTags}
+        setContent={setContent}
+        setMusicContent={setMusicContent}
       />
     </>
   );

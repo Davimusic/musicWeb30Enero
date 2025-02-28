@@ -28,7 +28,9 @@ const ImageAndText = ({ content, onItemClick }) => {
             alignItems: 'flex-end',
             cursor: 'pointer',
             borderRadius: '0.5em',
-            padding: '10px',
+            paddingLeft: '10px',
+            paddingRight: '10px',
+            paddingBottom: '10px',
             marginRight: '10px',
             marginLeft: '10px',            
           }}
@@ -50,7 +52,7 @@ const ImageAndText = ({ content, onItemClick }) => {
             <Text
               id={item.text.id}
               text={item.text.textTitle}
-              style={{...item.text.style, color: 'white', margin: '5px'}}
+              style={{...item.text.style, color: 'white', margin: '0px'}}
               className={[`${item.text.className}`, 'title-md']}
             />
             <Text
