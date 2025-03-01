@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const HeartIcon = ({ size = 100 }) => {
   const [isRed, setIsRed] = useState(true);
@@ -29,23 +30,6 @@ const HeartIcon = ({ size = 100 }) => {
           fill={isRed ? 'red' : 'black'}
         />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.1);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.5s ease;
-        }
-      `}</style>
     </>
   );
 };

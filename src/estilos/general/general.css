@@ -1,6 +1,6 @@
 /* Colores de texto */
-.color1 { color: #060606; }
-.color2 { color: #0c283f; }
+.color1 { color: #000000; }
+.color2 { color: #ffffff; }
 .color3 { color: #1d6188; }
 .color4 { color: #2b95c8; }
 .color5 { color: #2bc6c8; }
@@ -11,6 +11,11 @@
   --backgroundColor3: #05a1fc;
   --backgroundColor4: #0cf7ffce;
   --backgroundColor5: #2bc6c8;
+  --color1: #000000;
+  --color2: #ffffff;
+  --color3: #1d6188;
+  --color4: #2b95c8;
+  --color5: #2bc6c8;
 }
 
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const AudioIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -31,14 +32,6 @@ const AudioIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         {/* Ícono de corchea musical */}
         <path d="M9 3v10.68A4 4 0 1 0 11 17V7h4V3H9z" />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.2); }
-          100% { transform: scale(1); }
-        }
-        .pulse { animation: pulse 0.3s ease; }
-      `}</style>
     </>
   );
 };

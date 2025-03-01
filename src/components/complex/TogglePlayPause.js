@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const TogglePlayPause = ({ size = 30, isPlaying = false, onToggle }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -39,23 +40,6 @@ const TogglePlayPause = ({ size = 30, isPlaying = false, onToggle }) => {
           <polygon points="5 3 19 12 5 21" fill="white" /> 
         )}
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

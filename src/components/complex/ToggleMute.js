@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const ToggleMute = ({ size = 24, isMuted = false, onToggle, buttonColor = "#ffffff" }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -66,23 +67,6 @@ const ToggleMute = ({ size = 24, isMuted = false, onToggle, buttonColor = "#ffff
           </>
         )}
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

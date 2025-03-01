@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const VideoIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -32,14 +33,6 @@ const VideoIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         <rect x="2" y="4" width="20" height="16" rx="2" />
         <path d="M10 9l5 3-5 3V9z" />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.2); }
-          100% { transform: scale(1); }
-        }
-        .pulse { animation: pulse 0.3s ease; }
-      `}</style>
     </>
   );
 };

@@ -1,0 +1,49 @@
+.pulse {
+    animation: pulse 0.3s ease;
+  }
+
+
+@keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10%);
+    }
+  }
+
+  .bar.animate {
+    animation: bounce 1.5s infinite;
+  }
+
+  .bar:nth-child(1).animate {
+    animation-delay: 0s;
+  }
+
+  .bar:nth-child(2).animate {
+    animation-delay: 0.3s;
+  }
+
+  .bar:nth-child(3).animate {
+    animation-delay: 0.6s;
+  }
+
+  .bar:nth-child(4).animate {
+    animation-delay: 0.9s;
+  }
+
+  .bar:nth-child(5).animate {
+    animation-delay: 1.2s;
+  }

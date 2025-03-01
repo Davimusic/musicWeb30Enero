@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -32,23 +33,6 @@ const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         <circle cx="10" cy="10" r="7" />
         <line x1="15" y1="15" x2="20" y2="20" />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

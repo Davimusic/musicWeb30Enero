@@ -9,7 +9,6 @@ import ToggleMute from './ToggleMute';
 import QualitySelectorModal from './qualitySelectorModal';
 import getCSSVariableValue from '@/functions/music/getCSSVariableValue';
 import '../../estilos/music/mediaControl.css';
-import ExpandIcon from './expandIcon';
 import ShowComponentButton from './showComponentButton';
 
 const MediaControl = forwardRef(

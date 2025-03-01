@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -33,23 +34,6 @@ const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         <line x1="4" y1="12" x2="20" y2="12" />
         <line x1="4" y1="18" x2="20" y2="18" />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

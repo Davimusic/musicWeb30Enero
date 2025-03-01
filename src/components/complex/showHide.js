@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const ShowHide = ({ size = 24, onClick = () => {}, isVisible = false, style = {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -43,23 +44,6 @@ const ShowHide = ({ size = 24, onClick = () => {}, isVisible = false, style = {}
           </>
         )}
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

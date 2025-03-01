@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const RepeatButton = ({ buttonColor = "#ffffff", size = 30, isRepeat, toggleRepeat }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -28,23 +29,6 @@ const RepeatButton = ({ buttonColor = "#ffffff", size = 30, isRepeat, toggleRepe
           d="M17 17H7v-3l-4 4 4 4v-3h12v-6h-2v4zm2-10h-2V7H7v3L3 6l4-4v3h12v6h2V7z"
         />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

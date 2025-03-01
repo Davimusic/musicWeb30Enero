@@ -1,115 +1,114 @@
 import React, { useState, useEffect } from 'react';
-import { HexColorPicker } from 'react-colorful'; // Importar el selector de colores
+import { HexColorPicker } from 'react-colorful';
 import Modal from './modal';
-import { useRouter } from 'next/navigation'; // Importa useRouter de Next.js
-import { signOut } from 'firebase/auth'; // Importa signOut de Firebase
-import { auth } from '../../../firebase'
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../../firebase';
 import '../../estilos/general/general.css';
 
 const Menu = ({ isOpen, onClose, className = '' }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedColorClass, setSelectedColorClass] = useState('backgroundColor1');
-    const [selectedColor, setSelectedColor] = useState('#060606'); // Color seleccionado
+    const [selectedColor, setSelectedColor] = useState('#060606');
     const [userName, setUserName] = useState('');
     const [userImage, setUserImage] = useState('');
-    const router = useRouter(); // Usa useRouter para redirecciones
+    const router = useRouter();
 
-    // Objeto para manejar los colores de fondo
+    // State to store current colors
     const [colors, setColors] = useState({
-        backgroundColor1: '#060606',
-        backgroundColor2: '#0c283f',
-        backgroundColor3: '#1d6188',
-        backgroundColor4: '#2b95c8',
-        backgroundColor5: '#2bc6c8',
+        backgroundColor1: '',
+        backgroundColor2: '',
+        backgroundColor3: '',
+        backgroundColor4: '',
+        backgroundColor5: '',
     });
 
-    // Efecto para cargar los datos del usuario desde sessionStorage
+    // Get user data from sessionStorage
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const name = sessionStorage.getItem('userName') || '';
-            const image = sessionStorage.getItem('userImage') || '';
-            setUserName(name);
-            setUserImage(image);
-        }, 1000);
-
-        return () => clearTimeout(timer);
+        const name = sessionStorage.getItem('userName') || '';
+        const image = sessionStorage.getItem('userImage') || '';
+        setUserName(name);
+        setUserImage(image);
     }, []);
 
-    // Función para manejar el logout
+    // Get colors from CSS variables
+    useEffect(() => {
+        const rootStyles = getComputedStyle(document.documentElement);
+        const newColors = {
+            backgroundColor1: rootStyles.getPropertyValue('--backgroundColor1').trim(),
+            backgroundColor2: rootStyles.getPropertyValue('--backgroundColor2').trim(),
+            backgroundColor3: rootStyles.getPropertyValue('--backgroundColor3').trim(),
+            backgroundColor4: rootStyles.getPropertyValue('--backgroundColor4').trim(),
+            backgroundColor5: rootStyles.getPropertyValue('--backgroundColor5').trim(),
+        };
+        setColors(newColors);
+    }, []);
+
+    // Update selected color when class changes
+    useEffect(() => {
+        setSelectedColor(colors[selectedColorClass]);
+    }, [selectedColorClass, colors]);
+
+    // Function to update a color
+    const updateColor = (colorClass, hexValue) => {
+        if (/^#([0-9A-Fa-f]{3}){1,2}$/i.test(hexValue)) {
+            const updatedColors = { ...colors, [colorClass]: hexValue };
+            setColors(updatedColors);
+            document.documentElement.style.setProperty(`--${colorClass}`, hexValue);
+            return true;
+        }
+        return false;
+    };
+
+    // Function to handle color update
+    const handleUpdateColor = () => {
+        if (updateColor(selectedColorClass, selectedColor)) {
+            //setIsModalOpen(false);
+            onClose();
+
+        } else {
+            alert('Error: Invalid hexadecimal value.');
+        }
+    };
+
+    // Function to handle logout
     const handleLogout = async () => {
         try {
-            await signOut(auth); // Cierra la sesión en Firebase
-            sessionStorage.removeItem('userName'); // Limpiar sessionStorage al cerrar sesión
+            await signOut(auth);
+            sessionStorage.removeItem('userName');
             sessionStorage.removeItem('userImage');
-            router.push('/'); // Redirige a la página de login
-            onClose(); // Cierra el menú
+            router.push('/');
+            onClose();
         } catch (error) {
             console.error('Error logging out:', error);
         }
     };
 
-    // Método para obtener el valor actual de una variable CSS
-    const getCurrentColorValue = (colorClass) => {
-        return getComputedStyle(document.documentElement).getPropertyValue(`--${colorClass}`).trim();
-    };
-
-    // Efecto para actualizar el color seleccionado cuando cambia la clase
-    useEffect(() => {
-        const currentColor = getCurrentColorValue(selectedColorClass);
-        setSelectedColor(currentColor);
-    }, [selectedColorClass]);
-
-    // Método para actualizar un color
-    const updateColor = (colorClass, hexValue) => {
-        if (/^#([0-9A-Fa-f]{3}){1,2}$/i.test(hexValue)) {
-            const updatedColors = { ...colors, [colorClass]: hexValue };
-            setColors(updatedColors);
-            return true; // Indica que la actualización fue exitosa
-        }
-        return false; // Indica que hubo un error
-    };
-
-    // Método para manejar la actualización del color
-    const handleUpdateColor = () => {
-        const success = updateColor(selectedColorClass, selectedColor);
-        if (success) {
-            // Actualizar la variable CSS correspondiente en el DOM
-            document.documentElement.style.setProperty(`--${selectedColorClass}`, selectedColor);
-            setIsModalOpen(false);
-            onClose()
-        } else {
-            alert('Error: Valor hexadecimal no válido.');
-        }
-    };
-
-    // Método para evitar que el clic se propague a los elementos hijos
-    const handleMenuClick = (e) => {
-        e.stopPropagation(); // Evita que el clic se propague al contenedor del menú
-    };
+    // Prevent click propagation to child elements
+    const handleMenuClick = (e) => e.stopPropagation();
 
     return (
         <>
-            {/* Menú lateral */}
+            {/* Side menu */}
             <div
                 style={{
                     position: 'fixed',
                     top: 0,
-                    left: isOpen ? 0 : '-300px', // Desplazamiento del menú
+                    left: isOpen ? 0 : '-300px',
                     width: '300px',
                     height: '100vh',
                     zIndex: 9990,
                     transition: 'left 0.3s ease, visibility 0.3s ease, opacity 0.3s ease',
                     padding: '20px',
                     boxShadow: '2px 0 5px rgba(0, 0, 0, 0.5)',
-                    visibility: isOpen ? 'visible' : 'hidden', // Ocultar completamente el menú
-                    opacity: isOpen ? 1 : 0, // Hacer el menú transparente cuando esté cerrado
+                    visibility: isOpen ? 'visible' : 'hidden',
+                    opacity: isOpen ? 1 : 0,
                 }}
                 className={className}
-                onClick={onClose} // Cerrar el menú al hacer clic en cualquier parte del contenedor
+                onClick={onClose}
             >
-                <div onClick={handleMenuClick}> {/* Evita que el clic se propague al contenedor del menú */}
-                    <p className='title-md' style={{ marginBottom: '20px' }}>Menú</p>
-                    {/* Mostrar nombre e imagen del usuario si están disponibles */}
+                <div onClick={handleMenuClick}>
+                    <p className='title-md color2' style={{ marginBottom: '20px' }}>Menu</p>
                     {userName && (
                         <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
                             {userImage && (
@@ -119,35 +118,26 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                                     style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
                                 />
                             )}
-                            <p className='title-sm' style={{ margin: 0 }}>{userName}</p>
+                            <p className='title-sm color2' style={{ margin: 0 }}>{userName}</p>
                         </div>
                     )}
                     <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {['Home', 'Explore', 'Favorites', 'Settings'].map((item, index) => (
+                            <li key={index} style={{ marginBottom: '15px' }}>
+                                <a href="#" style={{ textDecoration: 'none' }} className='title-sm color2'>{item}</a>
+                            </li>
+                        ))}
                         <li style={{ marginBottom: '15px' }}>
-                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Inicio</a>
+                            <p onClick={() => setIsModalOpen(true)} className='title-sm color2'>Change background color</p>
                         </li>
                         <li style={{ marginBottom: '15px' }}>
-                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Explorar</a>
-                        </li>
-                        <li style={{ marginBottom: '15px' }}>
-                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Favoritos</a>
-                        </li>
-                        <li style={{ marginBottom: '15px' }}>
-                            <a href="#" style={{textDecoration: 'none', color: 'white'}} className='title-sm'>Configuración</a>
-                        </li>
-                        <li style={{ marginBottom: '15px' }}>
-                            <p onClick={() => setIsModalOpen(true)} className='title-sm'>Cambiar color de fondo</p>
-                        </li>
-                        {/* Botón de Logout */}
-                        <li style={{ marginBottom: '15px' }}>
-                            <p onClick={handleLogout} className='title-sm' style={{ cursor: 'pointer', color: 'white' }}>
-                                Cerrar sesión
-                            </p>
+                            <p onClick={handleLogout} className='title-sm color2' style={{ cursor: 'pointer' }}>Log out</p>
                         </li>
                     </ul>
                 </div>
             </div>
-            {/* Overlay para cerrar el menú */}
+
+            {/* Overlay to close the menu */}
             {isOpen && (
                 <div
                     style={{
@@ -162,40 +152,52 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
                     onClick={onClose}
                 />
             )}
-            {/* Modal para cambiar el color de fondo */}
-            <Modal className={'backgroundColor2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <div style={{padding: '30px'}}>
-                    <p className='title-md'>Actualizar color de fondo</p>
+
+            {/* Modal to change background color */}
+            <Modal className={'backgroundColor2 color2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                <div style={{ padding: '30px' }}>
+                    <p className='title-md'>Update background color</p>
+
+                    {/* Show current colors as selectable buttons */}
                     <div style={{ marginBottom: '20px' }}>
-                        <label className='text-general' style={{ marginRight: '10px' }}>Selecciona un color:</label>
-                        <select 
-                            className='text-general'
-                            value={selectedColorClass} 
-                            onChange={(e) => setSelectedColorClass(e.target.value)}
-                            style={{ padding: '5px', borderRadius: '4px' }}
-                        >
-                            <option value="backgroundColor1">Color 1</option>
-                            <option value="backgroundColor2">Color 2</option>
-                            <option value="backgroundColor3">Color 3</option>
-                            <option value="backgroundColor4">Color 4</option>
-                            <option value="backgroundColor5">Color 5</option>
-                        </select>
+                        <p className='text-general'>Select a color to update:</p>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            {Object.entries(colors).map(([key, value]) => (
+                                <div
+                                    key={key}
+                                    onClick={() => setSelectedColorClass(key)} // Select color on click
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        backgroundColor: value,
+                                        border: selectedColorClass === key ? '3px solid #2bc6c8' : '1px solid #000',
+                                        cursor: 'pointer',
+                                        borderRadius: '4px',
+                                    }}
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label className='text-general' style={{ marginRight: '10px' }}>Color seleccionado:</label>
-                        {/* Usar HexColorPicker en lugar del input de tipo color */}
-                        <HexColorPicker 
-                            color={selectedColor} 
-                            onChange={setSelectedColor} 
-                            style={{ marginBottom: '20px' }}
-                        />
-                    </div>
-                    <button 
-                        className='backgroundColor3 text-general'
+
+                    {/* Show color picker only if a color is selected */}
+                    {selectedColorClass && (
+                        <div style={{ marginBottom: '20px' }}>
+                            <label className='text-general' style={{ marginRight: '10px' }}>Edit selected color:</label>
+                            <HexColorPicker
+                                color={selectedColor}
+                                onChange={setSelectedColor}
+                                style={{ marginBottom: '20px' }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Button to update the color */}
+                    <button
+                        className='backgroundColor3 text-general color2'
                         onClick={handleUpdateColor}
                         style={{ padding: '10px 20px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
-                        Actualizar color
+                        Update color
                     </button>
                 </div>
             </Modal>

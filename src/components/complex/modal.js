@@ -43,7 +43,7 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
           transition: 'transform 0.3s ease, opacity 0.3s ease',
         }}
       >
-        <button onClick={handleClose} style={styles.closeButton}>
+        <button className='color2' onClick={handleClose} style={styles.closeButton}>
           ×
         </button>
         {children}
@@ -80,7 +80,6 @@ const styles = {
     border: 'none',
     fontSize: '40px',
     cursor: 'pointer',
-    color: 'black',
   },
 };
 

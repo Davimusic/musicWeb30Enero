@@ -7,7 +7,6 @@ import ImageAndHeart from './imageAndHeart';
 import Menu from './menu';
 import '../../estilos/general/general.css';
 import '../../estilos/music/fullControlMedia.css';
-import ExpandIcon from './expandIcon';
 import ShowComponentButton from './showComponentButton';
 
 const FullControlMedia = forwardRef((props, ref) => {

@@ -1,6 +1,5 @@
-//NextBeforeIcon
-
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const NextBeforeIcon = ({ size = 30, direction = 'right', onToggle }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -47,23 +46,6 @@ const NextBeforeIcon = ({ size = 30, direction = 'right', onToggle }) => {
         <polygon points="4 2, 14 12, 4 22" fill="white" />
         <polygon points="10 2, 20 12, 10 22" fill="white" />
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

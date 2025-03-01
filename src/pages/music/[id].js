@@ -38,6 +38,7 @@ export default function Music() {
   const [isShuffleMedia, setIsShuffleMedia] = useState(false);
   const [isMutedMedia, setIsMutedMedia] = useState(false);
   const [modalContent, setModalContent] = useState(<MidiAndPdf content={content[0]}/>);
+  const [componentNameUsingModal, setComponentNameUsingModal] = useState('');
 
 
   const messages = [
@@ -52,10 +53,19 @@ export default function Music() {
     setIsMenuOpen(!isMenuOpen)
   }
 
-
   useEffect(() => {
-    console.log(isMenuOpen);
-  }, [isMenuOpen]);
+    console.log(componentNameUsingModal);
+  }, [componentNameUsingModal]);
+
+  useEffect(() => { 
+    if(isModalOpen === false){ setComponentNameUsingModal('') } 
+  }, [isModalOpen]); 
+  
+  useEffect(() => { 
+    if(componentNameUsingModal === 'download'){ toggleContentVisibility() } 
+  }, [content]);
+  
+  
 
 
   // ============== EFECTOS DE DISEÑO ==============
@@ -123,9 +133,10 @@ export default function Music() {
 
   // ============== FUNCIONES DE INTERFAZ ==============
   const toggleContentVisibility = () => {
-    setIsContentVisible(!isContentVisible);
+    //setIsContentVisible(!isContentVisible); cre que no se necesita
     setIsModalOpen(true)
     setModalContent(<MidiAndPdf content={content[0]}/>)
+    setComponentNameUsingModal('download')
   };
 
   const handleQualityChange= (newQuality) =>{
@@ -157,6 +168,39 @@ export default function Music() {
     setCurrentTimeMedia(0)
   };
 
+  // ============== Variables comunes entre Audio y Video ==============
+  const commonProps = {
+    allMusicProyects: musicContent,
+    currentIndex: currentIndex,
+    setCurrentIndex: setCurrentIndex,
+    setContent: setContent,
+    tags: tags,
+    setTags: setTags,
+    setMusicContent: setMusicContent,
+    isContentVisible: isContentVisible,
+    toggleContentVisibility: toggleContentVisibility,
+    componentInUse: componentInUse,
+    setComponentInUse: setComponentInUse,
+    setShowComponent: setShowComponent,
+    showComponent: showComponent,
+    setCurrentTimeMedia: setCurrentTimeMedia,
+    currentTimeMedia: currentTimeMedia,
+    changeStateMenu: changeStateMenu,
+    isMenuOpen: isMenuOpen,
+    setVolumeMedia: setVolumeMedia,
+    volumeMedia: volumeMedia,
+    setQualityMedia: setQualityMedia,
+    qualityMedia: qualityMedia,
+    setIsRepeatMedia: setIsRepeatMedia,
+    isRepeatMedia: isRepeatMedia,
+    setIsShuffleMedia: setIsShuffleMedia,
+    isShuffleMedia: isShuffleMedia,
+    setIsMutedMedia: setIsMutedMedia,
+    isMutedMedia: isMutedMedia,
+    openQualityModal: openQualityModal
+  };
+
+
 
   
 
@@ -164,15 +208,14 @@ export default function Music() {
   return (
     <>
       {isLoading ? (
-        <BackgroundGeneric isLoading={true} style={{width: '100vw', height: '100hv'}} className={'background-container'}>
-        <div style={{ textAlign: 'center' }}>
-          <MainLogo animate={true} size={'40vh'} />
-          <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={1000}/>
-        </div>
-      </BackgroundGeneric>
+        <BackgroundGeneric isLoading={true} style={{width: '100vw', height: '100vh'}} className={'background-container'}>
+          <div style={{ textAlign: 'center' }}>
+            <MainLogo animate={true} size={'40vh'} />
+            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={1000}/>
+          </div>
+        </BackgroundGeneric>
       ) : (
         <div className='music-container backgroundColor1'>
-          {/* Contenedor para Audio */}
           {showComponent === 'audio' && content[0]?.audioPrincipal?.src && (
             <>
               {content[0]?.imagePrincipal?.src && (
@@ -187,55 +230,17 @@ export default function Music() {
               </div>
               <Audio
                 src={content[0].audioPrincipal.src}
-                allMusicProyects={musicContent}
-                currentIndex={currentIndex}
-                setCurrentIndex={setCurrentIndex}
-                setContent={setContent}
-                tags={tags}
-                setTags={setTags}
-                setMusicContent={setMusicContent}
-                isContentVisible={isContentVisible}
-                toggleContentVisibility={toggleContentVisibility}
-                componentInUse={componentInUse}
-                setComponentInUse={setComponentInUse}
+                {...commonProps}
                 isFirstTimeLoading={isFirstTimeLoading}
                 setIsFirstTimeLoading={setIsFirstTimeLoading}
-                setShowComponent={setShowComponent}
-                showComponent={showComponent}
-                setCurrentTimeMedia={setCurrentTimeMedia}
-                currentTimeMedia={currentTimeMedia}
-                changeStateMenu={changeStateMenu}
-                isMenuOpen={isMenuOpen}
-                setVolumeMedia={setVolumeMedia}
-                volumeMedia={volumeMedia}
-                setQualityMedia={setQualityMedia}
-                qualityMedia={qualityMedia}
-                setIsRepeatMedia={setIsRepeatMedia}
-                isRepeatMedia={isRepeatMedia}
-                setIsShuffleMedia={setIsShuffleMedia}
-                isShuffleMedia={isShuffleMedia}
-                setIsMutedMedia={setIsMutedMedia}
-                isMutedMedia={isMutedMedia}
-                openQualityModal={openQualityModal}
               />
             </>
           )}
   
-          {/* Contenedor para Video */}
           {showComponent === 'video' && content[0]?.videoPrincipal?.src && (
             <Video
               src={content[0].videoPrincipal.src}
-              allMusicProyects={musicContent}
-              currentIndex={currentIndex}
-              setCurrentIndex={setCurrentIndex}
-              setContent={setContent}
-              tags={tags}
-              setTags={setTags}
-              setMusicContent={setMusicContent}
-              isContentVisible={isContentVisible}
-              toggleContentVisibility={toggleContentVisibility}
-              componentInUse={componentInUse}
-              setComponentInUse={setComponentInUse}
+              {...commonProps}
               setIsLoading={setIsLoading}
               isVideoFullScreen={false}
               isEndendVideo={false}
@@ -243,30 +248,12 @@ export default function Music() {
               isModalOpen={isModalOpen}
               content={content}
               handleItemClick={handleItemClick}
-              setShowComponent={setShowComponent}
-              showComponent={showComponent}
-              setCurrentTimeMedia={setCurrentTimeMedia}
-              currentTimeMedia={currentTimeMedia}
-              changeStateMenu={changeStateMenu}
-              isMenuOpen={isMenuOpen}
-              setVolumeMedia={setVolumeMedia}
-              volumeMedia={volumeMedia}
-              setQualityMedia={setQualityMedia}
-              qualityMedia={qualityMedia}
-              setIsRepeatMedia={setIsRepeatMedia}
-              isRepeatMedia={isRepeatMedia}
-              setIsShuffleMedia={setIsShuffleMedia}
-              isShuffleMedia={isShuffleMedia}
-              setIsMutedMedia={setIsMutedMedia}
-              isMutedMedia={isMutedMedia}
-              openQualityModal={openQualityModal}
             />
           )}
           {isModalOpen && (
-            <Modal isOpen={true} onClose={()=>setIsModalOpen(false)} children={modalContent} className={'backgroundColor3'}/>
+            <Modal isOpen={true} onClose={() => setIsModalOpen(false)} children={modalContent} className={'backgroundColor3'}/>
           )}
         </div>
-       
       )}
     </>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../../estilos/music/icon.css'
 
 const DownloadIcon = ({ size = 30, isOpen = false, onToggle = () => {} }) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -36,23 +37,6 @@ const DownloadIcon = ({ size = 30, isOpen = false, onToggle = () => {} }) => {
           <path d="M12 4v16m0 0l6-6m-6 6l-6-6" /> // Flecha hacia abajo
         )}
       </svg>
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-
-        .pulse {
-          animation: pulse 0.3s ease;
-        }
-      `}</style>
     </>
   );
 };

@@ -14,9 +14,3 @@ export default function ShowComponentButton({ setShowComponent, showComponent })
 
 
 
-/*import VideoIcon from "./videoIcon"
-import AudioIcon from "./audioIcon"
-
-export default function ShowComponentButton({setShowComponent, showComponent} ){
-    return <ExpandIcon size={50} onClick={() => setShowComponent(showComponent === 'audio' ? 'video' : 'audio')} />
-}*/

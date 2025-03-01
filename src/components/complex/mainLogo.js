@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../estilos/music/icon.css'
 
 const MainLogo = ({ size = 100, animate = false }) => {
   const animationClass = animate ? 'animate' : '';
@@ -32,44 +33,6 @@ const MainLogo = ({ size = 100, animate = false }) => {
 
       {/* Borde del círculo */}
       <circle cx="50" cy="50" r="45" fill="none" stroke="#2bc6c8" strokeWidth="4" /> {/* color5 */}
-
-      {/* Estilo para la animación */}
-      <style>
-        {`
-          @keyframes bounce {
-            0%, 100% {
-              transform: translateY(0);
-            }
-            50% {
-              transform: translateY(-10%);
-            }
-          }
-
-          .bar.animate {
-            animation: bounce 1.5s infinite;
-          }
-
-          .bar:nth-child(1).animate {
-            animation-delay: 0s;
-          }
-
-          .bar:nth-child(2).animate {
-            animation-delay: 0.3s;
-          }
-
-          .bar:nth-child(3).animate {
-            animation-delay: 0.6s;
-          }
-
-          .bar:nth-child(4).animate {
-            animation-delay: 0.9s;
-          }
-
-          .bar:nth-child(5).animate {
-            animation-delay: 1.2s;
-          }
-        `}
-      </style>
     </svg>
   );
 };

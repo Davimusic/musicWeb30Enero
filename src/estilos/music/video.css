@@ -1,20 +1,47 @@
 .video-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background-color: black;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: black;
+}
+
+.controls-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  z-index: 1000; /* Asegurar que estén por encima del video */
+  touch-action: manipulation; /* Mejorar respuesta táctil */
+  pointer-events: none; /* Permite clics a través del contenedor */
+}
+
+.controls-wrapper > * {
+  pointer-events: auto; /* Hace los hijos interactivos */
+}
+
+/* Opcional: Añadir un fondo degradado para mejor visibilidad */
+.controls-wrapper::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  pointer-events: none; /* Permitir clics a través del degradado */
+}
   
