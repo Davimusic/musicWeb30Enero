@@ -198,7 +198,7 @@ export default function Music() {
         <BackgroundGeneric isLoading={true} style={{ width: '100vw', height: '100vh' }} className={'background-container'}>
           <div style={{ textAlign: 'center' }}>
             <MainLogo animate={true} size={'40vh'} />
-            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={1000} />
+            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={3000} />
           </div>
         </BackgroundGeneric>
       ) : (

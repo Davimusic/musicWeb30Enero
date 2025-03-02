@@ -4,7 +4,6 @@ import '../../estilos/music/video.css';
 import mixUrlWithQuality from '@/functions/music/mixUrlWithQuality';
 import UseControlVisibility from '../complex/useControlVisibility';
 
-
 const Video = ({
   src,
   allMusicProyects,
@@ -55,9 +54,10 @@ const Video = ({
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [lastTap, setLastTap] = useState(0);
 
   const isMobile = /Mobile|iPhone|iPad|iPod|Android|BlackBerry|Windows Phone|Opera Mini|IEMobile|Silk/i.test(navigator.userAgent);
-
 
   // Usar el hook para controlar la visibilidad
   const { isVisible, showControls } = UseControlVisibility(isMobile);
@@ -246,6 +246,34 @@ const Video = ({
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+    if (now - lastTap < DOUBLE_PRESS_DELAY) {
+      alert('Me gusta');
+    }
+    setLastTap(now);
+  };
+
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY === null) return;
+
+    const touchEndY = e.touches[0].clientY;
+    const deltaY = touchEndY - touchStartY;
+
+    if (deltaY > 50) {
+      handlePreviousVideo();
+      setTouchStartY(null);
+    } else if (deltaY < -50) {
+      handleNextVideo();
+      setTouchStartY(null);
+    }
+  };
+
   const fullControlMediaProps = {
     isPlaying,
     togglePlayPause,
@@ -295,11 +323,36 @@ const Video = ({
         onEnded={handleEnded}
         muted={isMutedMedia}
         loop={isRepeatMedia}
-        onClick={handleVideoInteraction} // Mostrar controles al hacer clic
-        onTouchStart={handleVideoInteraction} // Mostrar controles al tocar en móvil
+        onClick={handleVideoInteraction}
+        onTouchStart={(e) => {
+          handleVideoInteraction();
+          handleTouchStart(e);
+          handleDoubleTap();
+        }}
+        onTouchMove={handleTouchMove}
       >
         Tu navegador no admite el elemento de video.
       </video>
+
+      {isMobile && (
+        <button
+          className="center-play-button"
+          onClick={togglePlayPause}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'transparent',
+            border: 'none',
+            color: 'white',
+            fontSize: '48px',
+            cursor: 'pointer',
+          }}
+        >
+          {isPlaying ? '❚❚' : '▶'}
+        </button>
+      )}
 
       {isVisible && <FullControlMedia {...fullControlMediaProps} />}
     </>
