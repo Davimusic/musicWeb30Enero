@@ -15,7 +15,7 @@ import '../estilos/music/login.css';
 import BackgroundGeneric from './complex/backgroundGeneric';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaGoogle, FaEnvelope, FaLock } from 'react-icons/fa';
 
 const Login = () => {
   const router = useRouter();
@@ -87,7 +87,7 @@ const Login = () => {
         setError(data.message);
       }
     } catch (error) {
-      console.error('Error  calling handleUserAfterAuth:', error);
+      console.error('Error calling handleUserAfterAuth:', error);
       setError(`An error occurred while handling user data: ${error.message}`);
     }
   };
@@ -174,17 +174,6 @@ const Login = () => {
     }
   };
 
-  if (user) {
-    return (
-      <BackgroundGeneric isLoading={true}>
-        <div className="login-container">
-          <Image src={user.photoURL || '/default-profile.png'} alt={`${user.name}'s profile picture`} width={150} height={150} style={{ borderRadius: '50%' }} />
-          <p className='title-xs'>Welcome, {user.displayName || user.email}!</p>
-        </div>
-      </BackgroundGeneric>
-    );
-  }
-
   return (
     <BackgroundGeneric isLoading={true}>
       <div className="login-container">
@@ -226,7 +215,12 @@ const Login = () => {
                   required
                 />
                 <div className="show-hide-icon" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  <ShowHide
+                    size={24}
+                    onClick={() => setShowPassword(!showPassword)}
+                    isVisible={showPassword}
+                    style={{ cursor: 'pointer' }}
+                  />
                 </div>
               </div>
             </div>

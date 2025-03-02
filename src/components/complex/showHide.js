@@ -25,7 +25,7 @@ const ShowHide = ({ size = 24, onClick = () => {}, isVisible = false, style = {}
           transition: 'transform 0.3s ease',
           ...style, // Merge the passed style with default styles
         }}
-        stroke="currentColor"
+        stroke="black"
         strokeWidth="2"
         fill="none"
       >

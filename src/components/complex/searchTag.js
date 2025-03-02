@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import GlassIcon from './glassIcon';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import Modal from './modal';
+import '../../estilos/general/general.css'
 
 const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags, setIsModalOpen, setContentModal }) => {
     const [searchResults, setSearchResults] = useState('');
@@ -76,6 +77,11 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
             alignItems: 'center',
             width: '100%',
             maxWidth: '50vw',
+            borderRadius: '0.7em',
+            paddingLeft: '10px',
+            paddingRight: '10px',
+            paddingTop: '2px',
+            padding: '2px'
         },
         input: {
             flex: 1,
@@ -163,7 +169,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                 `}
             </style>
 
-            <div style={styles.container}>
+            <div className='backgroundColor2' style={styles.container}>
                 <input 
                     type="text" 
                     placeholder="Search" 

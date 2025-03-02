@@ -1,96 +1,108 @@
 /* Estilos generales para el componente Music */
 .music-container {
-    height: 97vh;
-    display: block;
-    border-radius: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  /* Fondo difuminado */
-  .background-blur {
-    position: absolute;
-    background-size: cover;
-    background-position: center;
-    filter: blur(8px) opacity(0.5);
-    inset: 0;
-    margin: 20px;
-    border-radius: 20px;
-    z-index: 1;
-  }
-  
-  .background-overlay {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
+  height: 97vh;
+  display: flex;
+  flex-direction: column; /* Asegura que los elementos se apilen verticalmente */
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Contenedor del SearchTagInDb */
+.search-tag-container {
+  z-index: 3; /* Asegura que esté por encima de otros elementos */
+  position: fixed; /* Fijo para mantenerse en la parte superior */
+  top: 0; /* Posición en la parte superior */
+  left: 50%; /* Centrado horizontal */
+  transform: translateX(-50%); /* Ajusta el centrado horizontal */
+  width: 90%; /* Ancho relativo para adaptabilidad */
+  padding: 10px; /* Espaciado interno */
+  margin: 0 auto; /* Centra el margen vertical y horizontal, aunque con left+transform no es necesario */
+  border-radius: 0.7em; /* Bordes redondeados */
+  display: flex; /* Activa flexbox */
+  justify-content: center; /* Centrado horizontal de contenido */
+  align-items: center; /* Centrado vertical de contenido */
+}
+
+
+
+
+/* Fondo difuminado */
+.background-blur {
+  position: absolute;
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px) opacity(0.5);
+  inset: 0;
+  margin: 20px;
+  border-radius: 20px;
+  z-index: 1;
+}
+
+.background-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
       circle,
       rgba(0, 0, 0, 0.9) 20%,
       rgba(0, 0, 0, 0.6) 70%,
       rgba(255, 255, 255, 0.1) 100%
-    );
-    z-index: 2;
-  }
-  
-  /* Lista de contenido */
+  );
+  z-index: 2;
+}
+
+/* Lista de contenido */
+.content-list {
+  position: relative;
+  z-index: 2;
+  padding-top: 40px; /* Ajusta según sea necesario */
+  flex-grow: 1;
+  overflow: visible; /* Permite que el contenido se expanda */
+}
+
+
+
+
+
+.content-list-inner {
+  height: var(--dynamic-height); /* Altura dinámica calculada en JS */
+  overflow: auto;
+  padding: 10px; /* Agrega espacio interno */
+  box-sizing: border-box; /* Asegura que el padding no rompa el ancho total */
+}
+
+
+
+.background-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 1s ease;
+  width: 98vw;
+  height: 97vh;
+  border-radius: 0.7em;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
   .content-list {
-    position: relative;
-    z-index: 2;
-    margin-top: 20px; /* Espacio superior para dispositivos móviles */
-  }
-  
-  .content-list-inner {
-    height: var(--dynamic-height); /* Altura dinámica calculada en JS */
-    overflow: auto;
-    padding: 10px;
-  }
-  
-  .background-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 1s ease; 
-    width: 98vw;
-    height: 97vh;
-    border-radius: 0.7em;
-  }
-  
-  
-  /* Estilos responsivos */
-  @media (max-width: 768px) {
-    .content-list {
       margin-top: 10px; /* Menos espacio en dispositivos móviles */
-    }
-  
-    .content-list-inner {
+  }
+
+  .content-list-inner {
       padding: 5px; /* Menos padding en dispositivos móviles */
-    }
   }
+}
 
+/* Para isLoading */
+.text-container {
+  background: rgba(0, 0, 0, 0.562); /* Fondo blanco con 50% de opacidad */
+  backdrop-filter: blur(10px); /* Efecto de difuminado */
+  width: 80vw;
+  padding: 20px;
+  border-radius: 0.7em;
+  margin-top: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.281); /* Borde sutil */
+  color: white;
+}
 
-  /*para is loading
-  .background-container {
-    width: 96vw;
-    height: 96vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }*/
-  
-  .text-container {
-    background: rgba(0, 0, 0, 0.562); /* Fondo blanco con 50% de opacidad */
-    backdrop-filter: blur(10px); /* Efecto de difuminado */
-    width: 80vw;
-    padding: 20px;
-    border-radius: 0.7em;
-    margin-top: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.281); /* Borde sutil */
-    color: white
-  }
-  
-  .title-lg {
-    word-wrap: break-word;
-    white-space: normal;
-    overflow-wrap: break-word;
-    font-weight: bold;
-    color: black; /* Color del texto */
-  }

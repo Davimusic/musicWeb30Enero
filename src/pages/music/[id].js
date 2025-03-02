@@ -8,13 +8,13 @@ import Modal from '@/components/complex/modal';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import getCSSVariableValue from '@/functions/music/getCSSVariableValue';
 import Audio from '@/components/simple/audio';
-import '../../estilos/music/music.css'
+import '../../estilos/music/music.css';
 import ShowComponentButton from '@/components/complex/showComponentButton';
 import Video from '@/components/simple/video';
 import BackgroundGeneric from '@/components/complex/backgroundGeneric';
 import RotatingContentLoader from '@/components/complex/rotatingContentLoader';
 import QualitySelectorModal from '@/components/complex/qualitySelectorModal';
-
+import FullScreenMedia from '@/components/complex/fullScreenMedia';
 
 export default function Music() {
   // ============== ESTADOS PRINCIPALES ==============
@@ -37,9 +37,8 @@ export default function Music() {
   const [isRepeatMedia, setIsRepeatMedia] = useState(false);
   const [isShuffleMedia, setIsShuffleMedia] = useState(false);
   const [isMutedMedia, setIsMutedMedia] = useState(false);
-  const [modalContent, setModalContent] = useState(<MidiAndPdf content={content[0]}/>);
+  const [modalContent, setModalContent] = useState(<MidiAndPdf content={content[0]} />);
   const [componentNameUsingModal, setComponentNameUsingModal] = useState('');
-
 
   const messages = [
     'Tuning the strings of the universe...',
@@ -49,24 +48,25 @@ export default function Music() {
     'Orchestrating the perfect harmony for you...'
   ];
 
-  function changeStateMenu(){
-    setIsMenuOpen(!isMenuOpen)
+  function changeStateMenu() {
+    setIsMenuOpen(!isMenuOpen);
   }
 
   useEffect(() => {
     console.log(componentNameUsingModal);
   }, [componentNameUsingModal]);
 
-  useEffect(() => { 
-    if(isModalOpen === false){ setComponentNameUsingModal('') } 
-  }, [isModalOpen]); 
-  
-  useEffect(() => { 
-    if(componentNameUsingModal === 'download'){ toggleContentVisibility() } 
-  }, [content]);
-  
-  
+  useEffect(() => {
+    if (isModalOpen === false) {
+      setComponentNameUsingModal('');
+    }
+  }, [isModalOpen]);
 
+  useEffect(() => {
+    if (componentNameUsingModal === 'download') {
+      toggleContentVisibility();
+    }
+  }, [content]);
 
   // ============== EFECTOS DE DISEÑO ==============
   useLayoutEffect(() => {
@@ -74,7 +74,7 @@ export default function Music() {
       const windowHeight = window.innerHeight;
       const audioPlayerHeight = parseInt(getCSSVariableValue('--audioPlayerHeight'), 10);
       if (!isNaN(audioPlayerHeight)) {
-        const remainingHeight = windowHeight - audioPlayerHeight - 30;
+        const remainingHeight = windowHeight - audioPlayerHeight - 80;
         setDynamicHeight(`${remainingHeight}px`);
       }
     };
@@ -91,8 +91,7 @@ export default function Music() {
   useEffect(() => {
     if (content?.length > 0) {
       console.log('llega');
-      
-      setIsLoading(false)
+      setIsLoading(false);
       const idToFind = content[0].idObjeto;
       document.querySelectorAll('.highlight').forEach(element => {
         element.classList.remove('highlight');
@@ -108,9 +107,8 @@ export default function Music() {
     }
   }, [content, currentIndex, musicContent, componentInUse]);
 
-
   useEffect(() => {
-    searchTagInDb('', setContent, setMusicContent, setTags)
+    searchTagInDb('', setContent, setMusicContent, setTags);
   }, []);
 
   useEffect(() => {
@@ -119,8 +117,8 @@ export default function Music() {
 
   useEffect(() => {
     console.log(`showComponent: ${showComponent}`);
-    if(componentInUse !== ''){
-      setComponentInUse(showComponent)
+    if (componentInUse !== '') {
+      setComponentInUse(showComponent);
     }
   }, [showComponent]);
 
@@ -128,21 +126,17 @@ export default function Music() {
     console.log(`componentInUse: ${componentInUse}`);
   }, [componentInUse]);
 
-
-
-
   // ============== FUNCIONES DE INTERFAZ ==============
   const toggleContentVisibility = () => {
-    //setIsContentVisible(!isContentVisible); cre que no se necesita
-    setIsModalOpen(true)
-    setModalContent(<MidiAndPdf content={content[0]}/>)
-    setComponentNameUsingModal('download')
+    setIsModalOpen(true);
+    setModalContent(<MidiAndPdf content={content[0]} />);
+    setComponentNameUsingModal('download');
   };
 
-  const handleQualityChange= (newQuality) =>{
+  const handleQualityChange = (newQuality) => {
     setQualityMedia(newQuality);
     setIsModalOpen(false);
-  }
+  };
 
   const openQualityModal = () => {
     setModalContent(
@@ -156,16 +150,12 @@ export default function Music() {
     setIsModalOpen(true);
   };
 
-  
-
-
-  
   const handleItemClick = item => {
     setContent([item]);
     const index = musicContent.findIndex(c => c.idObjeto === item.idObjeto);
     if (index !== -1) setCurrentIndex(index);
-    setComponentInUse('audio')
-    setCurrentTimeMedia(0)
+    setComponentInUse('audio');
+    setCurrentTimeMedia(0);
   };
 
   // ============== Variables comunes entre Audio y Video ==============
@@ -197,65 +187,41 @@ export default function Music() {
     isShuffleMedia: isShuffleMedia,
     setIsMutedMedia: setIsMutedMedia,
     isMutedMedia: isMutedMedia,
-    openQualityModal: openQualityModal
+    openQualityModal: openQualityModal,
+    content: content
   };
-
-
-
-  
 
   // ============== RENDERIZADO ==============
   return (
     <>
       {isLoading ? (
-        <BackgroundGeneric isLoading={true} style={{width: '100vw', height: '100vh'}} className={'background-container'}>
+        <BackgroundGeneric isLoading={true} style={{ width: '100vw', height: '100vh' }} className={'background-container'}>
           <div style={{ textAlign: 'center' }}>
             <MainLogo animate={true} size={'40vh'} />
-            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={1000}/>
+            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={1000} />
           </div>
         </BackgroundGeneric>
       ) : (
-        <div className='music-container backgroundColor1'>
-          {showComponent === 'audio' && content[0]?.audioPrincipal?.src && (
-            <>
-              {content[0]?.imagePrincipal?.src && (
-                <div className='background-blur' style={{ backgroundImage: `url(${content[0].imagePrincipal.src})` }}>
-                  <div className='background-overlay' />
-                </div>
-              )}
-              <div className='content-list spaceTopOnlyPhone'>
-                <div className='content-list-inner' style={{ height: dynamicHeight }}>
-                  <ImageAndText content={musicContent} onItemClick={handleItemClick} />
-                </div>
-              </div>
-              <Audio
-                src={content[0].audioPrincipal.src}
-                {...commonProps}
-                isFirstTimeLoading={isFirstTimeLoading}
-                setIsFirstTimeLoading={setIsFirstTimeLoading}
-              />
-            </>
-          )}
-  
-          {showComponent === 'video' && content[0]?.videoPrincipal?.src && (
-            <Video
-              src={content[0].videoPrincipal.src}
-              {...commonProps}
-              setIsLoading={setIsLoading}
-              isVideoFullScreen={false}
-              isEndendVideo={false}
-              setIsModalOpen={setIsModalOpen}
-              isModalOpen={isModalOpen}
-              content={content}
-              handleItemClick={handleItemClick}
-            />
-          )}
-          {isModalOpen && (
-            <Modal isOpen={true} onClose={() => setIsModalOpen(false)} children={modalContent} className={'backgroundColor3'}/>
-          )}
-        </div>
+        <FullScreenMedia
+          showComponent={showComponent}
+          content={content}
+          musicContent={musicContent}
+          dynamicHeight={dynamicHeight}
+          isFirstTimeLoading={isFirstTimeLoading}
+          setIsFirstTimeLoading={setIsFirstTimeLoading}
+          setIsLoading={setIsLoading}
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          modalContent={modalContent}
+          tags={tags}
+          setTags={setTags}
+          setContent={setContent}
+          setMusicContent={setMusicContent}
+          setContentModal={setModalContent}
+          commonProps={commonProps}
+          handleItemClick={handleItemClick}
+        />
       )}
     </>
   );
-  
 }

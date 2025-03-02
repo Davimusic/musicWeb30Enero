@@ -1,28 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import '../../estilos/music/backgroundGeneric.css';
-import '../../estilos/general/general.css';
 
 const BackgroundGeneric = ({ isLoading, children, style, className }) => {
-  const [backgroundColorClass, setBackgroundColorClass] = useState('backgroundColor1');
+  const [backgroundClass, setBackgroundClass] = useState('backgroundColor1'); // Clase inicial
 
   useEffect(() => {
     if (isLoading) {
+      const classes = [
+        'backgroundColor1',
+        'backgroundColor2',
+        'backgroundColor3',
+        'backgroundColor4',
+        'backgroundColor5',
+      ];
+      let index = 0;
       const interval = setInterval(() => {
-        setBackgroundColorClass((prevClass) => {
-          if (prevClass === 'backgroundColor1') return 'backgroundColor2';
-          if (prevClass === 'backgroundColor2') return 'backgroundColor3';
-          if (prevClass === 'backgroundColor3') return 'backgroundColor4';
-          if (prevClass === 'backgroundColor4') return 'backgroundColor5';
-          return 'backgroundColor1'; // Restart the cycle
-        });
-      }, 3000); // Change every 3 seconds
+        index = (index + 1) % classes.length; // Cambiar al siguiente color en el ciclo
+        setBackgroundClass(classes[index]);
+      }, 3000); // Cambiar cada 3 segundos
 
-      return () => clearInterval(interval); // Cleanup interval on component unmount
+      return () => clearInterval(interval); // Limpiar intervalo al desmontar el componente
     }
   }, [isLoading]);
 
   return (
-    <div style={style} className={`${backgroundColorClass} ${className}`}>
+    <div
+      style={{
+        ...style,
+        transition: 'background-color 2.5s ease', // Transición suave
+      }}
+      className={`${backgroundClass} ${className}`}
+    >
       {children}
     </div>
   );

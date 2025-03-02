@@ -12,8 +12,6 @@ const ImageAndHeart = ({ content, onItemClick }) => {
     console.log(content);
   }, [content]);
 
-  return null
-
   return (
     <div>
       {items.map((item, index) => (

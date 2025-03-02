@@ -62,7 +62,6 @@ const ImageAndText = ({ content, onItemClick }) => {
               className={[`${item.text.className}`, 'title-xs']}
             />
           </div>
-          <HeartIcon size={45} />
         </div>
       ))}
     </div>
