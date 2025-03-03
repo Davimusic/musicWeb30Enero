@@ -176,6 +176,7 @@ export default function Music() {
     setCurrentTimeMedia: setCurrentTimeMedia,
     currentTimeMedia: currentTimeMedia,
     changeStateMenu: changeStateMenu,
+    setIsMenuOpen: setIsMenuOpen,
     isMenuOpen: isMenuOpen,
     setVolumeMedia: setVolumeMedia,
     volumeMedia: volumeMedia,

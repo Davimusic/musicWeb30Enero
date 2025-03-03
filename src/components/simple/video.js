@@ -30,6 +30,7 @@ const Video = ({
   isMuted,
   setVolume,
   volume,
+  setIsMenuOpen,
   isMenuOpen,
   toggleMenu,
   content,
@@ -56,7 +57,7 @@ const Video = ({
   const [duration, setDuration] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
   const [lastTap, setLastTap] = useState(0);
-  const [isCenterButtonVisible, setIsCenterButtonVisible] = useState(false);
+  //const [isCenterButtonVisible, setIsCenterButtonVisible] = useState(false);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
   const previousTimeRef = useRef(0); // Almacenar el tiempo anterior
   const userInteractionRef = useRef(false); // Bandera para interacciones del usuario
@@ -69,17 +70,17 @@ const Video = ({
 
   // Función para mostrar el botón central y los controles, y reiniciar el temporizador
   const showUIElements = (showControlsFlag = true) => {
-    setIsCenterButtonVisible(true);
+    //setIsCenterButtonVisible(true);
     if (showControlsFlag) setIsControlsVisible(true);
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current); // Limpiar el temporizador anterior
     }
-
+    console.log('sis');
     // Si el menú no está abierto, iniciar el temporizador para ocultar los elementos
     if (!isMenuOpen) {
       timeoutRef.current = setTimeout(() => {
-        setIsCenterButtonVisible(false);
+        //setIsCenterButtonVisible(false);
         setIsControlsVisible(false);
       }, 2000); // Ocultar después de 2 segundos
     }
@@ -87,18 +88,18 @@ const Video = ({
 
   // Manejar cambios de tiempo
   const handleTimeUpdate = () => {
+    
+    
     const currentTime = videoRef.current.currentTime;
+   
     if (currentTime - previousTimeRef.current >= 2) {
       showUIElements();
       userInteractionRef.current = false; // Resetear bandera
     }
     previousTimeRef.current = currentTime;
+    setCurrentTimeMedia(currentTime);
   };
 
-  // Reiniciar el temporizador cuando cambien ciertos estados
-  useEffect(() => {
-    showUIElements();
-  }, [isMuted, content, volumeMedia, qualityMedia, isRepeatMedia, isShuffleMedia, isMutedMedia, openQualityModal]);
 
   // Mantener los elementos visibles mientras el menú esté abierto
   useEffect(() => {
@@ -107,6 +108,8 @@ const Video = ({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current); // Detener el temporizador
       }
+    } else {
+      setIsControlsVisible(false)
     }
   }, [isMenuOpen]);
 
@@ -179,6 +182,7 @@ const Video = ({
       setComponentInUse('video');
       setIsPlaying(true);
     }
+    if (!fromCenterButton) showUIElements();
   };
 
   // Manejar el final del video
@@ -368,6 +372,7 @@ const Video = ({
     toggleShuffle,
     isShuffle: isShuffleMedia,
     toggleRepeat,
+    setIsMenuOpen,
     isMenuOpen,
     toggleMenu,
     content,
@@ -407,7 +412,7 @@ const Video = ({
         Tu navegador no admite el elemento de video.
       </video>
 
-      {isMobile && isCenterButtonVisible && (
+      {isMobile && isControlsVisible && (
         <button
           className="center-play-button"
           onClick={(e) => togglePlayPause(true, e)} // No mostrar controles si se activa desde el botón central

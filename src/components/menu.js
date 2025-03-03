@@ -41,31 +41,7 @@ export function Menu({ children, imageLink, body, backgroundColor, zIndex }) {
             </div>
         </div>
     </div>
-);
-
-    
-
-    /*return (
-        <div className={`backgroundImage ${isMenuOpen ? 'sinMarco' : 'marco'} center`} style={{ height: '100%', background: backgroundColor }}>
-            <div>
-                <div style={{background: backgroundColor, zIndex: zIndex}} className={`dropdown ${isMenuOpen ? 'open' : ''}`}>
-                    <img 
-                        onClick={changeMenuState} 
-                        className="imagenes" 
-                        style={{ margin: '5px' }} 
-                        src={imageLink} 
-                        alt="Descripción de la imagen" 
-                    />
-                    {isMenuOpen && (
-                        <div className='menuContent' onClick={changeMenuState}>
-                            {body}
-                        </div>
-                    )}
-                </div>
-                {children}
-            </div>
-        </div>
-    );*/
+    );
 }
 
 

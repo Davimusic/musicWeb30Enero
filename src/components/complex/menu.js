@@ -65,7 +65,6 @@ const Menu = ({ isOpen, onClose, className = '' }) => {
         if (updateColor(selectedColorClass, selectedColor)) {
             //setIsModalOpen(false);
             onClose();
-
         } else {
             alert('Error: Invalid hexadecimal value.');
         }

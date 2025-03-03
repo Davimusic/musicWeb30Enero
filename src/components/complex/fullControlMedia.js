@@ -12,6 +12,7 @@ import ShowComponentButton from './showComponentButton';
 const FullControlMedia = forwardRef((props, ref) => {
   const {
     isMenuOpen,
+    setIsMenuOpen,
     toggleMenu,
     content,
     handleItemClick,
@@ -47,7 +48,7 @@ const FullControlMedia = forwardRef((props, ref) => {
           <ShowComponentButton showComponent={showComponent} setShowComponent={setShowComponent}/>
         </div>
       </div>
-      <Menu isOpen={isMenuOpen} onClose={changeStateMenu} className="backgroundColor2" />
+      <Menu isOpen={isMenuOpen} onClose={()=>setIsMenuOpen(false)} className="backgroundColor2" />
       <div className="mediaControlContainer">
       <MediaControl ref={ref} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} openQualityModal={openQualityModal}   {...restProps} />
       </div>

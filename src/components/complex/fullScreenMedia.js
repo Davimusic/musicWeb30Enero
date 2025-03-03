@@ -23,7 +23,7 @@ const FullScreenMedia = ({
   setMusicContent,
   setContentModal,
   commonProps,
-  handleItemClick
+  handleItemClick,
 }) => {
   return (
     <div>
