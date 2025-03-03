@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import MediaControl from './mediaControl';
 import MenuIcon from './menuIcon';
-import SearchTagInDb from './searchTag';
+//import SearchTagInDb from './searchTag';
 import DownloadIcon from './downloadIcon';
 import ImageAndHeart from './imageAndHeart';
 import Menu from './menu';
@@ -31,8 +31,14 @@ const FullControlMedia = forwardRef((props, ref) => {
     showComponent,
     changeStateMenu,
     openQualityModal,
+    openUpdateBackgroundColor,
+    currentIndex,
+    setIsLike,
+    isLike,
+    isHybridView,
     ...restProps
   } = props;
+
 
   
 
@@ -41,16 +47,16 @@ const FullControlMedia = forwardRef((props, ref) => {
       <div className="flexContainer">
         <MenuIcon onClick={changeStateMenu} />
         <div className="imageHeartContainer">
-          <ImageAndHeart content={content} onItemClick={handleItemClick} />
+          <ImageAndHeart isHybridView={isHybridView} content={content} currentIndex={currentIndex} setIsLike={setIsLike} isLike={isLike} showComponent={showComponent}/>
         </div>
         <DownloadIcon size={30} isOpen={isContentVisible} onToggle={toggleContentVisibility} />
         <div className="changeModeView">
-          <ShowComponentButton showComponent={showComponent} setShowComponent={setShowComponent}/>
+          <ShowComponentButton isHybridView={isHybridView}  showComponent={showComponent} setShowComponent={setShowComponent}/>
         </div>
       </div>
-      <Menu isOpen={isMenuOpen} onClose={()=>setIsMenuOpen(false)} className="backgroundColor2" />
+      <Menu isOpen={isMenuOpen} onClose={()=>setIsMenuOpen(false)} className="backgroundColor2" openUpdateBackgroundColor={openUpdateBackgroundColor}/>
       <div className="mediaControlContainer">
-      <MediaControl ref={ref} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} openQualityModal={openQualityModal}   {...restProps} />
+      <MediaControl ref={ref} isHybridView={isHybridView} showComponent={showComponent} setShowComponent={setShowComponent} setComponentInUse={setComponentInUse} componentInUse={componentInUse} openQualityModal={openQualityModal}   {...restProps} />
       </div>
     </div>
   );

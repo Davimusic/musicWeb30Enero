@@ -4,7 +4,7 @@ import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import Modal from './modal';
 import '../../estilos/general/general.css'
 
-const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags, setIsModalOpen, setContentModal }) => {
+const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags, setIsModalOpen, setContentModal, setCurrentTimeMedia }) => {
     const [searchResults, setSearchResults] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
@@ -21,6 +21,8 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
         if (componentInUse === 'video' && result === true) {
             setIsEndedVideo(true);
         }
+
+        if(result === true){setCurrentTimeMedia(0)}
 
         if(result === false){
             setIsModalOpen(true)

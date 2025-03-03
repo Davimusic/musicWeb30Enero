@@ -43,8 +43,7 @@ const MediaControl = forwardRef(
       componentInUse,
       setShowComponent,
       showComponent,
-
-      
+      isHybridView
     },
     ref
   ) => {
@@ -142,7 +141,7 @@ const MediaControl = forwardRef(
                 />
               </div>
               <div className="changeModePhoneView">
-                  <ShowComponentButton showComponent={showComponent} setShowComponent={setShowComponent}/>
+                  <ShowComponentButton isHybridView={isHybridView} showComponent={showComponent} setShowComponent={setShowComponent}/>
               </div>
             </div>
           )}

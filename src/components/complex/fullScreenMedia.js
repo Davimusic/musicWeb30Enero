@@ -1,5 +1,5 @@
 import React from 'react';
-import { searchTagInDb } from '@/functions/music/searchTagInDb';
+//import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import Audio from '../simple/audio';
 import Video from '../simple/video';
 import Modal from './modal';
@@ -24,6 +24,10 @@ const FullScreenMedia = ({
   setContentModal,
   commonProps,
   handleItemClick,
+  setCurrentTimeMedia,
+  setIsLike,
+  isLike,
+  isHybridView
 }) => {
   return (
     <div>
@@ -36,6 +40,7 @@ const FullScreenMedia = ({
           setTags={setTags}
           setContent={setContent}
           setMusicContent={setMusicContent}
+          setCurrentTimeMedia={setCurrentTimeMedia}
         />
       </div>
 
@@ -50,7 +55,7 @@ const FullScreenMedia = ({
             )}
             <div className='content-list spaceTopOnlyPhone'>
               <div className='content-list-inner' style={{ height: dynamicHeight }}>
-                <ImageAndText content={musicContent} onItemClick={handleItemClick} />
+                <ImageAndText isHybridView={isHybridView} content={musicContent} onItemClick={handleItemClick} setIsLike={setIsLike} isLike={isLike} showComponent={showComponent}/>
               </div>
             </div>
             <Audio
@@ -58,6 +63,8 @@ const FullScreenMedia = ({
               {...commonProps}
               isFirstTimeLoading={isFirstTimeLoading}
               setIsFirstTimeLoading={setIsFirstTimeLoading}
+              setIsLike={setIsLike}
+              isLike={isLike}
             />
           </>
         )}
@@ -73,6 +80,8 @@ const FullScreenMedia = ({
             isModalOpen={isModalOpen}
             content={content}
             handleItemClick={handleItemClick}
+            setIsLike={setIsLike}
+            isLike={isLike}
           />
         )}
 

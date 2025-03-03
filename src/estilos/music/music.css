@@ -106,3 +106,13 @@
   color: white;
 }
 
+/* Estilos para el fade-in y fade-out */
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.8s ease-in; /* Transición más lenta */
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.8s ease-out; /* Transición más lenta */
+}

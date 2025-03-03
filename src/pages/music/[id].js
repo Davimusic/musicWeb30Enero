@@ -15,6 +15,8 @@ import BackgroundGeneric from '@/components/complex/backgroundGeneric';
 import RotatingContentLoader from '@/components/complex/rotatingContentLoader';
 import QualitySelectorModal from '@/components/complex/qualitySelectorModal';
 import FullScreenMedia from '@/components/complex/fullScreenMedia';
+import ColorPicker from '@/components/complex/colorPicker';
+import InternetStatus from '@/components/complex/internetStatus';
 
 export default function Music() {
   // ============== ESTADOS PRINCIPALES ==============
@@ -38,6 +40,10 @@ export default function Music() {
   const [isShuffleMedia, setIsShuffleMedia] = useState(false);
   const [isMutedMedia, setIsMutedMedia] = useState(false);
   const [modalContent, setModalContent] = useState(<MidiAndPdf content={content[0]} />);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isRenderingLoader, setIsRenderingLoader] = useState(false); // Nuevo estado para controlar el renderizado del loader
+  const [isLike, setIsLike] = useState([]);
+  const [isHybridView , setIsHybridView] = useState(true);
   const [componentNameUsingModal, setComponentNameUsingModal] = useState('');
 
   const messages = [
@@ -53,8 +59,30 @@ export default function Music() {
   }
 
   useEffect(() => {
-    console.log(componentNameUsingModal);
-  }, [componentNameUsingModal]);
+    if (isLoadingMedia || isLoading) {
+      // Si isLoadingMedia es true, hacer visible el componente
+      setIsVisible(true);
+      setIsRenderingLoader(true); // Asegurarse de que el loader esté en el DOM
+    } else {
+      // Si isLoadingMedia es false, esperar un momento antes de ocultar el componente
+      setIsVisible(false);
+      const timeout = setTimeout(() => {
+        setIsRenderingLoader(false); // Ocultar el loader después de que la animación termine
+      }, 800); // Retraso de 800ms para que el fade-out se complete
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoadingMedia, isLoading]);
+
+  useEffect(() => {
+    if (musicContent && musicContent.length > 0) {
+      const initialLikes = musicContent.map(() => ({ audio: false, video: false }));
+      setIsLike(initialLikes);
+    }
+  }, [musicContent]);
+
+  useEffect(() => {
+    console.log(isLike);
+  }, [isLike]);
 
   useEffect(() => {
     if (isModalOpen === false) {
@@ -150,6 +178,11 @@ export default function Music() {
     setIsModalOpen(true);
   };
 
+  const openUpdateBackgroundColor = () =>{
+    setModalContent(<ColorPicker onClose={() => setIsMenuOpen(false)}/>)
+    setIsModalOpen(true);
+  }
+
   const handleItemClick = item => {
     setContent([item]);
     const index = musicContent.findIndex(c => c.idObjeto === item.idObjeto);
@@ -157,6 +190,8 @@ export default function Music() {
     setComponentInUse('audio');
     setCurrentTimeMedia(0);
   };
+
+  
 
   // ============== Variables comunes entre Audio y Video ==============
   const commonProps = {
@@ -189,20 +224,46 @@ export default function Music() {
     setIsMutedMedia: setIsMutedMedia,
     isMutedMedia: isMutedMedia,
     openQualityModal: openQualityModal,
-    content: content
+    openUpdateBackgroundColor: openUpdateBackgroundColor,
+    content: content,
+    setIsLoadingMedia: setIsLoadingMedia,
+    handleItemClick: handleItemClick,
+    isHybridView: isHybridView
   };
 
   // ============== RENDERIZADO ==============
   return (
     <>
-      {isLoading ? (
-        <BackgroundGeneric isLoading={true} style={{ width: '100vw', height: '100vh' }} className={'background-container'}>
+      {/* Capa de carga para isLoadingMedia o isLoading */}
+      {isRenderingLoader && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)', // Fondo semitransparente
+            backdropFilter: 'blur(10px)', // Efecto de distorsión
+            zIndex: 1000, // Asegura que esté por encima del contenido
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: isVisible ? 1 : 0, // Controla la opacidad basada en isVisible
+            transition: 'opacity 0.8s ease-in-out', // Transición suave
+            pointerEvents: isVisible ? 'auto' : 'none', // Permite o bloquea la interacción
+          }}
+          className={isVisible ? 'fade-in' : 'fade-out'} // Aplica fade-in o fade-out
+        >
+          {/* Contenido centrado con animación */}
           <div style={{ textAlign: 'center' }}>
-            <MainLogo animate={true} size={'40vh'} />
-            <RotatingContentLoader className={'text-container'} contents={messages} isLoading={true} intervalTime={3000} />
+            <MainLogo animate={true} size={'10vh'} /> {/* Logo animado */}
           </div>
-        </BackgroundGeneric>
-      ) : (
+        </div>
+      )}
+
+      {/* Contenido principal */}
+      {!isLoading && (
         <FullScreenMedia
           showComponent={showComponent}
           content={content}
@@ -219,10 +280,16 @@ export default function Music() {
           setContent={setContent}
           setMusicContent={setMusicContent}
           setContentModal={setModalContent}
+          setCurrentTimeMedia={setCurrentTimeMedia}
           commonProps={commonProps}
           handleItemClick={handleItemClick}
+          setIsLike={setIsLike} 
+          isLike={isLike}
+          isHybridView={isHybridView}
         />
       )}
+
+      <InternetStatus setModalContent={setModalContent} setIsModalOpen={setIsModalOpen}/>
     </>
   );
 }
