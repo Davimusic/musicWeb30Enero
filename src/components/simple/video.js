@@ -56,12 +56,67 @@ const Video = ({
   const [duration, setDuration] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
   const [lastTap, setLastTap] = useState(0);
+  const [isCenterButtonVisible, setIsCenterButtonVisible] = useState(false);
+  const [isControlsVisible, setIsControlsVisible] = useState(false);
+  const previousTimeRef = useRef(0); // Almacenar el tiempo anterior
+  const userInteractionRef = useRef(false); // Bandera para interacciones del usuario
+  const timeoutRef = useRef(null); // Referencia para el temporizador
 
   const isMobile = /Mobile|iPhone|iPad|iPod|Android|BlackBerry|Windows Phone|Opera Mini|IEMobile|Silk/i.test(navigator.userAgent);
 
   // Usar el hook para controlar la visibilidad
   const { isVisible, showControls } = UseControlVisibility(isMobile);
 
+  // Función para mostrar el botón central y los controles, y reiniciar el temporizador
+  const showUIElements = (showControlsFlag = true) => {
+    setIsCenterButtonVisible(true);
+    if (showControlsFlag) setIsControlsVisible(true);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current); // Limpiar el temporizador anterior
+    }
+
+    // Si el menú no está abierto, iniciar el temporizador para ocultar los elementos
+    if (!isMenuOpen) {
+      timeoutRef.current = setTimeout(() => {
+        setIsCenterButtonVisible(false);
+        setIsControlsVisible(false);
+      }, 2000); // Ocultar después de 2 segundos
+    }
+  };
+
+  // Manejar cambios de tiempo
+  const handleTimeUpdate = () => {
+    const currentTime = videoRef.current.currentTime;
+    if (currentTime - previousTimeRef.current >= 2) {
+      showUIElements();
+      userInteractionRef.current = false; // Resetear bandera
+    }
+    previousTimeRef.current = currentTime;
+  };
+
+  // Reiniciar el temporizador cuando cambien ciertos estados
+  useEffect(() => {
+    showUIElements();
+  }, [isMuted, content, volumeMedia, qualityMedia, isRepeatMedia, isShuffleMedia, isMutedMedia, openQualityModal]);
+
+  // Mantener los elementos visibles mientras el menú esté abierto
+  useEffect(() => {
+    if (isMenuOpen) {
+      showUIElements();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current); // Detener el temporizador
+      }
+    }
+  }, [isMenuOpen]);
+
+  // Mostrar controles al interactuar con el video
+  const handleVideoInteraction = () => {
+    showControls();
+    showUIElements();
+  };
+
+  // Reproducir el video
   const playVideo = () => {
     if (videoRef.current) {
       videoRef.current.play().catch((error) => {
@@ -71,11 +126,7 @@ const Video = ({
     }
   };
 
-  // Mostrar controles al interactuar con el video
-  const handleVideoInteraction = () => {
-    showControls();
-  };
-
+  // Cargar el video con la calidad seleccionada
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.src = mixUrlWithQuality(src, qualityMedia);
@@ -86,6 +137,7 @@ const Video = ({
     }
   }, [qualityMedia]);
 
+  // Controlar la reproducción/pausa del video
   useEffect(() => {
     if (componentInUse === 'video') {
       if (videoRef.current) {
@@ -101,6 +153,7 @@ const Video = ({
     }
   }, [componentInUse]);
 
+  // Cambiar el video cuando cambia la fuente
   useEffect(() => {
     if (componentInUse === 'video') {
       if (videoRef.current) {
@@ -112,7 +165,10 @@ const Video = ({
     }
   }, [src]);
 
-  const togglePlayPause = () => {
+  // Alternar entre reproducir y pausar
+  const togglePlayPause = (fromCenterButton = false, e) => {
+    if (e) e.stopPropagation(); // Detener propagación
+    userInteractionRef.current = !fromCenterButton; // Marcar interacción
     if (isPlaying) {
       if (videoRef.current) {
         videoRef.current.pause();
@@ -125,6 +181,7 @@ const Video = ({
     }
   };
 
+  // Manejar el final del video
   const handleEnded = () => {
     if (isRepeatMedia) {
       playVideo();
@@ -134,26 +191,24 @@ const Video = ({
     setCurrentTimeMedia(0);
   };
 
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTimeMedia(videoRef.current.currentTime);
-    }
-  };
-
+  // Obtener la duración del video
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
     }
   };
 
+  // Buscar un tiempo específico en el video
   const handleSeek = (e) => {
     if (videoRef.current) {
       const seekTime = parseFloat(e.target.value);
       videoRef.current.currentTime = seekTime;
       setCurrentTimeMedia(seekTime);
     }
+    showUIElements();
   };
 
+  // Cambiar el volumen
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolumeMedia(newVolume);
@@ -163,29 +218,37 @@ const Video = ({
     if (isMutedMedia && newVolume > 0) {
       setIsMutedMedia(false);
     }
+    showUIElements();
   };
 
+  // Alternar el silencio
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMutedMedia;
       setIsMutedMedia(!isMutedMedia);
     }
+    showUIElements();
   };
 
+  // Alternar el modo shuffle
   const toggleShuffle = () => {
     if (isRepeatMedia) {
       setIsRepeatMedia(false);
     }
     setIsShuffleMedia(!isShuffleMedia);
+    showUIElements();
   };
 
+  // Alternar el modo repeat
   const toggleRepeat = () => {
     if (isShuffleMedia) {
       setIsShuffleMedia(false);
     }
     setIsRepeatMedia(!isRepeatMedia);
+    showUIElements();
   };
 
+  // Obtener el siguiente video
   const getNextVideo = () => {
     if (allMusicProyects.length === 0) return null;
     if (isShuffleMedia) {
@@ -200,6 +263,7 @@ const Video = ({
     }
   };
 
+  // Obtener el video anterior
   const getPreviousVideo = () => {
     if (allMusicProyects.length === 0) return null;
     if (isShuffleMedia) {
@@ -214,6 +278,7 @@ const Video = ({
     }
   };
 
+  // Cambiar al siguiente video
   const handleNextVideo = () => {
     const nextVideo = getNextVideo();
     if (nextVideo) {
@@ -225,8 +290,10 @@ const Video = ({
       );
       setCurrentTimeMedia(0);
     }
+    showUIElements();
   };
 
+  // Cambiar al video anterior
   const handlePreviousVideo = () => {
     const previousVideo = getPreviousVideo();
     if (previousVideo) {
@@ -238,14 +305,17 @@ const Video = ({
       );
       setCurrentTimeMedia(0);
     }
+    showUIElements();
   };
 
+  // Formatear el tiempo en minutos y segundos
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  // Manejar doble toque para "Me gusta"
   const handleDoubleTap = () => {
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300;
@@ -255,10 +325,12 @@ const Video = ({
     setLastTap(now);
   };
 
+  // Manejar el inicio del toque
   const handleTouchStart = (e) => {
     setTouchStartY(e.touches[0].clientY);
   };
 
+  // Manejar el movimiento del toque
   const handleTouchMove = (e) => {
     if (touchStartY === null) return;
 
@@ -274,6 +346,7 @@ const Video = ({
     }
   };
 
+  // Propiedades para FullControlMedia
   const fullControlMediaProps = {
     isPlaying,
     togglePlayPause,
@@ -334,10 +407,10 @@ const Video = ({
         Tu navegador no admite el elemento de video.
       </video>
 
-      {isMobile && (
+      {isMobile && isCenterButtonVisible && (
         <button
           className="center-play-button"
-          onClick={togglePlayPause}
+          onClick={(e) => togglePlayPause(true, e)} // No mostrar controles si se activa desde el botón central
           style={{
             position: 'absolute',
             top: '50%',
@@ -354,7 +427,7 @@ const Video = ({
         </button>
       )}
 
-      {isVisible && <FullControlMedia {...fullControlMediaProps} />}
+      {isControlsVisible && <FullControlMedia {...fullControlMediaProps} />}
     </>
   );
 };

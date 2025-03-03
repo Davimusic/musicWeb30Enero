@@ -134,7 +134,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                         width: 70%;
                         max-height: 150px;
                         overflow-y: auto;
-                        z-index: 1000;
+                        z-index: 10;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                         top: 100%;
                         margin-top: 5px;

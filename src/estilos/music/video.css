@@ -46,6 +46,8 @@ video {
 }
 
 
+
+
 .center-play-button {
   position: absolute;
   top: 50%;
@@ -56,5 +58,10 @@ video {
   color: white;
   font-size: 48px;
   cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
 }
-  
+
+.center-play-button:hover {
+  opacity: 1;
+}
