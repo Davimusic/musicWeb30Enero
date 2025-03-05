@@ -59,6 +59,7 @@ const Video = ({
   isHybridView
 }) => {
   const videoRef = useRef(null);
+  const backgroundRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
@@ -67,10 +68,31 @@ const Video = ({
   const previousTimeRef = useRef(0);
   const userInteractionRef = useRef(false);
   const timeoutRef = useRef(null);
+  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
 
   const isMobile = /Mobile|iPhone|iPad|iPod|Android|BlackBerry|Windows Phone|Opera Mini|IEMobile|Silk/i.test(navigator.userAgent);
 
   const { isVisible, showControls } = UseControlVisibility(isMobile);
+
+  // Captura el frame actual del video y lo usa como fondo
+  const captureFrame = () => {
+    if (videoRef.current && backgroundRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      backgroundRef.current.src = canvas.toDataURL();
+    }
+  };
+
+  // Actualiza las dimensiones del video
+  const updateVideoDimensions = () => {
+    if (videoRef.current) {
+      const { videoWidth, videoHeight } = videoRef.current;
+      setVideoDimensions({ width: videoWidth, height: videoHeight });
+    }
+  };
 
   const showUIElements = (showControlsFlag = true) => {
     if (showControlsFlag) setIsControlsVisible(true);
@@ -161,6 +183,23 @@ const Video = ({
       }
     }
   }, [src]);
+
+  // Captura el frame cuando el video está listo para reproducirse
+  useEffect(() => {
+    if (videoRef.current) {
+      const handleCanPlay = () => {
+        captureFrame();
+        updateVideoDimensions();
+      };
+      videoRef.current.addEventListener('canplay', handleCanPlay);
+      return () => {
+        if (videoRef.current) { // Check if videoRef.current is not null
+          videoRef.current.removeEventListener('canplay', handleCanPlay);
+        }
+      };
+    }
+  }, [src]);
+  
 
   const togglePlayPause = (fromCenterButton = false, e) => {
     if (e) e.stopPropagation();
@@ -377,11 +416,26 @@ const Video = ({
       className="video-wrapper"
       onMouseEnter={!isMobile ? () => setIsControlsVisible(true) : undefined}
       onMouseLeave={!isMobile ? () => setIsControlsVisible(false) : undefined}
+      onClick={handleVideoInteraction}
+      onTouchStart={(e) => {
+        handleVideoInteraction();
+        handleTouchStart(e);
+        handleDoubleTap();
+      }}
     >
+      {/* Fondo difuminado */}
+      <img
+        ref={backgroundRef}
+        className="video-background"
+        alt="Video background"
+      />
+
+      {/* Video principal */}
       <video
         className="video-container"
         ref={videoRef}
         src={mixUrlWithQuality(src, qualityMedia)}
+        crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
@@ -391,17 +445,16 @@ const Video = ({
         onPlaying={() => setIsLoadingMedia(false)}
         muted={isMutedMedia}
         loop={isRepeatMedia}
-        onClick={handleVideoInteraction}
-        onTouchStart={(e) => {
-          handleVideoInteraction();
-          handleTouchStart(e);
-          handleDoubleTap();
+        style={{
+          width: videoDimensions.width > videoDimensions.height ? '100%' : 'auto',
+          height: videoDimensions.height > videoDimensions.width ? '100%' : 'auto',
+          objectFit: 'cover',
         }}
-        onTouchMove={handleTouchMove}
       >
         Tu navegador no admite el elemento de video.
       </video>
 
+      {/* Controles */}
       {isMobile && isControlsVisible && (
         <button
           className="center-play-button"

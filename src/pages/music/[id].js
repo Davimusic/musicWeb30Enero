@@ -171,14 +171,7 @@ export default function Music() {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (type === 'audio' || type === 'video') {
-      //setComponentInUse(type)
-      setShowComponent(type)
-    }// else if(type === 'hybridView'){
-      //setShowComponent('audio')
-    //}
-  }, [type, quality]);
+  
 
   useEffect(() => {
     console.log(qualityMedia);
