@@ -6,29 +6,15 @@ import React, { useEffect, useState } from 'react';
 export default function ShowComponentButton({ setShowComponent, showComponent, isHybridView }) {
     const router = useRouter();
     const { type } = router.query;
-    const [IconComponent, setIconComponent] = useState(null);
+    const [IconComponent, setIconComponent] = useState(<VideoIcon size={30} onClick={() => setShowComponent(showComponent === 'audio' ? 'video' : 'audio')}/>);
 
     useEffect(() => {
-        if (type === 'hybridView') {
-            setShowComponent('audio');
-            setIconComponent(() =>
-                showComponent === 'audio' ? VideoIcon : AudioIcon
-            );
-        }
-    }, [type,]);
+        // Actualiza el icono basado en el valor de `showComponent`
+        setIconComponent(showComponent === 'audio' ? <VideoIcon size={30} onClick={() => setShowComponent(showComponent === 'audio' ? 'video' : 'audio')}/> : <AudioIcon size={30} onClick={() => setShowComponent(showComponent === 'audio' ? 'video' : 'audio')}/>);
+    }, [showComponent]);
 
-    return null
-
-    if (type === 'hybridView' && IconComponent) {
-        const CurrentIcon = IconComponent;
-        return (
-            <CurrentIcon
-                size={40}
-                onClick={() =>
-                    setShowComponent(showComponent === 'audio' ? 'video' : 'audio')
-                }
-            />
-        );
+    if (type === 'hybridView') {
+        return IconComponent
     }
 
     return null;
