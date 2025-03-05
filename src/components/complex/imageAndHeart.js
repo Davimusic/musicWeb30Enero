@@ -2,37 +2,14 @@ import React, { useEffect, useState } from 'react';
 import Image from '../simple/image';
 import HeartIcon from './heartIcon';
 import '../../estilos/general/general.css';
+import handleLike from '@/functions/music/handleLike';
 
 const ImageAndHeart = ({isHybridView, content, onItemClick = () => {}, currentIndex, setIsLike, isLike, showComponent}) => { // Default function
   const [items, setItems] = useState(content);
 
   useEffect(() => {
     setItems(content);
-    console.log(content);
-    console.log(isLike[currentIndex].audio);
   }, [content]);
-
-  useEffect(() => {
-    console.log(isLike);
-    console.log(isLike[currentIndex].audio);
-  }, [isLike]);
-
-  const handleLike = (index, showComponent, isLike, setIsLike, isHybridView) => {
-    const newLikes = [...isLike];
-    if (isHybridView) {
-      // Si está en modo híbrido, cambia tanto el audio como el video
-      newLikes[index].audio = !newLikes[index].audio;
-      newLikes[index].video = !newLikes[index].video;
-    } else {
-      // Si no está en modo híbrido, cambia solo el componente actual (audio o video)
-      if (showComponent === 'audio') {
-        newLikes[index].audio = !newLikes[index].audio;
-      } else if (showComponent === 'video') {
-        newLikes[index].video = !newLikes[index].video;
-      }
-    }
-    setIsLike(newLikes);
-  };
 
 
   return (
@@ -74,7 +51,11 @@ const ImageAndHeart = ({isHybridView, content, onItemClick = () => {}, currentIn
               width: '20px',
               borderRadius: '50%',
             }}
-            defaultLike={showComponent === 'audio' ? isLike[currentIndex].audio : isLike[currentIndex].video}
+            defaultLike={
+              showComponent === 'audio' 
+                ? (isLike[currentIndex] ? isLike[currentIndex].audio : false) 
+                : (isLike[currentIndex] ? isLike[currentIndex].video : false)
+            }
             onClickFunction={()=> handleLike(currentIndex, showComponent, isLike, setIsLike, isHybridView)} // Pasar función al ícono
           />
         </div>

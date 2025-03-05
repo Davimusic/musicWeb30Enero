@@ -41,6 +41,7 @@ const FullScreenMedia = ({
           setContent={setContent}
           setMusicContent={setMusicContent}
           setCurrentTimeMedia={setCurrentTimeMedia}
+          showComponent={showComponent}
         />
       </div>
 
@@ -55,7 +56,7 @@ const FullScreenMedia = ({
             )}
             <div className='content-list spaceTopOnlyPhone'>
               <div className='content-list-inner' style={{ height: dynamicHeight }}>
-                <ImageAndText isHybridView={isHybridView} content={musicContent} onItemClick={handleItemClick} setIsLike={setIsLike} isLike={isLike} showComponent={showComponent}/>
+                <ImageAndText setContentModal={setContentModal} setIsModalOpen={setIsModalOpen} isHybridView={isHybridView} content={musicContent} onItemClick={handleItemClick} setIsLike={setIsLike} isLike={isLike} showComponent={showComponent}/>
               </div>
             </div>
             <Audio

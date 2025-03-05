@@ -17,6 +17,9 @@ import QualitySelectorModal from '@/components/complex/qualitySelectorModal';
 import FullScreenMedia from '@/components/complex/fullScreenMedia';
 import ColorPicker from '@/components/complex/colorPicker';
 import InternetStatus from '@/components/complex/internetStatus';
+import { useRouter } from 'next/router';
+import { Collection } from 'mongoose';
+
 
 export default function Music() {
   // ============== ESTADOS PRINCIPALES ==============
@@ -46,6 +49,9 @@ export default function Music() {
   const [isHybridView , setIsHybridView] = useState(true);
   const [componentNameUsingModal, setComponentNameUsingModal] = useState('');
 
+  const router = useRouter();
+  const { id, type, quality } = router.query;
+
   const messages = [
     'Tuning the strings of the universe...',
     'Composing the melody of your experience...',
@@ -53,6 +59,19 @@ export default function Music() {
     'Creating symphonies of possibilities...',
     'Orchestrating the perfect harmony for you...'
   ];
+
+  useEffect(() => {
+    if(type){
+      console.log(type);
+      if(type === 'hybridView'){
+        setShowComponent('audio')
+      } else if(type === 'audio' || type === 'video'){
+        setShowComponent(type)
+      }
+    }
+  }, []);
+
+
 
   function changeStateMenu() {
     setIsMenuOpen(!isMenuOpen);
@@ -81,7 +100,7 @@ export default function Music() {
   }, [musicContent]);
 
   useEffect(() => {
-    console.log(isLike);
+    //console.log(isLike);
   }, [isLike]);
 
   useEffect(() => {
@@ -135,9 +154,29 @@ export default function Music() {
     }
   }, [content, currentIndex, musicContent, componentInUse]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     searchTagInDb('', setContent, setMusicContent, setTags);
-  }, []);
+  }, []);*/
+
+  
+  useEffect(() => {
+    console.log('ID:', id);
+    console.log('Type:', type);
+    console.log('Quality:', quality);
+  
+    if (id) {
+      if (id.includes('id=') || id.includes('globalCollections=') || id.includes('tag=')) {
+        searchTagInDb('', setContent, setMusicContent, setTags, id, setModalContent, setIsModalOpen, setIsLoading, setIsLoadingMedia);
+      } 
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (type === 'audio' || type === 'video' || type === 'hybridView') {
+      //setComponentInUse(type)
+      setShowComponent(type)
+    }
+  }, [type, quality]);
 
   useEffect(() => {
     console.log(qualityMedia);

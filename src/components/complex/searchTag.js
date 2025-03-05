@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router'; // Importa useRouter de Next.js
 import GlassIcon from './glassIcon';
 import { searchTagInDb } from '@/functions/music/searchTagInDb';
 import Modal from './modal';
-import '../../estilos/general/general.css'
+import '../../estilos/general/general.css';
 
-const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, componentInUse, setTags, tags, setIsModalOpen, setContentModal, setCurrentTimeMedia }) => {
+const SearchTagInDb = ({
+    path,
+    setContent,
+    setMusicContent,
+    setIsEndedVideo,
+    componentInUse,
+    setTags,
+    tags,
+    setIsModalOpen,
+    setContentModal,
+    setCurrentTimeMedia,
+    showComponent
+}) => {
     const [searchResults, setSearchResults] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
@@ -12,30 +25,28 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
     const [isInputFocused, setIsInputFocused] = useState(false);
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
+    const router = useRouter(); // Obtén el objeto router
+
+    
 
     const handleSearch = async (tag, setContent, setMusicContent) => {
-        setIsSearching(true);
-        const result = await searchTagInDb(tag, setContent, setMusicContent, setTags);
-        setIsSearching(false);
+        
 
-        if (componentInUse === 'video' && result === true) {
-            setIsEndedVideo(true);
-        }
+        //if (componentInUse === 'video') {
+         //   setIsEndedVideo(true);
+        //}
 
-        if(result === true){setCurrentTimeMedia(0)}
+        // Navega a la nueva ruta
+        router.push(`/music/tag=${tag}?&type=${showComponent}`);
 
-        if(result === false){
-            setIsModalOpen(true)
-            setContentModal(<p className='title-md' style={{padding: '30px', color: 'white'}}>No results were found for the tag: {searchResults}</p>)
-        }
-        //setShowModal(result === false);
+        
     };
 
     const handleInputChange = (e) => {
         const value = e.target.value;
         setSearchResults(value);
 
-        const filteredSuggestions = tags.filter(tag => 
+        const filteredSuggestions = tags.filter((tag) =>
             tag.toLowerCase().includes(value.toLowerCase())
         );
         setSuggestions(filteredSuggestions);
@@ -50,9 +61,9 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (
-                inputRef.current && 
-                !inputRef.current.contains(e.target) && 
-                suggestionsRef.current && 
+                inputRef.current &&
+                !inputRef.current.contains(e.target) &&
+                suggestionsRef.current &&
                 !suggestionsRef.current.contains(e.target)
             ) {
                 setSuggestions([]);
@@ -68,7 +79,34 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
     useEffect(() => {
         if (path) {
             setSearchResults(path);
-            handleSearch(path, setContent, setMusicContent);
+            //handleSearch(path, setContent, setMusicContent);
+        }
+    }, [path]);
+
+    
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (
+                inputRef.current &&
+                !inputRef.current.contains(e.target) &&
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(e.target)
+            ) {
+                setSuggestions([]);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (path) {
+            setSearchResults(path);
+            //handleSearch(path, setContent, setMusicContent);
         }
     }, [path]);
 
@@ -83,7 +121,7 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
             paddingLeft: '10px',
             paddingRight: '10px',
             paddingTop: '2px',
-            padding: '2px'
+            padding: '2px',
         },
         input: {
             flex: 1,
@@ -172,29 +210,29 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
             </style>
 
             <div className='backgroundColor2' style={styles.container}>
-                <input 
-                    type="text" 
-                    placeholder="Search" 
+                <input
+                    type='text'
+                    placeholder='Search'
                     value={searchResults}
                     style={styles.input}
                     onChange={handleInputChange}
                     onFocus={() => setIsInputFocused(true)}
                     ref={inputRef}
                 />
-                <GlassIcon 
+                <GlassIcon
                     onClick={() => {
                         handleSearch(searchResults, setContent, setMusicContent);
                         setSuggestions([]); // Ocultar sugerencias al hacer clic en el icono de búsqueda
-                    }} 
+                    }}
                     style={isSearching ? { ...styles.icon, ...styles.spinAnimation } : styles.icon}
                 />
-                
+
                 {suggestions.length > 0 && isInputFocused && (
-                    <div className="suggestions" ref={suggestionsRef}>
+                    <div className='suggestions' ref={suggestionsRef}>
                         {suggestions.map((suggestion, index) => (
-                            <div 
-                                key={index} 
-                                className="suggestion-item"
+                            <div
+                                key={index}
+                                className='suggestion-item'
                                 onClick={() => handleSuggestionClick(suggestion)}
                             >
                                 {suggestion}
@@ -203,14 +241,11 @@ const SearchTagInDb = ({ path, setContent, setMusicContent, setIsEndedVideo, com
                     </div>
                 )}
             </div>
-            
-            
         </>
     );
 };
 
 export default SearchTagInDb;
-
 
 
 
