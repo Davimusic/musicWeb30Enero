@@ -82,7 +82,7 @@ const Video = ({
     if (!isMenuOpen) {
       timeoutRef.current = setTimeout(() => {
         setIsControlsVisible(false);
-      }, 2000);
+      }, 5000);
     }
   };
 
@@ -373,7 +373,11 @@ const Video = ({
   };
 
   return (
-    <>
+    <div
+      className="video-wrapper"
+      onMouseEnter={!isMobile ? () => setIsControlsVisible(true) : undefined}
+      onMouseLeave={!isMobile ? () => setIsControlsVisible(false) : undefined}
+    >
       <video
         className="video-container"
         ref={videoRef}
@@ -381,10 +385,10 @@ const Video = ({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onLoadStart={() => setIsLoadingMedia(true)} // Establece isLoadingMedia en true cuando comienza la carga
-        onCanPlay={() => setIsLoadingMedia(false)} // Establece isLoadingMedia en false cuando el audio está listo para reproducirse
-        onWaiting={() => setIsLoadingMedia(true)} // Establece isLoadingMedia en true cuando el audio está esperando datos (buffering)
-        onPlaying={() => setIsLoadingMedia(false)} // Establece isLoadingMedia en false cuando el audio continúa reproduciéndose
+        onLoadStart={() => setIsLoadingMedia(true)}
+        onCanPlay={() => setIsLoadingMedia(false)}
+        onWaiting={() => setIsLoadingMedia(true)}
+        onPlaying={() => setIsLoadingMedia(false)}
         muted={isMutedMedia}
         loop={isRepeatMedia}
         onClick={handleVideoInteraction}
@@ -399,10 +403,8 @@ const Video = ({
       </video>
 
       {isMobile && isControlsVisible && (
-        
         <button
           className="center-play-button"
-          //onClick={(e) => togglePlayPause(true, e)}
           style={{
             position: 'absolute',
             top: '50%',
@@ -415,18 +417,18 @@ const Video = ({
             cursor: 'pointer',
           }}
         >
-          
           <TogglePlayPause isPlaying={isPlaying} size={50} onToggle={(e) => togglePlayPause(true, e)}/> 
         </button>
       )}
 
-      {isControlsVisible && <FullControlMedia {...fullControlMediaProps} />}
-    </>
+      <div className={`controls-container ${isControlsVisible ? 'visible' : ''}`}>
+        <FullControlMedia {...fullControlMediaProps} />
+      </div>
+    </div>
   );
 };
 
 export default Video;
-
 
 
 

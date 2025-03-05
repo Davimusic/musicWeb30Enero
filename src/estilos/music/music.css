@@ -53,6 +53,7 @@
 
 /* Lista de contenido */
 .content-list {
+  margin-top: 40px;
   position: relative;
   z-index: 2;
   padding-top: 40px; /* Ajusta según sea necesario */
@@ -85,9 +86,7 @@
 
 /* Estilos responsivos */
 @media (max-width: 768px) {
-  .content-list {
-      margin-top: 10px; /* Menos espacio en dispositivos móviles */
-  }
+  
 
   .content-list-inner {
       padding: 5px; /* Menos padding en dispositivos móviles */
