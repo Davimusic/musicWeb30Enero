@@ -27,7 +27,7 @@ const SearchTagInDb = ({
     const suggestionsRef = useRef(null);
     const router = useRouter(); // Obtén el objeto router
 
-    const handleSearch = async (tag, setContent, setMusicContent) => {
+    const handleSearch = async (tag) => {
         // Navega a la nueva ruta
         router.push(`/music/tag=${tag}?&type=${showComponent}`);
     };
@@ -46,7 +46,13 @@ const SearchTagInDb = ({
     const handleSuggestionClick = (suggestion) => {
         setSearchResults(suggestion); // Establecer la sugerencia seleccionada en el input
         setSuggestions([]); // Ocultar las sugerencias
-        inputRef.current.focus(); // Enfocar el input nuevamente
+
+        // Usar setTimeout para asegurar el enfoque
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus(); // Enfocar el input nuevamente
+            }
+        }, 500);
     };
 
     useEffect(() => {
@@ -99,6 +105,8 @@ const SearchTagInDb = ({
             outline: 'none',
             fontFamily: 'Montserrat Alternates, sans-serif',
             fontSize: '1rem',
+            position: 'relative', // Asegura que el input tenga un contexto de apilamiento
+            zIndex: 20, // El input debe tener un zIndex mayor que las sugerencias
         },
         icon: {
             marginLeft: '10px',
@@ -106,16 +114,6 @@ const SearchTagInDb = ({
             cursor: 'pointer',
             fontSize: '1.5rem',
             opacity: 1, // La lupa siempre tiene opacidad del 100%
-        },
-        spinAnimation: {
-            animation: 'spin 1s linear infinite',
-        },
-        '@keyframes spin': {
-            '0%': { transform: 'rotate(0deg)' },
-            '100%': { transform: 'rotate(360deg)' },
-        },
-        modalText: {
-            fontFamily: 'Roboto Slab, sans-serif',
         },
     };
 
@@ -155,6 +153,8 @@ const SearchTagInDb = ({
                         outline: none;
                         font-family: 'Montserrat Alternates', sans-serif;
                         font-size: 1rem;
+                        position: relative; /* Asegura que el input tenga un contexto de apilamiento */
+                        z-index: 20; /* El input debe tener un zIndex mayor que las sugerencias */
                     }
 
                     .suggestions {
@@ -165,7 +165,7 @@ const SearchTagInDb = ({
                         width: 100%;
                         max-height: 150px;
                         overflow-y: auto;
-                        z-index: 10;
+                        z-index: 10; /* Asegúrate de que este valor sea menor que el del input */
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                         top: 100%;
                         margin-top: 5px;
@@ -188,13 +188,13 @@ const SearchTagInDb = ({
                             max-width: 90vw;
                         }
 
-                        .input {
-                            width: 60%;
-                            font-size: 0.9rem;
+                        .input-container {
+                            width: 80%; /* Asegura que el input sea visible en móvil */
                         }
 
                         .icon {
-                            font-size: 1.2rem;
+                            margin-left: 0; /* La lupa se mantiene a la derecha */
+                            margin-right: 10px; /* Espacio a la derecha */
                         }
                     }
 
@@ -205,28 +205,25 @@ const SearchTagInDb = ({
                         font-size: 1.5rem;
                         opacity: 1; /* La lupa siempre tiene opacidad del 100% */
                     }
-
-                    .icon.spinAnimation {
-                        animation: spin 1s linear infinite;
-                    }
-
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
                 `}
             </style>
 
             <div className='container backgroundColor2' style={styles.container}>
-                <div className='input-container' style={styles.inputContainer}>
+                <div className='' style={styles.inputContainer}>
                     <input
                         type='text'
                         placeholder='Search'
                         value={searchResults}
                         style={styles.input}
                         onChange={handleInputChange}
-                        onFocus={() => setIsInputFocused(true)} // Enfocado
-                        onBlur={() => setIsInputFocused(false)} // Desenfocado
+                        onFocus={() => setIsInputFocused(true)}
+                        onBlur={(e) => {
+                            setTimeout(() => {
+                                if (!e.relatedTarget?.classList.contains('suggestion-item')) {
+                                    setIsInputFocused(false);
+                                }
+                            }, 100); // Retraso de 100ms para evitar conflictos
+                        }}
                         ref={inputRef}
                     />
                     {suggestions.length > 0 && isInputFocused && (
@@ -245,10 +242,10 @@ const SearchTagInDb = ({
                 </div>
                 <GlassIcon
                     onClick={() => {
-                        handleSearch(searchResults, setContent, setMusicContent);
+                        handleSearch(searchResults);
                         setSuggestions([]); // Ocultar sugerencias al hacer clic en el icono de búsqueda
                     }}
-                    style={isSearching ? { ...styles.icon, ...styles.spinAnimation } : styles.icon}
+                    style={styles.icon}
                 />
             </div>
         </>

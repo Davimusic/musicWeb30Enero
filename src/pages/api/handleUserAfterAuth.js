@@ -1,9 +1,19 @@
+import { getAuth } from 'firebase-admin/auth';
 import { connectToDatabase } from './connectToDatabase';
+import admin from 'firebase-admin';
+
+// Inicializar Firebase Admin SDK
+if (!admin.apps.length) {
+  const serviceAccount = require('../../firebase/exclusivemusic-ce540-firebase-adminsdk-fbsvc-7fd029342c.json'); // Ruta al archivo JSON
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
 export default async function handleUserAfterAuth(req, res) {
   const db = await connectToDatabase();
   const collection = db.collection('users'); // Colección principal
-  const { uid, email, authType } = req.body; // authType puede ser 'login' o 'signIn'
+  const { uid, email, authType } = req.body; // Recibir datos del frontend
 
   try {
     console.log('Handling user after auth:', uid, email, authType); // Depuración
@@ -22,12 +32,29 @@ export default async function handleUserAfterAuth(req, res) {
     const userExists = mainDoc.users && mainDoc.users[uid];
 
     if (userExists) {
-      // Si el usuario ya existe
-      console.log('User already exists in the database:', uid); // Depuración
+      // Si el usuario ya existe, actualizar la fecha de modificación
+      const updatedUser = {
+        ...mainDoc.users[uid], // Mantener los datos existentes del usuario
+        updatedAt: new Date(), // Actualizar la fecha de modificación
+      };
+
+      // Actualizar el documento principal para actualizar el usuario en el objeto "users"
+      const updateResult = await collection.updateOne(
+        { _id: mainDoc._id }, // Filtro para encontrar el documento principal
+        { $set: { [`users.${uid}`]: updatedUser } } // Actualizar el usuario en el objeto "users"
+      );
+
+      console.log('Update result:', updateResult); // Depuración
+
+      if (updateResult.modifiedCount === 0) {
+        throw new Error('Failed to update the user.');
+      }
+
+      console.log('User updated in the database:', updatedUser); // Depuración
       return res.status(200).json({ 
         success: true, 
-        message: 'User already exists.', 
-        user: mainDoc.users[uid]
+        message: 'User updated successfully.', 
+        user: updatedUser,
       });
     } else {
       // Si el usuario no existe, crear un nuevo objeto y agregarlo al objeto "users"
@@ -36,20 +63,30 @@ export default async function handleUserAfterAuth(req, res) {
         email,
         createdAt: new Date(),
         updatedAt: new Date(),
-        compositions: [] // Puedes agregar más campos según sea necesario
+        compositions: [], // Array para composiciones
+        myLikes: [], // Array para "me gusta"
+        myPurchases: [], // Array para compras
+        mySells: [], // Array para ventas
+        myComments: [], // Array para comentarios
       };
 
       // Actualizar el documento principal para agregar el nuevo usuario al objeto "users"
-      await collection.updateOne(
+      const updateResult = await collection.updateOne(
         { _id: mainDoc._id }, // Filtro para encontrar el documento principal
         { $set: { [`users.${uid}`]: newUser } } // Agregar el nuevo usuario al objeto "users"
       );
+
+      console.log('Update result:', updateResult); // Depuración
+
+      if (updateResult.modifiedCount === 0) {
+        throw new Error('Failed to create the user.');
+      }
 
       console.log('New user created in the database:', newUser); // Depuración
       return res.status(201).json({ 
         success: true, 
         message: 'User created successfully.', 
-        user: newUser 
+        user: newUser,
       });
     }
   } catch (error) {

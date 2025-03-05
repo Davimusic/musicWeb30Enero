@@ -19,7 +19,7 @@ const GlassIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
         onClick={handleClick}
-        className={isAnimating ? 'pulse' : ''}
+        className={isAnimating ? 'pulse rotate-infinite' : ''}
         style={{ 
           cursor: 'pointer', 
           transition: 'transform 0.3s ease',

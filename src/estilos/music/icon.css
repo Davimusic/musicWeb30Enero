@@ -47,3 +47,18 @@
   .bar:nth-child(5).animate {
     animation-delay: 1.2s;
   }
+
+  /* Definimos la animación */
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Clase para el efecto de rotación infinita */
+.rotate-infinite {
+  animation: rotate 2s linear infinite; /* 2 segundos por ciclo, lineal, y repetición infinita */
+}
