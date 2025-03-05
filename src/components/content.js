@@ -51,7 +51,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      //router.push('/music/globalCollections=test1?type=audio&quality=low');
+      //   router.push('/music/globalCollections=test1?type=audio&quality=low');
     }
   }, [user]);
 
