@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 const AudioEditor = () => {
-  return ('hi')
+  
   const waveformRef = useRef(null);
   const wavesurferRef = useRef(null);
 
