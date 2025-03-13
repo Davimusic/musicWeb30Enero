@@ -1,4 +1,74 @@
+
+
+
+
+
+
+
+
+
+
+
+
 import { useState, useRef, useEffect } from 'react';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js';
+
+const AudioEditor = () => {
+  const [tracks, setTracks] = useState([]);
+  const waveformRef = useRef(null);
+  const wavesurferRef = useRef(null);
+
+  useEffect(() => {
+    if (waveformRef.current) {
+      wavesurferRef.current = WaveSurfer.create({
+        container: waveformRef.current,
+        waveColor: 'violet',
+        progressColor: 'purple',
+        cursorColor: 'navy',
+        height: 100,
+        responsive: true,
+        plugins: [RegionsPlugin.create()],
+      });
+
+      wavesurferRef.current.load('path/to/audio/file.mp3');
+
+      return () => {
+        if (wavesurferRef.current) {
+          wavesurferRef.current.destroy();
+        }
+      };
+    }
+  }, []);
+
+  return (
+    <div className="audio-editor">
+      <h1>Audio Editor</h1>
+      <div ref={waveformRef} className="waveform"></div>
+    </div>
+  );
+};
+
+export default AudioEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*import { useState, useRef, useEffect } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -586,4 +656,4 @@ const AudioEditor = () => {
   );
 };
 
-export default AudioEditor;
+export default AudioEditor;*/
