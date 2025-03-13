@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'; // Importa useRouter de Next.js
 import Head from 'next/head';
 import './globals.css';
 import Login from '@/components/content';
-import AudioEditor from '@/components/complex/audioEditor';
+//import AudioEditor from '@/components/complex/audioEditor';
 
 
 export function Root({ children }) {
@@ -30,7 +30,7 @@ export function Root({ children }) {
       <body className="backgroundImage sinMarco" style={{ height: '100%' }}>
         <div>
           {children} {/* Renderiza las páginas aquí */}
-          <AudioEditor/>
+          <Login/>
         </div>
       </body>
     </html>
