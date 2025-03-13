@@ -111,10 +111,13 @@ const Login = () => {
         setModalMessage('Account created successfully!');
         setIsModalOpen(true);
         await handleUserAfterAuth(user.uid, user.email, 'signIn');
+        console.log('bien form');
+        
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         await handleUserAfterAuth(user.uid, user.email, 'login');
+        console.log('bien form');
       }
     } catch (error) {
       console.error('Error:', error);
