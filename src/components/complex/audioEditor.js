@@ -1,35 +1,42 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import WaveSurfer from 'wavesurfer.js';
+import dynamic from 'next/dynamic';
+
+// 1. Cargar Wavesurfer solo en el cliente
+const Wavesurfer = dynamic(
+  () => import('wavesurfer.js').then((mod) => mod.default),
+  { ssr: false }
+);
 
 const AudioEditor = () => {
-  const [isClient, setIsClient] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const wavesurferRef = useRef(null);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient) {
-      const wavesurfer = WaveSurfer.create({
+    // 2. Verificar que estamos en el cliente
+    if (typeof window !== 'undefined') {
+      wavesurferRef.current = Wavesurfer.create({
         container: '#waveform',
         waveColor: 'violet',
         progressColor: 'purple',
         height: 100,
       });
 
-      wavesurfer.load('path/to/your/audio/file.mp3');
-
-      return () => {
-        wavesurfer.destroy();
-      };
+      // 3. Cargar el audio desde la carpeta public
+      wavesurferRef.current.load('/audio/sample.mp3'); // Asegúrate de tener el archivo en public/audio/
+      
+      setIsReady(true);
     }
-  }, [isClient]);
 
-  if (!isClient) {
-    return <p>Loading...</p>;
-  }
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+    };
+  }, []);
+
+  if (!isReady) return <div>Loading audio player...</div>;
 
   return (
     <div>
@@ -40,7 +47,6 @@ const AudioEditor = () => {
 };
 
 export default AudioEditor;
-
 
 
 
