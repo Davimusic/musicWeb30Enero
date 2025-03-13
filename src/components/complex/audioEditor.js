@@ -1,5 +1,52 @@
 "use client";
 
+import { useState, useEffect } from 'react';
+import WaveSurfer from 'wavesurfer.js';
+
+const AudioEditor = () => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        height: 100,
+      });
+
+      wavesurfer.load('path/to/your/audio/file.mp3');
+
+      return () => {
+        wavesurfer.destroy();
+      };
+    }
+  }, [isClient]);
+
+  if (!isClient) {
+    return <p>Loading...</p>;
+  }
+
+  return (
+    <div>
+      <h1>Audio Editor</h1>
+      <div id="waveform"></div>
+    </div>
+  );
+};
+
+export default AudioEditor;
+
+
+
+
+
+/*"use client";
+
 
 import { useState, useRef, useEffect } from 'react';
 import WaveSurfer from 'wavesurfer.js';
@@ -526,7 +573,7 @@ const AudioEditor = () => {
   };
 
   return (
-    <div className="audio-editor">
+    <div className="audio-editor backgroundColor1">
       <h1 className="editor-title">Editor de Audio Multitrack</h1>
       <div
         ref={waveformContainerRef}
@@ -589,4 +636,4 @@ const AudioEditor = () => {
   );
 };
 
-export default AudioEditor;
+export default AudioEditor;*/
