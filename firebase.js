@@ -1,6 +1,43 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
+// Configuración directa para pruebas
+const firebaseConfig = {
+  apiKey: "AIzaSyD4O93pb09gyZrMyXymC9mVLZHBkfQBJkI",
+  authDomain: "exclusivemusic-ce540.firebaseapp.com",
+  projectId: "exclusivemusic-ce540",
+  storageBucket: "exclusivemusic-ce540.appspot.com",
+  messagingSenderId: "564459559461",
+  appId: "1:564459559461:web:fee41079fd348192d9fdcc",
+};
+
+// Verificar si las claves están definidas correctamente
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key is missing.");
+}
+
+// Inicializar Firebase solo si no ha sido inicializado previamente
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+
+console.log('Firebase Config (Direct Values):', firebaseConfig);
+
+
+
+
+
+
+
+
+
+
+
+
+/*import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+
 // Configuración de Firebase
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,5 +59,5 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
-console.log('Firebase Config (Loaded):', firebaseConfig);
+console.log('Firebase Config (Loaded):', firebaseConfig);*/
 
