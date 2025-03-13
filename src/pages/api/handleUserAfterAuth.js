@@ -4,7 +4,9 @@ import admin from 'firebase-admin';
 
 // Inicializar Firebase Admin SDK
 if (!admin.apps.length) {
-  const serviceAccount = require('../../firebase/exclusivemusic-ce540-firebase-adminsdk-fbsvc-7fd029342c.json'); // Ruta al archivo JSON
+  //const serviceAccount = require('../../firebase/exclusivemusic-ce540-firebase-adminsdk-fbsvc-7fd029342c.json'); // Ruta al archivo JSON
+  const serviceAccount = require('./credentials/exclusivemusic-ce540-firebase-adminsdk-fbsvc-7fd029342c.json');
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
