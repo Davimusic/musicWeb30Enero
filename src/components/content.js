@@ -51,7 +51,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      router.push('/music/globalCollections=test1?type=audio&quality=low');
+      //router.push('/music/globalCollections=test1?type=audio&quality=low');
     }
   }, [user]);
 
@@ -90,7 +90,7 @@ const Login = () => {
           sessionStorage.setItem('userMyLikes', data.myLikes || 'nada');
         }
 
-        router.push('/music/globalCollections=test1?type=audio&quality=low');
+        //router.push('/music/globalCollections=test1?type=audio&quality=low');
       } else {
         setError(data.message);
       }
@@ -149,11 +149,14 @@ const Login = () => {
   
       // Obtener el correo electrónico desde providerData
       const email = user.email || (user.providerData && user.providerData[0]?.email);
-  
+      console.log('por aca');
+      
+
       if (!email) {
         throw new Error('No se pudo obtener el correo electrónico de la cuenta de Google.');
       }
-  
+      console.log(user);
+      
       setUser(user);
       await handleUserAfterAuth(user.uid, email, 'google');
     } catch (error) {
