@@ -3,6 +3,7 @@ import Image from '../simple/image';
 import HeartIcon from './heartIcon';
 import '../../estilos/general/general.css';
 import handleLike from '@/functions/music/handleLike';
+import checkUserName from '@/functions/music/checkUserName';
 
 const ImageAndHeart = ({isHybridView, content, onItemClick = () => {}, currentIndex, setIsLike, isLike, showComponent}) => { // Default function
   const [items, setItems] = useState(content);
@@ -10,6 +11,28 @@ const ImageAndHeart = ({isHybridView, content, onItemClick = () => {}, currentIn
   useEffect(() => {
     setItems(content);
   }, [content]);
+
+  const getDefaultLike = (showComponent, isLikeCurrentIndex) => {
+    // Verifica si el usuario existe usando checkUserName
+    const userExists = checkUserName(
+        () => true,  // Si el usuario existe, retorna true
+        () => false // Si el usuario no existe, retorna false
+    );
+
+    // Si el usuario existe, calcula defaultLike
+    if (userExists) {
+      //console.log('verdad');
+        return showComponent === 'audio' 
+            ? (isLikeCurrentIndex ? isLikeCurrentIndex.audio : false) 
+            : (isLikeCurrentIndex ? isLikeCurrentIndex.video : false);
+  
+            
+    } else {
+      console.log('flaeo');
+        // Si el usuario no existe, retorna false
+        return false;
+    }
+};
 
 
   return (
@@ -51,11 +74,7 @@ const ImageAndHeart = ({isHybridView, content, onItemClick = () => {}, currentIn
               width: '20px',
               borderRadius: '50%',
             }}
-            defaultLike={
-              showComponent === 'audio' 
-                ? (isLike[currentIndex] ? isLike[currentIndex].audio : false) 
-                : (isLike[currentIndex] ? isLike[currentIndex].video : false)
-            }
+            defaultLike={getDefaultLike(showComponent, isLike[currentIndex])}
             onClickFunction={()=> handleLike(currentIndex, showComponent, isLike, setIsLike, isHybridView)} // Pasar función al ícono
           />
         </div>

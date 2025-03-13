@@ -6,11 +6,11 @@
 .color5 { color: #2bc6c8; }
 
 :root {
-  --backgroundColor1: #ffffff;
-  --backgroundColor2: #0f7fff;
-  --backgroundColor3: #05a1fc;
-  --backgroundColor4: #0cf7ffce;
-  --backgroundColor5: #2bc6c8;
+  --backgroundColor1: #00000098;
+  --backgroundColor2: #295337a4;
+  --backgroundColor3: #555555b0;
+  --backgroundColor4: #5f5e1a98;
+  --backgroundColor5: #06666885;
   --color1: #000000;
   --color2: #ffffff;
   --color3: #1d6188;

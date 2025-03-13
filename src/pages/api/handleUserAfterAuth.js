@@ -55,6 +55,7 @@ export default async function handleUserAfterAuth(req, res) {
         success: true, 
         message: 'User updated successfully.', 
         user: updatedUser,
+        myLikes: updatedUser.myLikes || [], // Retornar el array myLikes
       });
     } else {
       // Si el usuario no existe, crear un nuevo objeto y agregarlo al objeto "users"
@@ -87,6 +88,7 @@ export default async function handleUserAfterAuth(req, res) {
         success: true, 
         message: 'User created successfully.', 
         user: newUser,
+        myLikes: newUser.myLikes || [], // Retornar el array myLikes (vacío en este caso)
       });
     }
   } catch (error) {

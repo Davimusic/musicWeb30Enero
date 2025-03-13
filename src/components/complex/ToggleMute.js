@@ -32,13 +32,13 @@ const ToggleMute = ({ size = 24, isMuted = false, onToggle, buttonColor = "#ffff
           <>
             <path
               d="M16 9L21 14M21 9L16 14" // Línea diagonal que tacha el altavoz
-              stroke="white"
+              stroke={buttonColor}
               strokeWidth="1"
               strokeLinecap="round"
             />
             <path
               d="M15 5H13C12.4696 5 11.9609 5.21071 11.5858 5.58579C11.2107 5.96086 11 6.46957 11 7V13C11 13.5304 11.2107 14.0391 11.5858 14.4142C11.9609 14.7893 12.4696 15 13 15H15L19 19V5L15 9Z" // Altavoz
-              stroke="white"
+              stroke={buttonColor}
               strokeWidth="1"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -50,7 +50,7 @@ const ToggleMute = ({ size = 24, isMuted = false, onToggle, buttonColor = "#ffff
           <>
             <path
               d="M15 5H13C12.4696 5 11.9609 5.21071 11.5858 5.58579C11.2107 5.96086 11 6.46957 11 7V13C11 13.5304 11.2107 14.0391 11.5858 14.4142C11.9609 14.7893 12.4696 15 13 15H15L19 19V5L15 9Z" // Altavoz
-              stroke="white"
+              stroke={buttonColor}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -58,7 +58,7 @@ const ToggleMute = ({ size = 24, isMuted = false, onToggle, buttonColor = "#ffff
             />
             <path
               d="M19 9C20.1046 9 21 9.89543 21 11C21 12.1046 20.1046 13 19 13" // Onda de sonido
-              stroke="white"
+              stroke={buttonColor}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"

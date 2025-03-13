@@ -51,7 +51,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      //   router.push('/music/globalCollections=test1?type=audio&quality=low');
+      router.push('/music/globalCollections=test1?type=audio&quality=low');
     }
   }, [user]);
 
@@ -77,6 +77,9 @@ const Login = () => {
 
       const data = await response.json();
       if (data.success) {
+        console.log(data);
+        
+        
         setModalMessage(data.message);
         setIsModalOpen(true);
 
@@ -84,9 +87,10 @@ const Login = () => {
         if (user) {
           sessionStorage.setItem('userName', user.displayName || 'User');
           sessionStorage.setItem('userImage', user.photoURL || '');
+          sessionStorage.setItem('userMyLikes', data.myLikes || 'nada');
         }
 
-        //router.push('/music/globalCollections=test1?type=audio&quality=low');
+        router.push('/music/globalCollections=test1?type=audio&quality=low');
       } else {
         setError(data.message);
       }

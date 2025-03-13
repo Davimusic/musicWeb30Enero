@@ -64,11 +64,65 @@ const Audio = ({
   const [duration, setDuration] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Nuevo estado para la transcripción de la letra
+  const [transcript, setTranscript] = useState('');
+  const recognitionRef = useRef(null);
+
+  // Inicializar el reconocimiento de voz
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error('Tu navegador no soporta la Web Speech API.');
+      return;
+    }
+
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = true; // Reconocimiento continuo
+    recognitionRef.current.interimResults = true; // Resultados provisionales
+    recognitionRef.current.lang = 'es-ES'; // Idioma español
+
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join('');
+      setTranscript(transcript);
+    };
+
+    recognitionRef.current.onerror = (event) => {
+      console.error('Error en el reconocimiento de voz:', event.error);
+    };
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log(content);
+    
+  }, [content]);
+
+  // Iniciar/detener el reconocimiento de voz cuando el audio se reproduce/pausa
+  useEffect(() => {
+    if (isPlaying && recognitionRef.current) {
+      recognitionRef.current.start();
+    } else if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  }, [isPlaying]);
+
   const playAudio = () => {
     audioRef.current.play().catch((error) => {
       console.error('Error al reproducir el audio:', error);
     });
     setIsPlaying(true);
+  };
+
+  const pauseAudio = () => {
+    audioRef.current.pause();
+    setIsPlaying(false);
   };
 
   useEffect(() => {
@@ -100,8 +154,7 @@ const Audio = ({
       }
     } else {
       if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
+        pauseAudio();
       }
     }
   }, [componentInUse]);
@@ -134,7 +187,13 @@ const Audio = ({
 
   const fullControlMediaProps = {
     isPlaying,
-    togglePlayPause: () => togglePlayPause(isPlaying, setComponentInUse, 'audio'),
+    togglePlayPause: () => {
+      if (isPlaying) {
+        pauseAudio();
+      } else {
+        playAudio();
+      }
+    },
     handleNextSong,
     handlePreviousSong,
     handleSeek: (e) => handleSeek(e, audioRef, setCurrentTimeMedia),
@@ -185,10 +244,10 @@ const Audio = ({
         onTimeUpdate={() => handleTimeUpdate(audioRef, setCurrentTimeMedia)}
         onLoadedMetadata={() => handleLoadedMetadata(audioRef, setDuration)}
         onEnded={() => handleEnded(isRepeatMedia, playAudio, handleNextSong, setCurrentTimeMedia)}
-        onLoadStart={() => setIsLoadingMedia(true)} // Establece isLoadingMedia en true cuando comienza la carga
-        onCanPlay={() => setIsLoadingMedia(false)} // Establece isLoadingMedia en false cuando el audio está listo para reproducirse
-        onWaiting={() => setIsLoadingMedia(true)} // Establece isLoadingMedia en true cuando el audio está esperando datos (buffering)
-        onPlaying={() => setIsLoadingMedia(false)} // Establece isLoadingMedia en false cuando el audio continúa reproduciéndose
+        onLoadStart={() => setIsLoadingMedia(true)}
+        onCanPlay={() => setIsLoadingMedia(false)}
+        onWaiting={() => setIsLoadingMedia(true)}
+        onPlaying={() => setIsLoadingMedia(false)}
         muted={isMutedMedia}
         loop={isRepeatMedia}
       >
@@ -196,6 +255,27 @@ const Audio = ({
       </audio>
 
       <FullControlMedia {...fullControlMediaProps} />
+
+      {/* Nuevo: Mostrar la transcripción de la letra en tiempo real */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '300px',
+          maxHeight: '400px',
+          overflowY: 'auto',
+          padding: '10px',
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+        }}
+      >
+        <h3 style={{ marginTop: 0 }}>Letra en Tiempo Real</h3>
+        <p>{transcript || 'Habla o reproduce audio para ver la letra...'}</p>
+      </div>
     </>
   );
 };

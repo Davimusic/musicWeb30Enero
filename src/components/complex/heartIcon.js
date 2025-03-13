@@ -5,15 +5,15 @@ const HeartIcon = ({ size = 100, onClickFunction, defaultLike = false }) => {
   const [isLike, setIsLike] = useState(defaultLike); // Estado inicial dinámico
   const [isAnimating, setIsAnimating] = useState(false); // Animación del icono
 
-  // Sincroniza el estado interno `isLike` con la prop `defaultLike`
+  /*/* Sincroniza el estado interno `isLike` con la prop `defaultLike`
   useEffect(() => {
     setIsLike(defaultLike);
-  }, [defaultLike]);
+  }, [defaultLike]);*/
 
   const handleClick = (event) => {
     event.stopPropagation(); // Evitar propagación del evento
     const newLikeState = !isLike;
-    setIsLike(newLikeState); // Cambiar el estado de "like"
+    //setIsLike(newLikeState); // Cambiar el estado de "like"
 
     // Ejecutar la función externa si existe
     if (onClickFunction) {

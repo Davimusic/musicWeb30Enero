@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../firebase';
 import '../../estilos/general/general.css';
+import checkUserName from '@/functions/music/checkUserName';
 
 const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [userName, setUserName] = useState('');
     const [userImage, setUserImage] = useState('');
+    const [userMyLikes, setUserMyLikes] = useState([]);
     const router = useRouter();
 
     // State to store current colors
@@ -26,8 +28,10 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
     useEffect(() => {
         const name = sessionStorage.getItem('userName') || '';
         const image = sessionStorage.getItem('userImage') || '';
+        const myLikes = sessionStorage.getItem('userMyLikes') || '';
         setUserName(name);
         setUserImage(image);
+        setUserMyLikes(myLikes)
     }, []);
 
     // Get colors from CSS variables
@@ -91,6 +95,7 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
                 onClick={onClose}
             >
                 <div onClick={handleMenuClick}>
+                    <p className='title-sm color2' style={{ margin: 0 }}>{userMyLikes}</p>
                     <p className='title-md color2' style={{ marginBottom: '20px' }}>Menu</p>
                     {userName && (
                         <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
