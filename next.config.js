@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+require('dotenv').config(); // Cargar variables de entorno desde .env
 
 module.exports = {
   reactStrictMode: true,
@@ -12,9 +13,10 @@ module.exports = {
       return [
           {
               source: '/api/cloudinary/:path*',
-              destination: 'https://api.cloudinary.com/v1_1/dplncudbq/:path*', // URL base de Cloudinary
+              destination: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/:path*`, // URL base dinámica con variable de entorno
           },
       ];
   },
 };
+
 
