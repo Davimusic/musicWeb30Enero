@@ -20,12 +20,14 @@
     "ffmpeg.js": "^4.2.9003",
     "firebase": "^11.3.1",
     "firebase-admin": "^13.1.0",
+    "howler": "^2.2.4",
     "interactjs": "^1.10.27",
     "mongodb": "^5.8.1",
     "mongoose": "^7.4.5",
     "next": "^13.4.18",
     "next-auth": "^4.24.11",
     "next-redux-wrapper": "^8.1.0",
+    "peaks.js": "^3.4.2",
     "react": "18.2.0",
     "react-colorful": "^5.6.1",
     "react-dom": "18.2.0",
@@ -39,6 +41,6 @@
     "redux-thunk": "^3.1.0",
     "socket.io": "^4.7.2",
     "vosk-browser": "^0.0.8",
-    "wavesurfer.js": "^7.0.0"
+    "wavesurfer.js": "^7.9.1"
   }
 }
