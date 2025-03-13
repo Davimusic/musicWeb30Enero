@@ -1,6 +1,7 @@
 .editor-container {
   position: relative;
   height: 100vh;
+  overflow: auto;
 }
 
 .timeline-container {
@@ -18,28 +19,14 @@
 
 .progress-indicator {
   position: absolute;
-  width: 2px;
+  width: 20px;
   height: 100%;
   background: #f44336;
   transition: left 0.1s linear;
 }
 
-.tracks-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding-top: 20px;
-}
 
-.track {
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 10px;
-}
 
-.waveform-container {
-  overflow-x: auto;
-}
 
 canvas {
   display: block;
@@ -57,4 +44,21 @@ canvas {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.tracks-container {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+
+.track {
+  height: 100%;
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.waveform-container canvas {
+  vertical-align: middle;
 }
