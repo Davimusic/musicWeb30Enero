@@ -143,7 +143,7 @@ const TrackWaveform = ({
   );
 };
 
-// Componente principal AudioEditor
+// Componente principal AudioEditor...
 const AudioEditor = () => {
   const [tracks, setTracks] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
