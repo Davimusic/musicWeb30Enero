@@ -1,20 +1,69 @@
 "use client";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { useState, useRef, useEffect } from 'react';
+
+const AudioEditor = () => {
+  return ('hi')
+  const waveformRef = useRef(null);
+  const wavesurferRef = useRef(null);
+
+  useEffect(() => {
+    // Only execute on client side
+    if (typeof window !== 'undefined') {
+      const initializeWaveSurfer = async () => {
+        const WaveSurfer = (await import('wavesurfer.js')).default;
+        const RegionsPlugin = (await import('wavesurfer.js/src/plugin/regions')).default;
+        
+        wavesurferRef.current = WaveSurfer.create({
+          container: waveformRef.current,
+          waveColor: 'violet',
+          progressColor: 'purple',
+          plugins: [RegionsPlugin.create()],
+          height: 100,
+          responsive: true
+        });
+
+        // Load audio file
+        wavesurferRef.current.load('/audio/sample.mp3');
+      };
+
+      initializeWaveSurfer();
+    }
+
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+    };
+  }, []);
+
+  return (
+    <div className="audio-editor">
+      <h1>Audio Editor</h1>
+      <div ref={waveformRef} className="waveform" />
+    </div>
+  );
+};
+
+export default AudioEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*import { useState, useRef, useEffect } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -602,4 +651,4 @@ const AudioEditor = () => {
   );
 };
 
-export default AudioEditor;
+export default AudioEditor;*/
