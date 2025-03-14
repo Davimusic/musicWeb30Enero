@@ -2,6 +2,7 @@
   position: relative;
   height: 100vh;
   overflow: auto;
+  background-color: rgb(255, 255, 255);
 }
 
 .timeline-container {
@@ -13,7 +14,7 @@
 
 .main-progress-bar {
   height: 3px;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   position: relative;
 }
 
@@ -21,12 +22,9 @@
   position: absolute;
   width: 20px;
   height: 100%;
-  background: #f44336;
+  background: #4b015a;
   transition: left 0.1s linear;
 }
-
-
-
 
 canvas {
   display: block;
@@ -37,28 +35,38 @@ canvas {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: rgb(148, 5, 5);
   padding: 10px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.tracks-container {
-  overflow-x: auto;
-  white-space: nowrap;
-}
 
 
 .track {
   height: 100%;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   padding: 10px;
 }
 
+
+
+/* Agrega esto a tu CSS */
+.tracks-container {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.waveform-container {
+  position: relative;
+}
+
 .waveform-container canvas {
-  vertical-align: middle;
+  display: block;
+  height: 100%;
+  width: auto;
 }
