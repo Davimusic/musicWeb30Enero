@@ -2,7 +2,7 @@
   position: relative;
   height: 100vh;
   overflow: auto;
-  background-color: rgb(255, 255, 255);
+  background-color: rgba(0, 0, 0, 0.548);
 }
 
 .timeline-container {
@@ -30,19 +30,7 @@ canvas {
   display: block;
 }
 
-.controls {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgb(148, 5, 5);
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+
 
 
 
@@ -55,11 +43,6 @@ canvas {
 
 
 
-/* Agrega esto a tu CSS */
-.tracks-container {
-  overflow-x: auto;
-  scroll-behavior: smooth;
-}
 
 .waveform-container {
   position: relative;
@@ -69,4 +52,110 @@ canvas {
   display: block;
   height: 100%;
   width: auto;
+}
+
+
+
+
+
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+
+
+.time-ruler-container {
+  height: 30px;
+  overflow: hidden;
+  border-top: 1px solid #ddd;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #000000;
+  border-top: 1px solid #ddd;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.scroll-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.tracks-and-ruler {
+  position: relative;
+  min-height: 100%;
+}
+
+.tracks-container {
+  padding-bottom: 40px; /* Espacio para la regla */
+  scroll-behavior: smooth;
+}
+
+.time-ruler-wrapper {
+  position: sticky;
+  bottom: 0;
+  height: 40px;
+  background: white;
+  z-index: 2;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.time-ruler {
+  position: relative;
+  height: 100%;
+  background: #f8f8f8;
+}
+
+.time-mark {
+  position: absolute;
+  bottom: 0;
+  height: 100%;
+}
+
+.tick {
+  width: 1px;
+  height: 10px;
+  background: #999;
+}
+
+.time-label {
+  position: absolute;
+  bottom: 15px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #666;
+}
+
+.current-time-marker {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  background: #ff0000;
+  z-index: 3;
 }

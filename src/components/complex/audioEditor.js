@@ -1,91 +1,80 @@
 "use client";
 
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, useRef, useEffect } from "react";
 import "../../estilos/music/audioEditor.css";
 import "../../estilos/general/general.css";
 import TogglePlayPause from "./TogglePlayPause";
 import RecordIcon from "./recordIcon";
 import StopIcon from "./stopIcon";
-import TrashIcon from "./trashIcon";
+import Track from "./track";
+import TimeRuler from "./timeRuler";
 
 const AudioEditor = () => {
-  const [tracks, setTracks] = useState([]); // Cada track: { id, url, audio, duration, … }
+  const [tracks, setTracks] = useState([]); // Cada track: { id, url, audio, duration, audioBuffer, … }
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [autoScroll, setAutoScroll] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [pixelsPerSecond, setPixelsPerSecond] = useState(0);
 
-  const containerRef = useRef(null);
+  const scrollContainerRef = useRef(null); // Ref para el contenedor scrollable
   const audioContextRef = useRef(null);
   const mediaRecorderRef = useRef(null);
 
+  // Inicializar el AudioContext
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
   }, []);
 
+  // Calcular el ancho del contenedor y manejar el resize
   useEffect(() => {
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.clientWidth);
+    if (scrollContainerRef.current) {
+      setContainerWidth(scrollContainerRef.current.clientWidth);
     }
     const handleResize = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.clientWidth);
+      if (scrollContainerRef.current) {
+        setContainerWidth(scrollContainerRef.current.clientWidth);
       }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    const baseSeconds = 10; // Ajusta según necesidad
-    const pps = (containerWidth / baseSeconds) * zoomLevel;
-    setPixelsPerSecond(pps);
-  }, [containerWidth, zoomLevel]);
+  // Calcular la duración máxima de todos los tracks
+  const maxDuration =
+    tracks.length > 0
+      ? tracks.reduce((acc, t) => (t.duration > acc ? t.duration : acc), 0)
+      : 0;
 
+  // Sincronizar el scroll con la reproducción
   useEffect(() => {
-    if (isPlaying && autoScroll && tracks.length > 0 && containerRef.current) {
-      let animationFrameId;
-      const maxDurationTrack = tracks.reduce((prev, curr) =>
-        curr.duration > prev.duration ? curr : prev
-      );
-      const duration = maxDurationTrack.duration;
-      const tol = 0.1;
-
-      const animate = () => {
-        if (!isPlaying || !autoScroll) return;
+    if (isPlaying && autoScroll && tracks.length > 0 && scrollContainerRef.current) {
+      const pixelsPerSecond = 500 * zoomLevel;
+      const tol = 0.1; // Tolerancia en segundos
+      const intervalId = setInterval(() => {
+        const maxDurationTrack = tracks.reduce((prev, curr) =>
+          curr.duration > prev.duration ? curr : prev
+        );
         const currentTime = maxDurationTrack.audio.currentTime;
+        const duration = maxDurationTrack.duration;
 
         if (currentTime >= duration - tol) {
-          const maxScroll = duration * pixelsPerSecond - containerWidth;
-          containerRef.current.scrollLeft = maxScroll;
+          scrollContainerRef.current.scrollLeft = duration * pixelsPerSecond;
           tracks.forEach((track) => track.audio.pause());
           setHasEnded(true);
+          clearInterval(intervalId);
           return;
         }
 
-        const scrollPosition = currentTime * pixelsPerSecond;
-        const maxScroll = duration * pixelsPerSecond - containerWidth;
-        containerRef.current.scrollLeft = Math.min(scrollPosition, maxScroll);
-        animationFrameId = requestAnimationFrame(animate);
-      };
-
-      animationFrameId = requestAnimationFrame(animate);
-      return () => cancelAnimationFrame(animationFrameId);
+        // Desplazar el contenedor
+        scrollContainerRef.current.scrollLeft = currentTime * pixelsPerSecond;
+      }, 50);
+      return () => clearInterval(intervalId);
     }
-  }, [isPlaying, autoScroll, pixelsPerSecond, tracks, containerWidth]);
+  }, [isPlaying, autoScroll, zoomLevel, tracks]);
 
-  const handleUserScroll = () => {
-    if (!autoScroll && containerRef.current) {
-      const newTime = containerRef.current.scrollLeft / pixelsPerSecond;
-      tracks.forEach((track) => {
-        track.audio.currentTime = newTime;
-      });
-    }
-  };
-
+  // Manejar play/pause
   const handlePlayPause = () => {
     setIsPlaying((prev) => {
       const newState = !prev;
@@ -94,7 +83,7 @@ const AudioEditor = () => {
           tracks.forEach((track) => {
             track.audio.currentTime = 0;
           });
-          if (containerRef.current) containerRef.current.scrollLeft = 0;
+          if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
           setHasEnded(false);
         }
         setAutoScroll(true);
@@ -108,6 +97,7 @@ const AudioEditor = () => {
     });
   };
 
+  // Manejar stop
   const handleStop = () => {
     setIsPlaying(false);
     setHasEnded(false);
@@ -115,13 +105,15 @@ const AudioEditor = () => {
       track.audio.pause();
       track.audio.currentTime = 0;
     });
-    if (containerRef.current) containerRef.current.scrollLeft = 0;
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
   };
 
+  // Eliminar un track
   const deleteTrack = (id) => {
     setTracks((prevTracks) => prevTracks.filter((track) => track.id !== id));
   };
 
+  // Manejar la grabación
   const handleRecord = async () => {
     if (!isRecording) {
       try {
@@ -146,6 +138,7 @@ const AudioEditor = () => {
               url,
               audio,
               duration,
+              audioBuffer,
               volume: 1,
               muted: false,
             },
@@ -164,67 +157,43 @@ const AudioEditor = () => {
     }
   };
 
-  const Track = memo(({ track, deleteTrack }) => {
-    const canvasRef = useRef(null);
-    const trackWidth = isFinite(track.duration) ? track.duration * pixelsPerSecond : 0;
-
-    useEffect(() => {
-      if (!canvasRef.current || !track.duration) return;
-      const canvas = canvasRef.current;
-      canvas.width = trackWidth;
-      canvas.style.width = `${trackWidth}px`;
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, trackWidth, canvas.height);
-      (async () => {
-        try {
-          const response = await fetch(track.url);
-          const arrayBuffer = await response.arrayBuffer();
-          const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-          const data = audioBuffer.getChannelData(0);
-          const samplesPerPixel = Math.max(1, Math.ceil(data.length / (trackWidth * 0.5)));
-          const maxVal = data.reduce((acc, s) => {
-            const abs = Math.abs(s);
-            return abs > acc ? abs : acc;
-          }, 0);
-          const scaleFactor = canvas.height / (2 * maxVal);
-          ctx.beginPath();
-          for (let x = 0; x < trackWidth; x++) {
-            const startIndex = x * samplesPerPixel;
-            const endIndex = Math.min(startIndex + samplesPerPixel, data.length);
-            const segment = data.slice(startIndex, endIndex);
-            const amp = segment.reduce((acc, s) => Math.max(acc, Math.abs(s)), 0) * scaleFactor;
-            ctx.lineTo(x, canvas.height / 2 - amp);
-            ctx.lineTo(x, canvas.height / 2 + amp);
-          }
-          ctx.strokeStyle = "#2196f3";
-          ctx.stroke();
-        } catch (error) {
-          console.error("Error al dibujar la onda:", error);
-        }
-      })();
-    }, [track.url, track.duration, trackWidth]);
-
-    return (
-      <div className="track" style={{ width: trackWidth }}>
-        <canvas ref={canvasRef} height="100" />
-        <TrashIcon size={20} onClick={() => deleteTrack(track.id)} />
-      </div>
-    );
-  });
-
   return (
     <div className="editor-container">
       <div
-        ref={containerRef}
-        className="tracks-container"
+        ref={scrollContainerRef}
+        className="scroll-container"
         onMouseDown={() => setAutoScroll(false)}
         onTouchStart={() => setAutoScroll(false)}
-        onScroll={handleUserScroll}
       >
-        {tracks.map((track) => (
-          <Track key={track.id} track={track} deleteTrack={deleteTrack} />
-        ))}
+        <div className="tracks-and-ruler">
+          {/* Tracks */}
+          <div className="tracks-container">
+            {tracks.map((track) => (
+              <Track
+                key={track.id}
+                track={track}
+                deleteTrack={deleteTrack}
+                zoomLevel={zoomLevel}
+                containerWidth={containerWidth}
+                audioContextRef={audioContextRef}
+              />
+            ))}
+          </div>
+
+          {/* Regla de tiempo */}
+          {tracks.length > 0 && (
+            <div className="time-ruler-wrapper">
+              <TimeRuler
+                totalDuration={maxDuration}
+                zoomLevel={zoomLevel}
+                currentTime={tracks[0]?.audio?.currentTime || 0}
+              />
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Controles */}
       <div className="controls">
         <RecordIcon size={30} onClick={handleRecord} isRecording={isRecording} />
         <TogglePlayPause size={30} isPlaying={isPlaying} onToggle={handlePlayPause} />
