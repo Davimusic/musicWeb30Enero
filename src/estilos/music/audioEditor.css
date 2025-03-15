@@ -184,3 +184,29 @@ canvas {
   padding: 5px 10px;
   cursor: pointer;
 }
+
+
+
+
+
+
+
+.track {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.track-controls-wrapper {
+  flex: 0 0 200px; /* Define el ancho fijo de los controles */
+  position: sticky; /* Hace que los controles se mantengan fijos */
+  left: 0; /* Los fija al lado izquierdo */
+  z-index: 10; /* Asegura que los controles estén sobre el resto */
+  background-color: #fff; /* Fondo para que sean visibles */
+  border-right: 1px solid #ccc; /* Línea divisoria para claridad */
+}
+
+.track-content {
+  flex: 1; /* El resto del espacio está ocupado por el contenido */
+  overflow-x: hidden; /* Asegúrate de que el desplazamiento solo aplique al contenedor padre */
+}

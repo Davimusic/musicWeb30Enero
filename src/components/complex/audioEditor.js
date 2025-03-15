@@ -10,25 +10,55 @@ import Track from "./track";
 import TimeRuler from "./timeRuler";
 
 const AudioEditor = () => {
-  const [tracks, setTracks] = useState([]); // Cada track: { id, url, audio, duration, audioBuffer, … }
+  const [tracks, setTracks] = useState([]); // Tracks: { id, url, duration, volume, muted, panning, audio }
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [autoScroll, setAutoScroll] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [soloTrackId, setSoloTrackId] = useState(null); // Track seleccionado para "solo"
 
-  const scrollContainerRef = useRef(null); // Ref para el contenedor scrollable
+  const scrollContainerRef = useRef(null);
   const audioContextRef = useRef(null);
   const mediaRecorderRef = useRef(null);
 
-  // Inicializar el AudioContext
+  useEffect(() => {
+    if (isPlaying && autoScroll && tracks.length > 0 && scrollContainerRef.current) {
+      const pixelsPerSecond = 500 * zoomLevel; // Velocidad del desplazamiento
+      const tol = 0.1; // Tolerancia para el final de la pista
+      const intervalId = setInterval(() => {
+        const maxDurationTrack = tracks.reduce((prev, curr) =>
+          curr.duration > prev.duration ? curr : prev
+        );
+        const currentTime = maxDurationTrack.audio?.currentTime || 0;
+        const duration = maxDurationTrack.duration;
+  
+        if (currentTime >= duration - tol) {
+          // Detener al final de la pista
+          scrollContainerRef.current.scrollLeft = duration * pixelsPerSecond;
+          setIsPlaying(false);
+          setHasEnded(true);
+          clearInterval(intervalId);
+          return;
+        }
+  
+        // Actualizar el desplazamiento del contenedor
+        scrollContainerRef.current.scrollLeft = currentTime * pixelsPerSecond;
+      }, 50); // Intervalo de 50 ms
+      return () => clearInterval(intervalId);
+    }
+  }, [isPlaying, autoScroll, zoomLevel, tracks]);
+  
+
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
   }, []);
 
-  // Calcular el ancho del contenedor y manejar el resize
   useEffect(() => {
     if (scrollContainerRef.current) {
       setContainerWidth(scrollContainerRef.current.clientWidth);
@@ -42,79 +72,66 @@ const AudioEditor = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Calcular la duración máxima de todos los tracks
-  const maxDuration =
-    tracks.length > 0
-      ? tracks.reduce((acc, t) => (t.duration > acc ? t.duration : acc), 0)
-      : 0;
-
-  // Sincronizar el scroll con la reproducción
+  // Sincronizar propiedades `volume`, `muted` y `panning` con los objetos `Audio`
   useEffect(() => {
-    if (isPlaying && autoScroll && tracks.length > 0 && scrollContainerRef.current) {
-      const pixelsPerSecond = 500 * zoomLevel;
-      const tol = 0.1; // Tolerancia en segundos
-      const intervalId = setInterval(() => {
-        const maxDurationTrack = tracks.reduce((prev, curr) =>
-          curr.duration > prev.duration ? curr : prev
-        );
-        const currentTime = maxDurationTrack.audio.currentTime;
-        const duration = maxDurationTrack.duration;
-
-        if (currentTime >= duration - tol) {
-          scrollContainerRef.current.scrollLeft = duration * pixelsPerSecond;
-          tracks.forEach((track) => track.audio.pause());
-          setHasEnded(true);
-          clearInterval(intervalId);
-          return;
+    tracks.forEach((track) => {
+      if (track.audio) {
+        track.audio.volume = track.muted ? 0 : track.volume; // Mute afecta el volumen
+        if (track.pannerNode) {
+          track.pannerNode.pan.value = track.panning; // Sincroniza el panning
         }
+      }
+    });
+  }, [tracks]);
 
-        // Desplazar el contenedor
-        scrollContainerRef.current.scrollLeft = currentTime * pixelsPerSecond;
-      }, 50);
-      return () => clearInterval(intervalId);
-    }
-  }, [isPlaying, autoScroll, zoomLevel, tracks]);
-
-  // Manejar play/pause
   const handlePlayPause = () => {
     setIsPlaying((prev) => {
       const newState = !prev;
       if (newState) {
         if (hasEnded) {
           tracks.forEach((track) => {
-            track.audio.currentTime = 0;
+            if (track.audio) {
+              track.audio.currentTime = 0; // Reinicia el audio
+            }
           });
           if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
           setHasEnded(false);
         }
         setAutoScroll(true);
         tracks.forEach((track) => {
-          track.audio.play();
+          if (track.audio) { // Verifica que track.audio existe
+            track.audio.play().catch((error) => {
+              console.error("Error al reproducir:", error);
+            });
+          }
         });
       } else {
-        tracks.forEach((track) => track.audio.pause());
+        tracks.forEach((track) => {
+          if (track.audio) {
+            track.audio.pause();
+          }
+        });
       }
       return newState;
     });
   };
 
-  // Manejar stop
   const handleStop = () => {
     setIsPlaying(false);
     setHasEnded(false);
     tracks.forEach((track) => {
-      track.audio.pause();
-      track.audio.currentTime = 0;
+      if (track.audio) {
+        track.audio.pause();
+        track.audio.currentTime = 0;
+      }
     });
     if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
   };
 
-  // Eliminar un track
   const deleteTrack = (id) => {
     setTracks((prevTracks) => prevTracks.filter((track) => track.id !== id));
   };
 
-  // Manejar la grabación
   const handleRecord = async () => {
     if (!isRecording) {
       try {
@@ -129,9 +146,12 @@ const AudioEditor = () => {
           const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
           const duration = audioBuffer.duration;
           const audio = new Audio(url);
-          await new Promise((resolve) => {
-            audio.onloadedmetadata = resolve;
-          });
+
+          const pannerNode = audioContextRef.current.createStereoPanner();
+          const source = audioContextRef.current.createMediaElementSource(audio);
+          source.connect(pannerNode).connect(audioContextRef.current.destination);
+
+          await new Promise((resolve) => (audio.onloadedmetadata = resolve));
           setTracks((prev) => [
             ...prev,
             {
@@ -142,7 +162,8 @@ const AudioEditor = () => {
               audioBuffer,
               volume: 1,
               muted: false,
-              panning: 0, // Panning inicial
+              panning: 0,
+              pannerNode,
             },
           ]);
         };
@@ -159,31 +180,35 @@ const AudioEditor = () => {
     }
   };
 
-  // Función para mutear todos los tracks excepto el seleccionado
   const muteAllExceptThis = (trackId) => {
-    setSoloTrackId(trackId); // Establecer el track seleccionado
     setTracks((prevTracks) =>
       prevTracks.map((track) => ({
         ...track,
-        muted: track.id !== trackId, // Mutea todos excepto el track seleccionado
+        muted: track.id !== trackId, // Silencia a todos menos el track seleccionado
       }))
     );
   };
 
-  // Función para actualizar el volumen de un track
-  const updateTrackVolume = (trackId, volume) => {
+  const updateTrackMuted = (trackId, muted) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) =>
-        track.id === trackId ? { ...track, volume } : track
+        track.id === trackId ? { ...track, muted } : track
       )
     );
   };
 
-  // Función para actualizar el panning de un track
   const updateTrackPanning = (trackId, panning) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) =>
         track.id === trackId ? { ...track, panning } : track
+      )
+    );
+  };
+
+  const updateTrackVolume = (trackId, volume) => {
+    setTracks((prevTracks) =>
+      prevTracks.map((track) =>
+        track.id === trackId ? { ...track, volume } : track
       )
     );
   };
@@ -197,7 +222,6 @@ const AudioEditor = () => {
         onTouchStart={() => setAutoScroll(false)}
       >
         <div className="tracks-and-ruler">
-          {/* Tracks */}
           <div className="tracks-container">
             {tracks.map((track) => (
               <Track
@@ -210,16 +234,14 @@ const AudioEditor = () => {
                 muteAllExceptThis={muteAllExceptThis}
                 updateTrackVolume={updateTrackVolume}
                 updateTrackPanning={updateTrackPanning}
-                isSolo={soloTrackId === track.id} // Pasar si este track está seleccionado
+                updateTrackMuted={updateTrackMuted} // Pasa la función corregida
               />
             ))}
           </div>
-
-          {/* Regla de tiempo */}
           {tracks.length > 0 && (
             <div className="time-ruler-wrapper">
               <TimeRuler
-                totalDuration={maxDuration}
+                totalDuration={tracks.reduce((max, t) => Math.max(max, t.duration), 0)}
                 zoomLevel={zoomLevel}
                 currentTime={tracks[0]?.audio?.currentTime || 0}
               />
@@ -227,8 +249,6 @@ const AudioEditor = () => {
           )}
         </div>
       </div>
-
-      {/* Controles */}
       <div className="controls">
         <RecordIcon size={30} onClick={handleRecord} isRecording={isRecording} />
         <TogglePlayPause size={30} isPlaying={isPlaying} onToggle={handlePlayPause} />
@@ -239,7 +259,7 @@ const AudioEditor = () => {
           max="3"
           step="0.1"
           value={zoomLevel}
-          onChange={(e) => setZoomLevel(parseFloat(e.target.value))}
+          onChange={(e) => setZoomLevel(parseFloat(e.target.value))} // Cambia el zoomLevel
         />
       </div>
     </div>
