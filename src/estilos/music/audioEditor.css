@@ -159,3 +159,28 @@ canvas {
   background: #ff0000;
   z-index: 3;
 }
+
+
+
+
+
+
+
+
+
+
+.track-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.track-controls input[type="range"] {
+  width: 100px;
+}
+
+.track-controls button {
+  padding: 5px 10px;
+  cursor: pointer;
+}

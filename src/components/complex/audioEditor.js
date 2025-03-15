@@ -17,6 +17,7 @@ const AudioEditor = () => {
   const [autoScroll, setAutoScroll] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [soloTrackId, setSoloTrackId] = useState(null); // Track seleccionado para "solo"
 
   const scrollContainerRef = useRef(null); // Ref para el contenedor scrollable
   const audioContextRef = useRef(null);
@@ -141,6 +142,7 @@ const AudioEditor = () => {
               audioBuffer,
               volume: 1,
               muted: false,
+              panning: 0, // Panning inicial
             },
           ]);
         };
@@ -155,6 +157,35 @@ const AudioEditor = () => {
       setIsRecording(false);
       mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
     }
+  };
+
+  // Función para mutear todos los tracks excepto el seleccionado
+  const muteAllExceptThis = (trackId) => {
+    setSoloTrackId(trackId); // Establecer el track seleccionado
+    setTracks((prevTracks) =>
+      prevTracks.map((track) => ({
+        ...track,
+        muted: track.id !== trackId, // Mutea todos excepto el track seleccionado
+      }))
+    );
+  };
+
+  // Función para actualizar el volumen de un track
+  const updateTrackVolume = (trackId, volume) => {
+    setTracks((prevTracks) =>
+      prevTracks.map((track) =>
+        track.id === trackId ? { ...track, volume } : track
+      )
+    );
+  };
+
+  // Función para actualizar el panning de un track
+  const updateTrackPanning = (trackId, panning) => {
+    setTracks((prevTracks) =>
+      prevTracks.map((track) =>
+        track.id === trackId ? { ...track, panning } : track
+      )
+    );
   };
 
   return (
@@ -176,6 +207,10 @@ const AudioEditor = () => {
                 zoomLevel={zoomLevel}
                 containerWidth={containerWidth}
                 audioContextRef={audioContextRef}
+                muteAllExceptThis={muteAllExceptThis}
+                updateTrackVolume={updateTrackVolume}
+                updateTrackPanning={updateTrackPanning}
+                isSolo={soloTrackId === track.id} // Pasar si este track está seleccionado
               />
             ))}
           </div>
