@@ -1,291 +1,205 @@
+/* Estilos generales del editor */
 .editor-container {
-  position: relative;
-  height: 100vh;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.548);
-}
-
-.timeline-container {
-  position: sticky;
+  position: fixed; /* Fija el contenedor en la ventana */
   top: 0;
-  background: white;
-  z-index: 100;
-}
-
-.main-progress-bar {
-  height: 3px;
-  background: rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.progress-indicator {
-  position: absolute;
-  width: 20px;
-  height: 100%;
-  background: #4b015a;
-  transition: left 0.1s linear;
-}
-
-canvas {
-  display: block;
-}
-
-
-
-
-
-.track {
-  height: 100%;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  padding: 10px;
-}
-
-
-
-
-.waveform-container {
-  position: relative;
-}
-
-.waveform-container canvas {
-  display: block;
-  height: 100%;
-  width: auto;
-}
-
-
-
-
-
-.editor-container {
+  left: 0;
+  width: 100vw; /* Ancho completo de la ventana */
+  height: 100vh; /* Alto completo de la ventana */
+  overflow: hidden; /* Oculta el scroll general */
+  background-color: rgba(0, 0, 0, 0.548); /* Fondo semitransparente */
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  flex-direction: column; /* Organiza los elementos en columna */
 }
 
-
-
-.time-ruler-container {
-  height: 30px;
-  overflow: hidden;
-  border-top: 1px solid #ddd;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  background-color: #000000;
-  border-top: 1px solid #ddd;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Contenedor de scroll para los tracks */
 .scroll-container {
-  flex: 1;
-  overflow: auto;
+  flex: 1; /* Ocupa el espacio disponible */
+  overflow-y: auto; /* Activa el scroll vertical */
   position: relative;
-}
-
-.tracks-and-ruler {
-  position: relative;
-  min-height: 100%;
-}
-
-.tracks-container {
+  height: calc(100vh - 140px); /* Limita la altura para dejar espacio a la regla y controles */
   padding-bottom: 40px; /* Espacio para la regla */
-  scroll-behavior: smooth;
+  min-height: 0; /* Permite que el contenedor se reduzca si es necesario */
 }
 
+/* Contenedor de tracks y regla de tiempo */
+.tracks-and-ruler {
+  display: flex;
+  flex-direction: column; /* Organiza en columna */
+  height: 100%; /* Asegura que ocupe todo el espacio disponible */
+  min-height: min-content; /* Asegura que el contenido mínimo sea respetado */
+  
+}
+
+/* Contenedor de los tracks */
+.tracks-container {
+  flex: 1; /* Ocupa el espacio disponible */
+  position: relative;
+  z-index: 1; /* Asegura que los tracks estén por debajo de la regla */
+  min-height: 100px; /* Altura mínima para evitar que colapse */
+  /*background-color: saddlebrown;*/
+  overflow-y: auto; /* Permite el scroll vertical si el contenido excede la altura */
+}
+
+/* Estilos para cada track */
+.track {
+  display: flex; /* Mantiene la estructura flexible */
+  align-items: center;
+  height: 100px; /* Altura fija para cada track */
+  background: rgba(0, 0, 0, 0.1); /* Fondo semitransparente */
+  border-radius: 0.7em; /* Bordes redondeados */
+  padding: 10px; /* Espaciado interno */
+  margin-bottom: 10px; /* Espacio entre tracks */
+}
+
+/* Contenedor de controles del track */
+.track-controls-wrapper {
+  display: flex; /* Mantiene la estructura flexible */
+  align-items: center;
+  gap: 10px; /* Espacio entre controles */
+  position: sticky; /* Fija los controles */
+  left: 0; /* Alinea a la izquierda */
+  z-index: 10; /* Asegura que esté por encima */
+  background-color: var(--backgroundColor1); /* Color de fondo dinámico */
+  padding: 20px; /* Espaciado interno */
+  border-radius: 0.7em; /* Bordes redondeados */
+}
+
+/* Contenido del track */
+.track-content {
+  display: flex;
+  flex-direction: column; /* Organiza en columna */
+  flex: 1; /* Ocupa el espacio disponible */
+  overflow-x: hidden; /* Oculta el scroll horizontal */
+}
+
+/* Fondo fijo para la regla de tiempo */
+.time-ruler-background-fixed {
+  position: fixed; /* Fija el fondo en la parte inferior */
+  bottom: 80px; /* Ajusta según la altura de la regla */
+  left: 0;
+  width: 100vw; /* Ancho completo de la ventana */
+  height: 40px; /* Altura de la regla */
+  background: var(--backgroundColor2); /* Color de fondo de la regla */
+  z-index: 1; /* Asegura que esté detrás de la regla */
+}
+
+/* Contenedor de la regla de tiempo */
 .time-ruler-wrapper {
-  position: sticky;
+  position: sticky; /* Fija la regla en la parte inferior */
   bottom: 0;
-  height: 40px;
-  background: white;
-  z-index: 2;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  height: 40px; /* Altura de la regla */
+  z-index: 2; /* Asegura que esté por encima del fondo fijo */
+  width: 100%; /* Ancho completo del contenedor padre */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); /* Sombra para destacar */
 }
 
+/* Estilos para la regla de tiempo */
 .time-ruler {
   position: relative;
   height: 100%;
-  background: #f8f8f8;
+  z-index: 30; /* Asegura que la regla esté por encima del fondo */
 }
 
+/* Marcas de tiempo en la regla */
 .time-mark {
   position: absolute;
   bottom: 0;
   height: 100%;
 }
 
+/* Líneas de la regla */
 .tick {
   width: 1px;
   height: 10px;
-  background: #999;
+  background: #999; /* Color de las líneas */
 }
 
+/* Etiquetas de tiempo */
 .time-label {
   position: absolute;
   bottom: 15px;
   transform: translateX(-50%);
   font-size: 12px;
-  color: #666;
+  color: #666; /* Color del texto */
 }
 
+/* Marcador de tiempo actual */
 .current-time-marker {
   position: absolute;
   width: 2px;
   height: 100%;
-  background: #ff0000;
-  z-index: 3;
+  background: #000000; /* Color del marcador */
+  z-index: 3; /* Asegura que esté por encima de la regla */
 }
 
-
-
-
-
-
-
-
-
-
-.track-controls {
-  display: block;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.track-controls input[type="range"] {
-  width: 100px;
-}
-
-.track-controls button {
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-
-
-
-
-
-
-.track {
+/* Controles del editor */
+.controls {
+  position: sticky; /* Fija los controles en la parte inferior */
+  bottom: 0;
   display: flex;
+  flex-wrap: wrap; /* Permite que los elementos se envuelvan */
   align-items: center;
-  position: relative;
+  justify-content: space-between; /* Espaciado entre elementos */
+  gap: 10px; /* Espacio entre controles */
+  padding: 10px; /* Espaciado interno */
+  background-color: #000000; /* Fondo oscuro */
+  border-top: 1px solid #ddd; /* Borde superior */
+  z-index: 3; /* Asegura que esté por encima de la regla */
+  border-radius: 0.7em;
+  padding: 20px;
 }
 
-.track-controls-wrapper {
-  
-  display: block; /* Ensures the element displays as block */
-  position: sticky; /* Sticks the controls within the parent */
-  left: 0; /* Anchors it to the left */
-  z-index: 10; /* Ensures it stays above other elements */
-  background-color: var(--backgroundColor1); /* Dynamic background color */
-  padding: 20px; /* Adds internal spacing */
-  border-radius: 0.7em; /* Rounds the corners */
-}
-
-
-.track-content {
-  display: flex;
-  flex-direction: column; /* Garantiza que los hijos estén en columna (uno debajo del otro) */
-  flex: 1;
-  overflow-x: hidden;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Estilos para los knobs (perillas) */
 .knob {
   width: 50px;
   height: 50px;
-  border: 2px solid var(--backgroundColor4);
-  border-radius: 50%;
-  background: radial-gradient(var(--backgroundColor5), var(--backgroundColor3));
+  border: 2px solid var(--backgroundColor4); /* Borde dinámico */
+  border-radius: 50%; /* Forma circular */
+  background: radial-gradient(var(--backgroundColor5), var(--backgroundColor3)); /* Fondo degradado */
   position: relative;
-  cursor: grab;
+  cursor: grab; /* Cambia el cursor al pasar */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* Etiqueta del knob */
 .knob-label {
   position: absolute;
   font-size: 10px;
-  color: var(--color2);
+  color: var(--color2); /* Color dinámico */
 }
 
+/* Knob de volumen */
 .knob.volume-knob {
-  box-shadow: inset 0 0 10px var(--backgroundColor1);
+  box-shadow: inset 0 0 10px var(--backgroundColor1); /* Sombra interna */
 }
 
+/* Knob de paneo */
 .knob.panning-knob {
-  box-shadow: inset 0 0 10px var(--backgroundColor2);
+  box-shadow: inset 0 0 10px var(--backgroundColor2); /* Sombra interna */
 }
 
+/* Efecto hover en knobs */
 .knob:hover {
-  transform: scale(1.1); /* Efecto de zoom al pasar el cursor */
+  transform: scale(1.1); /* Escala al pasar el cursor */
 }
 
+/* Efecto active en knobs */
 .knob:active {
-  cursor: grabbing;
+  cursor: grabbing; /* Cambia el cursor al hacer clic */
 }
 
-
+/* Track silenciado */
 .track.muted {
-  opacity: 0.5; /* Opacidad cuando el track está silenciado */
-  transition: opacity 0.3s ease; /* Animación suave */
+  opacity: 0.5; /* Reduce la opacidad */
+  transition: opacity 0.3s ease; /* Transición suave */
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/* Media query para pantallas pequeñas */
 @media (max-width: 900px) {
   .track-controls {
-    flex-wrap: wrap; /* Permite que los elementos se envuelvan en varias líneas */
-    justify-content: flex-start; /* Alinea los elementos al inicio */
+    flex-wrap: wrap; /* Envuelve los controles */
+    justify-content: flex-start; /* Alinea al inicio */
   }
 }

@@ -6,11 +6,6 @@ import ToggleSolo from "./toggleSolo";
 import PanIcon from "./panIcon";
 import ResponsiveContent from "./responsiveContent";
 
-
-
-
-
-
 const Track = memo(({
   track,
   deleteTrack,
@@ -26,20 +21,20 @@ const Track = memo(({
   const [audioData, setAudioData] = useState(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // Calcular el ancho del track (lo que sea mayor entre el audio y la ventana)
   const trackWidth = Math.max(track.duration * 500 * zoomLevel, windowWidth);
 
-  // Manejar el redimensionamiento de la ventana
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
 
     window.addEventListener("resize", handleResize);
+
     return () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
 
-  // Preprocesar el audio y almacenar sus datos en estado
   useEffect(() => {
     const loadAudio = async () => {
       try {
@@ -55,57 +50,64 @@ const Track = memo(({
     loadAudio();
   }, [track.url, audioContextRef]);
 
-  // Renderizar la onda de audio
   useEffect(() => {
     if (!canvasRef.current || !audioData) return;
-
+  
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-
-    // Configuración inicial del canvas
-    canvas.width = trackWidth;
+  
+    // Ajustar dimensiones del lienzo
+    const adjustedWidth = trackWidth;
+  
+    canvas.width = adjustedWidth;
+    canvas.height = 100; // Puedes ajustar la altura según tus necesidades
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  
     const centerY = canvas.height / 2;
     const totalSamples = audioData.length;
-    const audioWidth = track.duration * 500 * zoomLevel; // Ancho real del audio
-
+    const audioWidth = track.duration * 500 * zoomLevel;
+  
+    // Dibujar la forma de onda
     ctx.beginPath();
     ctx.moveTo(0, centerY);
-
-    // Dibujar la onda de audio hasta donde alcance el archivo
+  
     const samplesPerPixel = totalSamples / audioWidth;
     for (let x = 0; x < audioWidth; x++) {
       const start = Math.floor(x * samplesPerPixel);
       const end = Math.floor((x + 1) * samplesPerPixel);
       const avg = Array.from({ length: end - start })
         .reduce((acc, _, i) => acc + Math.abs(audioData[start + i] || 0), 0) / (end - start);
-
-      const y = (avg * centerY);
+  
+      const y = avg * centerY;
       ctx.lineTo(x, centerY - y);
       ctx.lineTo(x, centerY + y);
     }
-
-    // Extender una línea plana hasta el final si hay espacio restante
-    if (trackWidth > audioWidth) {
-      ctx.lineTo(trackWidth, centerY); // Línea recta hasta el final
-    }
-
-    ctx.strokeStyle = "#2196f3";
+  
+    ctx.strokeStyle = "#2196f3"; // Color azul para la forma de onda
     ctx.stroke();
-  }, [audioData, trackWidth, track.duration, zoomLevel]);
+  
+    // Dibujar una línea horizontal roja en el área de excedente
+    if (adjustedWidth > audioWidth) {
+      ctx.beginPath();
+      ctx.moveTo(audioWidth, centerY); // Empieza donde termina el ancho del audio
+      ctx.lineTo(adjustedWidth, centerY); // Extiende la línea al ancho ajustado
+      ctx.strokeStyle = "red"; // Color de la línea roja
+      ctx.lineWidth = 2; // Grosor opcional para la línea roja
+      ctx.stroke();
+    }
+  }, [audioData, trackWidth, track.duration, zoomLevel, windowWidth]);
+  
 
-  // Handlers para los controles
   const handleVolumeChange = useCallback((newValue) => {
     updateTrackVolume(track.id, newValue / 100);
   }, [track.id, updateTrackVolume]);
 
   const handlePanningChange = useCallback((newValue) => {
-    updateTrackPanning(track.id, newValue); // Rango directamente (-50 a 50)
+    updateTrackPanning(track.id, newValue);
   }, [track.id, updateTrackPanning]);
 
   const handlePanIconClick = useCallback(() => {
-    updateTrackPanning(track.id, 0); // Valor de "centro" 0
+    updateTrackPanning(track.id, 0);
   }, [track.id, updateTrackPanning]);
 
   return (
@@ -113,26 +115,42 @@ const Track = memo(({
       <div className="track-controls-wrapper">
         <div className="track-controls">
           <ResponsiveContent showContent={showContent}>
-            <RangeInput
-              value={track.volume * 100}
-              min={0}
-              max={100}
-              onChange={handleVolumeChange}
-            />
-            <RangeInput
-              value={track.panning}
-              min={-50}
-              max={50}
-              onChange={handlePanningChange}
-              children={<PanIcon panValue={track.panning} onClick={handlePanIconClick} />}
-            />
+            <div style={{ paddingBottom: '10px' }}>
+              <RangeInput
+                value={track.volume * 100}
+                min={0}
+                max={100}
+                onChange={handleVolumeChange}
+                children={
+                  <ToggleMute
+                    size={30}
+                    isMuted={track.muted}
+                    onToggle={() => updateTrackMuted(track.id, !track.muted)}
+                  />
+                }
+              />
+              <RangeInput
+                value={track.panning}
+                min={-50}
+                max={50}
+                onChange={handlePanningChange}
+                children={
+                  <PanIcon
+                    panValue={track.panning}
+                    onClick={handlePanIconClick}
+                  />
+                }
+              />
+            </div>
           </ResponsiveContent>
-          <ToggleSolo
-            size={30}
-            isSolo={track.isSolo}
-            onToggle={() => muteAllExceptThis(track.id)}
-          />
-          <TrashIcon onClick={() => deleteTrack(track.id)} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <ToggleSolo
+              size={30}
+              isSolo={track.isSolo}
+              onToggle={() => muteAllExceptThis(track.id)}
+            />
+            <TrashIcon onClick={() => deleteTrack(track.id)} />
+          </div>
         </div>
       </div>
       <div className="track-content">

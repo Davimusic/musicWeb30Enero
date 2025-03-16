@@ -2,15 +2,15 @@
 .color1 { color: #000000; }
 .color2 { color: #ffffff; }
 .color3 { color: #1d6188; }
-.color4 { color: #2b95c8; }
-.color5 { color: #2bc6c8; }
+.color4 { color: #ee00f7; }
+.color5 { color: #bbb018; }
 
 :root {
   --backgroundColor1: #292424;
   --backgroundColor2: #295337a4;
   --backgroundColor3: #555555b0;
   --backgroundColor4: #00eeff98;
-  --backgroundColor5: #000000;
+  --backgroundColor5: #6a16c9;
   --color1: #000000;
   --color2: #ffffff;
   --color3: #1d6188;

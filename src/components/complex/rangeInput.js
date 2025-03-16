@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../../estilos/music/rangeInput.css';
+import '../../estilos/general/general.css'
 
 const RangeInput = ({
     min = 0,
@@ -7,7 +8,7 @@ const RangeInput = ({
     step = 1,
     value, // Valor controlado desde el padre
     onChange,
-    colorClass = 'color1',
+    colorClass = 'color3',
     backgroundColorClass = 'backgroundColor1',
     children
   }) => {
@@ -19,7 +20,7 @@ const RangeInput = ({
     };
   
     return (
-      <div className={`rangeContainer ${backgroundColorClass}`}>
+      <div className={`rangeContainer `}>
         {children}
         <input
           type="range"
@@ -28,9 +29,9 @@ const RangeInput = ({
           step={step}
           value={value}
           onChange={handleChange}
-          className={`rangeInput ${colorClass}`}
+          className={`rangeInput `}
         />
-        <div className={`rangeValue ${colorClass}`}>{value}</div>
+        <div className={`rangeValue `}>{Number.isInteger(value) ? value : parseFloat(value.toFixed(1))}</div>
       </div>
     );
   };

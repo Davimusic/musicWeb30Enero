@@ -10,6 +10,9 @@ import Track from "./track";
 import TimeRuler from "./timeRuler";
 import EditToggleIcon from "./EditToggleIcon ";
 import RangeInput from "./rangeInput";
+import DownloadIcon from "./downloadIcon";
+import handleDownloadMix from "@/functions/music/handleDownloadMix";
+
 
 
 const AudioEditor = () => {
@@ -22,8 +25,6 @@ const AudioEditor = () => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [showTracks, setShowTracks] = useState(true);
-
-  
 
   const scrollContainerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -255,6 +256,12 @@ const AudioEditor = () => {
     setZoomLevel(newValue); // Actualiza el estado del zoomLevel
   }, [setZoomLevel]);
 
+  
+  
+  
+
+  
+
   return (
     <div className="editor-container">
       <div
@@ -282,13 +289,18 @@ const AudioEditor = () => {
             ))}
           </div>
           {tracks.length > 0 && (
-            <div className="time-ruler-wrapper">
-              <TimeRuler
-                totalDuration={tracks.reduce((max, t) => Math.max(max, t.duration), 0)}
-                zoomLevel={zoomLevel}
-                currentTime={tracks[0]?.audio?.currentTime || 0}
-              />
-            </div>
+            <>
+              {/* Fondo fijo para la regla */}
+              <div className="time-ruler-background-fixed"></div>
+              {/* Regla de tiempo */}
+              <div className="time-ruler-wrapper">
+                <TimeRuler
+                  totalDuration={tracks.reduce((max, t) => Math.max(max, t.duration), 0)}
+                  zoomLevel={zoomLevel}
+                  currentTime={tracks[0]?.audio?.currentTime || 0}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -300,7 +312,7 @@ const AudioEditor = () => {
         {isMobile && (
           <EditToggleIcon size={30} iconColor={'white'} onToggle={toggleTrackVisibility} isVisible={true} />
         )}
-      
+        <DownloadIcon size={30} onToggle={() => handleDownloadMix(tracks)} />
       </div>
     </div>
   );

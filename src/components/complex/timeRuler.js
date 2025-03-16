@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import "../../estilos/general/general.css";
+import '../../estilos/music/audioEditor.css';
 
 const TimeRuler = ({ totalDuration, zoomLevel, currentTime }) => {
   const rulerWidth = totalDuration * 500 * zoomLevel;
@@ -20,8 +21,8 @@ const TimeRuler = ({ totalDuration, zoomLevel, currentTime }) => {
           className="time-mark"
           style={{ left: `${i * 500 * zoomLevel}px` }}
         >
-          <div className="time-label">{i}s</div>
-          <div className="tick"></div>
+          <div className="time-label title-xl color2">{i}s</div>
+          <div className="tick title-xl color2"></div>
         </div>
       ))}
     </div>
