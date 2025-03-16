@@ -1,0 +1,82 @@
+/* components/RangeInput.module.css */
+.rangeContainer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 15px;
+    background-color: var(--backgroundColor1); /* Fondo por defecto */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.3s ease;
+  }
+  
+  .rangeInput {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--color1), var(--color4));
+    outline: none;
+    opacity: 0.8;
+    transition: opacity 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .rangeInput:hover {
+    opacity: 1;
+    box-shadow: 0 0 15px var(--color4);
+  }
+  
+  .rangeInput::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color4);
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 10px var(--color4), 0 0 20px var(--color4);
+  }
+  
+  .rangeInput::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color4);
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 10px var(--color4), 0 0 20px var(--color4);
+  }
+  
+  .rangeInput::-webkit-slider-thumb:hover {
+    background: var(--color5);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--color5), 0 0 30px var(--color5);
+  }
+  
+  .rangeInput::-moz-range-thumb:hover {
+    background: var(--color5);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--color5), 0 0 30px var(--color5);
+  }
+  
+  .rangeValue {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color4);
+    text-shadow: 0 0 5px var(--color4), 0 0 10px var(--color4);
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+  }
+  
+  /* Clases de colores dinámicos */
+  .color1 { --color: var(--color1); }
+  .color2 { --color: var(--color2); }
+  .color3 { --color: var(--color3); }
+  .color4 { --color: var(--color4); }
+  .color5 { --color: var(--color5); }
+  
+  .backgroundColor1 { --backgroundColor: var(--backgroundColor1); }
+  .backgroundColor2 { --backgroundColor: var(--backgroundColor2); }
+  .backgroundColor3 { --backgroundColor: var(--backgroundColor3); }
+  .backgroundColor4 { --backgroundColor: var(--backgroundColor4); }
+  .backgroundColor5 { --backgroundColor: var(--backgroundColor5); }

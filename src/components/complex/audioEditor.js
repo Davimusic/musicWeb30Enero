@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import "../../estilos/music/audioEditor.css";
 import "../../estilos/general/general.css";
 import TogglePlayPause from "./TogglePlayPause";
@@ -8,6 +8,9 @@ import RecordIcon from "./recordIcon";
 import StopIcon from "./stopIcon";
 import Track from "./track";
 import TimeRuler from "./timeRuler";
+import EditToggleIcon from "./EditToggleIcon ";
+import RangeInput from "./rangeInput";
+
 
 const AudioEditor = () => {
   const [tracks, setTracks] = useState([]); // Tracks: { id, url, duration, volume, muted, panning, audio }
@@ -17,11 +20,29 @@ const AudioEditor = () => {
   const [autoScroll, setAutoScroll] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showTracks, setShowTracks] = useState(true);
+
+  
 
   const scrollContainerRef = useRef(null);
   const audioContextRef = useRef(null);
   const mediaRecorderRef = useRef(null);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768); // Detectar dispositivo móvil
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const toggleTrackVisibility = () => {
+    setShowTracks((prev) => !prev); // Alterna la visibilidad de las pistas
+  };
+
+  // Efecto para el desplazamiento automático durante la reproducción
   useEffect(() => {
     if (isPlaying && autoScroll && tracks.length > 0 && scrollContainerRef.current) {
       const pixelsPerSecond = 500 * zoomLevel; // Velocidad del desplazamiento
@@ -32,7 +53,7 @@ const AudioEditor = () => {
         );
         const currentTime = maxDurationTrack.audio?.currentTime || 0;
         const duration = maxDurationTrack.duration;
-  
+
         if (currentTime >= duration - tol) {
           // Detener al final de la pista
           scrollContainerRef.current.scrollLeft = duration * pixelsPerSecond;
@@ -41,15 +62,15 @@ const AudioEditor = () => {
           clearInterval(intervalId);
           return;
         }
-  
+
         // Actualizar el desplazamiento del contenedor
         scrollContainerRef.current.scrollLeft = currentTime * pixelsPerSecond;
       }, 50); // Intervalo de 50 ms
       return () => clearInterval(intervalId);
     }
   }, [isPlaying, autoScroll, zoomLevel, tracks]);
-  
 
+  // Inicializar el contexto de audio
   useEffect(() => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     return () => {
@@ -59,6 +80,7 @@ const AudioEditor = () => {
     };
   }, []);
 
+  // Actualizar el ancho del contenedor
   useEffect(() => {
     if (scrollContainerRef.current) {
       setContainerWidth(scrollContainerRef.current.clientWidth);
@@ -78,12 +100,13 @@ const AudioEditor = () => {
       if (track.audio) {
         track.audio.volume = track.muted ? 0 : track.volume; // Mute afecta el volumen
         if (track.pannerNode) {
-          track.pannerNode.pan.value = track.panning; // Sincroniza el panning
+          track.pannerNode.pan.value = track.panning / 50; // Sincroniza el panning
         }
       }
     });
   }, [tracks]);
 
+  // Función para reproducir/pausar
   const handlePlayPause = () => {
     setIsPlaying((prev) => {
       const newState = !prev;
@@ -99,7 +122,7 @@ const AudioEditor = () => {
         }
         setAutoScroll(true);
         tracks.forEach((track) => {
-          if (track.audio) { // Verifica que track.audio existe
+          if (track.audio) {
             track.audio.play().catch((error) => {
               console.error("Error al reproducir:", error);
             });
@@ -116,6 +139,7 @@ const AudioEditor = () => {
     });
   };
 
+  // Función para detener la reproducción
   const handleStop = () => {
     setIsPlaying(false);
     setHasEnded(false);
@@ -128,10 +152,12 @@ const AudioEditor = () => {
     if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
   };
 
+  // Función para eliminar un track
   const deleteTrack = (id) => {
     setTracks((prevTracks) => prevTracks.filter((track) => track.id !== id));
   };
 
+  // Función para grabar audio
   const handleRecord = async () => {
     if (!isRecording) {
       try {
@@ -180,6 +206,7 @@ const AudioEditor = () => {
     }
   };
 
+  // Función para silenciar todos los tracks excepto uno
   const muteAllExceptThis = (trackId) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) => ({
@@ -189,6 +216,7 @@ const AudioEditor = () => {
     );
   };
 
+  // Función para actualizar el estado de mute de un track
   const updateTrackMuted = (trackId, muted) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) =>
@@ -197,6 +225,7 @@ const AudioEditor = () => {
     );
   };
 
+  // Función para actualizar el paneo de un track
   const updateTrackPanning = (trackId, panning) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) =>
@@ -205,6 +234,7 @@ const AudioEditor = () => {
     );
   };
 
+  // Función para actualizar el volumen de un track
   const updateTrackVolume = (trackId, volume) => {
     setTracks((prevTracks) =>
       prevTracks.map((track) =>
@@ -213,13 +243,25 @@ const AudioEditor = () => {
     );
   };
 
+  // Función para desactivar el auto-scroll al interactuar con el contenedor
+  const handleScrollContainerInteraction = (event) => {
+    const isControl = event.target.closest(".track-controls, .track-controls-wrapper");
+    if (!isControl) {
+      setAutoScroll(false); // Solo desactivar autoScroll si no es un control
+    }
+  };
+
+  const handleZoomChange = useCallback((newValue) => {
+    setZoomLevel(newValue); // Actualiza el estado del zoomLevel
+  }, [setZoomLevel]);
+
   return (
     <div className="editor-container">
       <div
         ref={scrollContainerRef}
         className="scroll-container"
-        onMouseDown={() => setAutoScroll(false)}
-        onTouchStart={() => setAutoScroll(false)}
+        onMouseDown={handleScrollContainerInteraction}
+        onTouchStart={handleScrollContainerInteraction}
       >
         <div className="tracks-and-ruler">
           <div className="tracks-container">
@@ -234,7 +276,8 @@ const AudioEditor = () => {
                 muteAllExceptThis={muteAllExceptThis}
                 updateTrackVolume={updateTrackVolume}
                 updateTrackPanning={updateTrackPanning}
-                updateTrackMuted={updateTrackMuted} // Pasa la función corregida
+                updateTrackMuted={updateTrackMuted}
+                showContent={showTracks}
               />
             ))}
           </div>
@@ -253,14 +296,11 @@ const AudioEditor = () => {
         <RecordIcon size={30} onClick={handleRecord} isRecording={isRecording} />
         <TogglePlayPause size={30} isPlaying={isPlaying} onToggle={handlePlayPause} />
         <StopIcon size={30} onClick={handleStop} />
-        <input
-          type="range"
-          min="0.1"
-          max="3"
-          step="0.1"
-          value={zoomLevel}
-          onChange={(e) => setZoomLevel(parseFloat(e.target.value))} // Cambia el zoomLevel
-        />
+        <RangeInput value={zoomLevel} min={0.1} max={3} step={0.1} onChange={handleZoomChange} />
+        {isMobile && (
+          <EditToggleIcon size={30} iconColor={'white'} onToggle={toggleTrackVisibility} isVisible={true} />
+        )}
+      
       </div>
     </div>
   );

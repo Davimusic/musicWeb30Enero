@@ -37,10 +37,6 @@ const RecordIcon = ({
         {/* Ícono de grabación (círculo) */}
         <circle cx="12" cy="12" r={isRecording ? '8' : '6'} /> {/* Cambia el tamaño del círculo si está grabando */}
       </svg>
-      {/* Texto dinámico según el estado de grabación */}
-      <span style={{ color: 'white', fontSize: '14px' }}>
-        {isRecording ? 'Detener Grabación' : 'Comenzar Grabación'}
-      </span>
     </div>
   );
 };
