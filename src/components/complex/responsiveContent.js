@@ -1,39 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 
-const ResponsiveContent = ({ children, hiddenContent, showContent }) => {
+const ResponsiveContent = ({ children, showContent }) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [renderContent, setRenderContent] = useState(showContent);
   const contentRef = useRef(null);
   const [maxHeight, setMaxHeight] = useState("0px");
 
   // Detectar si es móvil
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
+    handleResize(); // Configuración inicial
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Controlar la altura y renderizado
+  // Control de la altura basado en showContent
   useEffect(() => {
-    let timeoutId;
-
     if (showContent) {
-      setRenderContent(true);
-      // Esperar a que el contenido se renderice para calcular la altura
-      timeoutId = setTimeout(() => {
-        if (contentRef.current) {
-          setMaxHeight(`${contentRef.current.scrollHeight}px`);
-        }
-      }, 10);
+      if (contentRef.current) {
+        setMaxHeight(`${contentRef.current.scrollHeight}px`);
+      }
     } else {
       setMaxHeight("0px");
-      // Esperar a que termine la transición para desmontar
-      timeoutId = setTimeout(() => setRenderContent(false), 300); // Ajusta este tiempo según la duración de la transición
     }
-
-    // Cleanup function to clear the timeout
-    return () => clearTimeout(timeoutId);
   }, [showContent]);
 
   // Estilos dinámicos
@@ -43,19 +31,14 @@ const ResponsiveContent = ({ children, hiddenContent, showContent }) => {
     maxHeight: isMobile ? maxHeight : "none",
     opacity: showContent ? 1 : 0,
     transform: `translateY(${showContent ? 0 : "-10px"})`,
-    transitionProperty: "max-height, opacity, transform", // Especifica las propiedades que se animarán
   };
 
   return (
     <div>
-      {!isMobile && children}
-      
-      {isMobile && (
-        <div
-          ref={contentRef}
-          style={contentStyle}
-        >
-          {renderContent && (showContent ? children : hiddenContent)}
+      {/* Mostrar children solo si showContent es true */}
+      {showContent && (
+        <div ref={contentRef} style={contentStyle}>
+          {children}
         </div>
       )}
     </div>

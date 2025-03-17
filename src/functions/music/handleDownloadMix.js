@@ -1,6 +1,8 @@
 // Función para mezclar y descargar las pistas
 const handleDownloadMix = async (tracks) => {
     console.log('descarga');
+    console.log(tracks);
+    
     
     if (tracks.length === 0) {
       alert("No hay pistas para mezclar.");
