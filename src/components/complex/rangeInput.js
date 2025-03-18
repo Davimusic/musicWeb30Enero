@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import '../../estilos/music/rangeInput.css';
-import '../../estilos/general/general.css';
+import '../../estilos/music/rangeInput.css'; // Asegúrate de importar los estilos correctamente
 
 const RangeInput = ({
   min = 0,
@@ -20,20 +19,22 @@ const RangeInput = ({
   };
 
   return (
-    <div className={`rangeContainer `}>
-      {children}
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={handleChange}
-        className={`rangeInput `}
-      />
-      <div className={`rangeValue `}>
-        {Number.isInteger(value) ? value : parseFloat((value || 0).toFixed(1))}
-      </div>
+    <div style={{display: 'flex'}}>
+        {children}
+        <div className={'rangeContainer'}>
+        <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={handleChange}
+            className={'rangeInput'}
+        />
+        <div className={'rangeValue'}>
+            {Number.isInteger(value) ? value : parseFloat((value || 0).toFixed(1))}
+        </div>
+        </div>
     </div>
   );
 };

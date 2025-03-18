@@ -2,31 +2,31 @@
 .rangeContainer {
     display: flex;
     align-items: center;
-    gap: 15px;
-    /*padding: 15px;
+    
+    
     border-radius: 15px;
-    background-color: var(--backgroundColor1); /* Fondo por defecto */
-    /*box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);*/
+    background-color: var(--backgroundColor1);
     transition: background-color 0.3s ease;
-  }
-  
-  .rangeInput {
+    width: 200px;
+}
+
+.rangeInput {
     -webkit-appearance: none;
-    width: 100%;
+    /*width: 60%; /* Ancho completo por defecto */
     height: 8px;
     border-radius: 5px;
     background: linear-gradient(90deg, var(--color2), var(--color3));
     outline: none;
     opacity: 0.8;
     transition: opacity 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .rangeInput:hover {
+}
+
+.rangeInput:hover {
     opacity: 1;
     box-shadow: 0 0 15px var(--color4);
-  }
-  
-  .rangeInput::-webkit-slider-thumb {
+}
+
+.rangeInput::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 20px;
@@ -35,40 +35,42 @@
     background: var(--backgroundColor2);
     cursor: pointer;
     transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-    /*box-shadow: 0 0 10px var(--color4), 0 0 20px var(--color4);*/
-  }
-  
-  .rangeInput::-moz-range-thumb {
+}
+
+.rangeInput::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
     background: var(--backgroundColor2);
     cursor: pointer;
     transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-    /*box-shadow: 0 0 10px var(--color4), 0 0 20px var(--color4);*/
-  }
-  
-  .rangeInput::-webkit-slider-thumb:hover {
+}
+
+.rangeInput::-webkit-slider-thumb:hover {
     background: var(--color5);
     transform: scale(1.1);
     box-shadow: 0 0 15px var(--color5), 0 0 30px var(--color5);
-  }
-  
-  .rangeInput::-moz-range-thumb:hover {
+}
+
+.rangeInput::-moz-range-thumb:hover {
     background: var(--color5);
     transform: scale(1.1);
     box-shadow: 0 0 15px var(--color5), 0 0 30px var(--color5);
-  }
-  
-  .rangeValue {
+}
+
+.rangeValue {
     font-size: 18px;
     font-weight: bold;
     color: var(--color2);
-    /*text-shadow: 0 0 5px var(--color2), 0 0 10px var(--color3);*/
     transition: color 0.3s ease, text-shadow 0.3s ease;
-  }
+}
 
-
+/* Media query para dispositivos móviles */
+@media (max-width: 768px) {
+    .rangeContainer {
+        width: 100px;
+    }
+}
 
   
   

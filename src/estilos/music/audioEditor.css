@@ -1,15 +1,20 @@
+/* Variables CSS para alturas dinámicas */
+:root {
+  --global-controls-height: 70px; /* Altura base para desktop */
+  --track-height: 100px; /* Altura base para cada track */
+}
+
 /* Estilos generales */
 .editor-container {
   display: flex;
   position: absolute;
-  top: 0; /* Se pega al borde superior */
-  left: 0; /* Se pega al borde izquierdo */
-  right: 0; /* Se pega al borde derecho */
-  bottom: 60px; /* Ajusta según el espacio de los controles globales */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--global-controls-height); /* Usar variable CSS */
   background-color: #ffffffa2;
-  color: white;
-  padding-bottom: 60px; /* Espacio para controles globales */
-  box-sizing: border-box; /* Incluye padding y bordes en la altura */
+  padding-bottom: var(--global-controls-height); /* Espacio dinámico */
+  box-sizing: border-box;
 }
 
 /* Controles laterales */
@@ -17,14 +22,29 @@
   width: 250px;
   background: #2a2a2a;
   overflow-y: auto; /* Habilita scroll vertical */
-  height: calc(100vh - 60px); /* Altura menos la altura de los controles globales */
+  height: calc(100vh - var(--global-controls-height)); /* Altura dinámica */
+  border-right: 1px solid #444; /* Línea divisoria cohesiva */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Sombra para profundidad */
+  scrollbar-gutter: stable; /* Espacio reservado para scrollbar */
+}
+
+/* Ocultar la barra de desplazamiento pero permitir el scroll */
+.track-controls-sidebar::-webkit-scrollbar {
+  width: 0; /* Ocultar la barra de desplazamiento en WebKit (Chrome, Safari) */
+}
+
+.track-controls-sidebar {
+  scrollbar-width: none; /* Ocultar la barra de desplazamiento en Firefox */
 }
 
 .track-controls {
-  margin-left: 10px;
-  margin-right: 10px;
-  height: 111px;
-  border-bottom: 1px solid white; /* Añadido borde para separación visual */
+  margin: 0 12px; /* Unificar márgenes laterales */
+  height: 100px; /* Altura fija */
+  border-bottom: 1px solid white; /* Separación visual */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
 }
 
 /* Línea de tiempo */
@@ -32,7 +52,16 @@
   flex: 1;
   overflow-x: auto;
   position: relative;
-  height: calc(100vh - 60px); /* Altura menos la altura de los controles globales */
+  height: calc(100vh - var(--global-controls-height)); /* Altura dinámica */
+}
+
+/* Ocultar la barra de desplazamiento horizontal pero permitir el scroll */
+.timeline-container::-webkit-scrollbar {
+  height: 0; /* Ocultar la barra de desplazamiento en WebKit (Chrome, Safari) */
+}
+
+.timeline-container {
+  scrollbar-width: none; /* Ocultar la barra de desplazamiento en Firefox */
 }
 
 .tracks-container {
@@ -40,30 +69,40 @@
   min-width: max-content;
   overflow-y: auto; /* Habilita scroll vertical */
   height: 100%; /* Ocupa toda la altura disponible */
+  scrollbar-gutter: stable; /* Espacio reservado para scrollbar */
 }
 
-.track-waveform {
-  height: 100px;
-  margin: 10px 0;
-  border-bottom: 1px solid #444;
+/* Ocultar la barra de desplazamiento vertical pero permitir el scroll */
+.tracks-container::-webkit-scrollbar {
+  width: 0; /* Ocultar la barra de desplazamiento en WebKit (Chrome, Safari) */
+}
+
+.tracks-container {
+  scrollbar-width: none; /* Ocultar la barra de desplazamiento en Firefox */
+}
+
+.canvas {
+  height: var(--track-height);
+  border-bottom: 1px solid #444; /* Separación visual */
 }
 
 /* Controles globales */
 .global-controls {
   position: fixed;
   bottom: 0;
-  left: 0; /* Extender desde el borde izquierdo */
-  right: 0; /* Extender hasta el borde derecho */
+  left: 0;
+  right: 0;
   background: #1a1a1a;
-  margin: 15px; /* Aumentar el padding para mejor espaciado */
+  padding: 15px; /* Padding en lugar de margin */
   display: flex;
   gap: 15px;
   align-items: center;
-  justify-content: center; /* Centrar el contenido horizontalmente */
-  height: 70px; /* Aumentar la altura para más espacio */
-  border-radius: 20px; /* Border radius en la esquina superior izquierda */
-  
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3); /* Sombra para un efecto elevado */
+  justify-content: center;
+  min-height: 70px; /* Altura mínima */
+  height: auto; /* Altura automática */
+  box-sizing: border-box;
+  border-radius: 20px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3); /* Sombra para efecto elevado */
 }
 
 /* Estilos adicionales para los controles */
@@ -83,12 +122,40 @@ input[type="range"] {
   width: 100%;
 }
 
+/* Transición suave para la opacidad */
 .timeline-container {
-  margin: 10px 0;
   border-bottom: 1px solid #444;
-  transition: opacity 0.3s ease; /* Transición suave para la opacidad */
+  transition: opacity 0.3s ease;
 }
 
 .track-controls {
   opacity: 1 !important; /* Asegurar que los controles no hereden la opacidad */
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  :root {
+    --global-controls-height: 100px; /* Mayor altura en móvil */
+  }
+
+  .global-controls {
+    flex-wrap: wrap; /* Ajustar controles en varias líneas */
+    padding: 10px; /* Menor padding en móvil */
+    min-height: 100px; /* Mayor altura en móvil */
+  }
+
+  .track-controls-sidebar {
+    width: 180px; /* Menor ancho en móvil */
+  }
+
+  .track-controls {
+    height: var(--track-height); /* Altura fija en móvil */
+    overflow: hidden; /* Evitar desbordamiento */
+  }
+}
+
+/* Estilos para el canvas de la forma de onda */
+canvas {
+  display: block; /* Evitar espacios no deseados */
+  /*background: #1a1a1a; /* Fondo oscuro para el canvas */
 }

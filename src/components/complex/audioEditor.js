@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "../../estilos/music/audioEditor.css";
 import "../../estilos/general/general.css";
@@ -61,6 +61,29 @@ const AudioEditor = () => {
       tracksContainer?.removeEventListener("scroll", handleTracksScroll);
     };
   }, []);
+
+  // Actualizar dimensiones del contenedor
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        setContainerWidth(container.offsetWidth);
+
+        // Actualizar variable CSS con altura real de los controles
+        const globalControls = container.querySelector('.global-controls');
+        if (globalControls) {
+          document.documentElement.style.setProperty(
+            '--global-controls-height',
+            `${globalControls.offsetHeight}px`
+          );
+        }
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [tracks]);
 
   // Inicializar AudioContext
   useEffect(() => {
@@ -183,6 +206,7 @@ const AudioEditor = () => {
             volume: 1,
             panning: 0,
             muted: false,
+            name: `Track ${prev.length + 1}`, // Nombre por defecto
           },
         ]);
       };
@@ -194,52 +218,44 @@ const AudioEditor = () => {
     }
   };
 
-  // Actualizar panning
-  const updateTrackPanning = (id, value) => {
-    setTracks((prev) =>
-      prev.map((track) => {
-        if (track.id === id && track.pannerNode) {
-          track.pannerNode.pan.value = value / 50;
-          return { ...track, panning: value };
-        }
-        return track;
-      })
-    );
-  };
+  // Manejar la subida de un archivo de audio
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  // Actualizar volumen
-  const updateTrackVolume = (id, volume) => {
-    setTracks((prev) =>
-      prev.map((track) => {
-        if (track.id === id && track.audio) {
-          track.audio.volume = volume;
-          return { ...track, volume };
-        }
-        return track;
-      })
-    );
-  };
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
 
-  // Actualizar mute
-  const updateTrackMuted = (id, muted) => {
-    setTracks((prev) =>
-      prev.map((track) => {
-        if (track.id === id && track.audio) {
-          track.audio.muted = muted;
-          return { ...track, muted };
-        }
-        return track;
-      })
-    );
-  };
+    audio.onloadedmetadata = async () => {
+      const duration = audio.duration;
 
-  const muteAllExceptThis = (trackId) => {
-    setTracks((prevTracks) =>
-      prevTracks.map((track) => ({
-        ...track,
-        muted: track.id !== trackId, // Silencia todos menos el track seleccionado
-      }))
-    );
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+
+        const pannerNode = audioContextRef.current.createStereoPanner();
+        const source = audioContextRef.current.createMediaElementSource(audio);
+        source.connect(pannerNode).connect(audioContextRef.current.destination);
+
+        setTracks((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            url,
+            audio,
+            duration,
+            audioBuffer, // Asegúrate de que el audioBuffer esté asignado
+            pannerNode,
+            volume: 1,
+            panning: 0,
+            muted: false,
+            name: `Track ${prev.length + 1}`, // Nombre por defecto
+          },
+        ]);
+      } catch (error) {
+        console.error("Error al decodificar el archivo de audio:", error);
+      }
+    };
   };
 
   // Cambiar zoom
@@ -255,6 +271,34 @@ const AudioEditor = () => {
           <div key={track.id} className="track-controls">
             <ResponsiveContent showContent={showContent}>
               <div style={{ paddingBottom: "10px" }}>
+                <div style={{}}>
+                  <ToggleSolo
+                    size={30}
+                    isSolo={track.isSolo}
+                    onToggle={() => muteAllExceptThis(track.id)}
+                  />
+                  {/* Input editable para el nombre del track */}
+                  <input
+                    type="text"
+                    value={track.name}
+                    onChange={(e) => {
+                      setTracks((prevTracks) =>
+                        prevTracks.map((t) =>
+                          t.id === track.id ? { ...t, name: e.target.value } : t
+                        )
+                      );
+                    }}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "white",
+                      fontSize: "14px",
+                      outline: "none",
+                      width: "100px", // Ajusta el ancho según sea necesario
+                    }}
+                  />
+                  <TrashIcon onClick={() => deleteTrack(track.id)} />
+                </div>
                 <RangeInput
                   value={track.volume * 100}
                   min={0}
@@ -282,14 +326,6 @@ const AudioEditor = () => {
                 />
               </div>
             </ResponsiveContent>
-            <div style={{}}>
-              <ToggleSolo
-                size={30}
-                isSolo={track.isSolo}
-                onToggle={() => muteAllExceptThis(track.id)}
-              />
-              <TrashIcon onClick={() => deleteTrack(track.id)} />
-            </div>
           </div>
         ))}
       </div>
@@ -322,6 +358,17 @@ const AudioEditor = () => {
         />
         <DownloadIcon onToggle={() => handleDownloadMix(tracks)} />
         <EditToggleIcon size={30} onToggle={() => setShowContent((prev) => !prev)} />
+        {/* Botón para subir archivo de audio */}
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={handleFileUpload}
+          style={{ display: "none" }}
+          id="file-upload"
+        />
+        <label style={{color: 'white'}} htmlFor="file-upload" className="upload-button">
+          Subir Audio
+        </label>
       </div>
     </div>
   );
