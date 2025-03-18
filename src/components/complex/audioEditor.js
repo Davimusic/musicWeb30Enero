@@ -183,33 +183,37 @@ const AudioEditor = () => {
       const audioChunks = [];
 
       mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunks, { type: "audio/wav" });
-        const url = URL.createObjectURL(blob);
-        const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+      // Dentro de la función handleRecord, modifica el evento onstop del mediaRecorder:
+mediaRecorder.onstop = async () => {
+  const blob = new Blob(audioChunks, { type: "audio/wav" });
+  const url = URL.createObjectURL(blob);
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
 
-        const audio = new Audio(url);
-        const pannerNode = audioContextRef.current.createStereoPanner();
-        const source = audioContextRef.current.createMediaElementSource(audio);
-        source.connect(pannerNode).connect(audioContextRef.current.destination);
+  const audio = new Audio(url);
+  const pannerNode = audioContextRef.current.createStereoPanner();
+  const source = audioContextRef.current.createMediaElementSource(audio);
+  source.connect(pannerNode).connect(audioContextRef.current.destination);
 
-        setTracks((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            url,
-            audio,
-            duration: audioBuffer.duration,
-            audioBuffer,
-            pannerNode,
-            volume: 1,
-            panning: 0,
-            muted: false,
-            name: `Track ${prev.length + 1}`, // Nombre por defecto
-          },
-        ]);
-      };
+  // Detener todas las pistas del flujo de medios
+  stream.getTracks().forEach(track => track.stop());  // <-- Añade esta línea
+
+  setTracks((prev) => [
+    ...prev,
+    {
+      id: Date.now(),
+      url,
+      audio,
+      duration: audioBuffer.duration,
+      audioBuffer,
+      pannerNode,
+      volume: 1,
+      panning: 0,
+      muted: false,
+      name: `Track ${prev.length + 1}`,
+    },
+  ]);
+};
 
       mediaRecorder.start();
       setIsRecording(true);
