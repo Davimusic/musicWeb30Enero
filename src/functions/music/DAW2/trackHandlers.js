@@ -1,14 +1,4 @@
-export const updateTrackVolume = (trackId, volume, setTracks) => {
-    setTracks((prev) =>
-      prev.map((track) => {
-        if (track.id === trackId) {
-          track.audio.volume = volume;
-          return { ...track, volume };
-        }
-        return track;
-      })
-    );
-  };
+
   
   export const updateTrackMuted = (trackId, muted, setTracks) => {
     setTracks((prev) =>
@@ -22,17 +12,7 @@ export const updateTrackVolume = (trackId, volume, setTracks) => {
     );
   };
   
-  export const updateTrackPanning = (trackId, panning, setTracks) => {
-    setTracks((prev) =>
-      prev.map((track) => {
-        if (track.id === trackId) {
-          track.pannerNode.pan.value = panning / 50;
-          return { ...track, panning };
-        }
-        return track;
-      })
-    );
-  };
+ 
   
   export const deleteTrack = (trackId, setTracks) => {
     setTracks((prev) => prev.filter((track) => track.id !== trackId));
@@ -45,6 +25,30 @@ export const updateTrackVolume = (trackId, volume, setTracks) => {
           return { ...track, isSolo: !track.isSolo };
         }
         return { ...track, muted: track.isSolo ? false : true };
+      })
+    );
+  };
+
+  export const updateTrackVolume = (trackId, volume, setTracks) => {
+    setTracks(prev => 
+      prev.map(track => {
+        if (track.id === trackId) {
+          track.gainNode.gain.value = volume;
+          return { ...track, volume };
+        }
+        return track;
+      })
+    );
+  };
+  
+  export const updateTrackPanning = (trackId, panning, setTracks) => {
+    setTracks(prev => 
+      prev.map(track => {
+        if (track.id === trackId) {
+          track.pannerNode.pan.value = panning;
+          return { ...track, panning };
+        }
+        return track;
       })
     );
   };

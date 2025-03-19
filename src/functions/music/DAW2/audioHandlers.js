@@ -1,33 +1,73 @@
-export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying) => {
-    try {
-      if (audioContextRef.current.state === "suspended") {
-        await audioContextRef.current.resume();
+// handlePlayPause.js
+export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
+    const ctx = audioContextRef.current;
+    
+    if (ctx.state === "suspended") await ctx.resume();
+  
+    if (!isPlaying) {
+      startTimeRef.current = audioContextRef.current.currentTime - currentTime;
+    }
+  
+    tracks.forEach(track => {
+      if (track.sourceNode && track.isPlaying) {
+        try {
+          track.sourceNode.stop();
+        } catch (error) {
+          console.warn("Error stopping node:", error);
+        }
+        track.sourceNode.disconnect();
       }
   
-      const playPromises = tracks.map((track) => {
-        if (!track.audio) return;
-        track.audio.currentTime = currentTime;
-        return track.audio.play();
-      });
+      if (!isPlaying) {
+        track.sourceNode = ctx.createBufferSource();
+        track.sourceNode.buffer = track.audioBuffer;
+        track.sourceNode.connect(track.gainNode);
+        track.sourceNode.start(0, Math.min(currentTime, track.duration));
+        track.sourceNode.onended = () => {
+          track.isPlaying = false;
+          track.sourceNode = null;
+        };
+      }
   
-      await Promise.all(playPromises);
-      setIsPlaying(true);
-    } catch (error) {
-      console.error("Error general de reproducción:", error);
-      setIsPlaying(false);
-    }
+      track.isPlaying = !isPlaying;
+    });
+  
+    setIsPlaying(!isPlaying);
   };
   
   export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef) => {
+    const now = performance.now(); // Usamos tiempo de alta precisión
+  
+    tracks.forEach(track => {
+      if (track.sourceNode && track.isPlaying) {
+        try {
+          // Verificamos si el nodo fue iniciado antes de intentar detenerlo
+          if (track.sourceNode.playbackState === track.sourceNode.PLAYING_STATE ||
+              track.sourceNode.playbackState === track.sourceNode.SCHEDULED_STATE) {
+            track.sourceNode.stop();
+          }
+          track.sourceNode.disconnect();
+        } catch (error) {
+          console.warn("Error stopping audio node:", error);
+        }
+        
+        // Limpiar el nodo
+        track.sourceNode = null;
+      }
+  
+      // Resetear estado de la pista
+      track.isPlaying = false;
+      track.offset = 0;
+    });
+  
+    // Resetear estado global
     setIsPlaying(false);
     setCurrentTime(0);
-    tracks.forEach((track) => {
-      if (track.audio) {
-        track.audio.pause();
-        track.audio.currentTime = 0;
-      }
-    });
-    if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
+    
+    // Resetear scroll
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0;
+    }
   };
   
   export const handleRecord = async (

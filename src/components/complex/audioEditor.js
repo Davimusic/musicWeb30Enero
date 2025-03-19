@@ -18,11 +18,10 @@ import {
   updateTrackVolume,
   updateTrackMuted,
   updateTrackPanning,
-  deleteTrack, // Asegúrate de importar deleteTrack
+  deleteTrack, 
   muteAllExceptThis,
 } from "@/functions/music/DAW/trackHandlers";
 
-const TimeRuler = dynamic(() => import("./timeRuler"), { ssr: false });
 const Track = dynamic(() => import("./track"), { ssr: false });
 
 const AudioEditor = () => {
@@ -37,11 +36,15 @@ const AudioEditor = () => {
     tracks,
     isPlaying,
     currentTime,
-    PIXELS_PER_SECOND
+    PIXELS_PER_SECOND,
+    setCurrentTime
   );
 
   const mediaRecorderRef = useRef(null);
   const trackControlsRef = useRef(null);
+  const startTimeRef = useRef(0); // Definir startTimeRef fuera del useEffect
+
+
 
   const handleTrackAction = useCallback((action, trackId, value) => {
     const actions = {
@@ -58,6 +61,38 @@ const AudioEditor = () => {
 
     actions[action]?.(trackId, value);
   }, []);
+
+
+  useEffect(() => {
+    console.log(startTimeRef);
+  }, [startTimeRef]);
+  
+
+useEffect(() => {
+  let rafId;
+
+  const updatePlayback = () => {
+    if (!isPlaying || !audioContextRef.current) return;
+    
+    const elapsed = audioContextRef.current.currentTime - startTimeRef.current;
+    setCurrentTime(elapsed);
+    
+    if (scrollContainerRef.current) {
+      const scrollPos = elapsed * PIXELS_PER_SECOND;
+      scrollContainerRef.current.scrollLeft = scrollPos;
+    }
+    
+    rafId = requestAnimationFrame(updatePlayback);
+  };
+
+  if (isPlaying) {
+    rafId = requestAnimationFrame(updatePlayback);
+  }
+
+  return () => {
+    cancelAnimationFrame(rafId);
+  };
+}, [isPlaying]);
 
   const handleLoadAudio = async (e) => {
     const file = e.target.files[0];
@@ -113,7 +148,7 @@ const AudioEditor = () => {
           isRecording={isRecording}
           currentTime={currentTime}
           onPlayPause={() =>
-            handlePlayPause(audioContextRef, tracks, currentTime, setIsPlaying)
+            handlePlayPause(audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef)
           }
           onStop={() =>
             handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
