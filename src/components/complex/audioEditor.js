@@ -1,5 +1,167 @@
 "use client";
 
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
+import "../../estilos/music/audioEditor.css";
+import "../../estilos/general/general.css";
+import { TrackControls, GlobalControls } from "../../functions/music/DAW2/controls";
+import { useAudioContext, useAutoScroll } from "../../functions/music/DAW2/audioHooks";
+import { createTrack, PIXELS_PER_SECOND } from "../../functions/music/DAW2/audioUtils";
+import {
+  handlePlayPause,
+  handleStop,
+  handleRecord,
+  handleTimeSelect,
+} from "@/functions/music/DAW2/audioHandlers";
+import { handleDownloadMix } from "@/functions/music/handleDownloadMix";
+import {
+  updateTrackVolume,
+  updateTrackMuted,
+  updateTrackPanning,
+  deleteTrack, // Asegúrate de importar deleteTrack
+  muteAllExceptThis,
+} from "@/functions/music/DAW/trackHandlers";
+
+const TimeRuler = dynamic(() => import("./timeRuler"), { ssr: false });
+const Track = dynamic(() => import("./track"), { ssr: false });
+
+const AudioEditor = () => {
+  const [tracks, setTracks] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showContent, setShowContent] = useState(true);
+
+  const { audioContextRef } = useAudioContext();
+  const { scrollContainerRef, tracksContainerRef } = useAutoScroll(
+    tracks,
+    isPlaying,
+    currentTime,
+    PIXELS_PER_SECOND
+  );
+
+  const mediaRecorderRef = useRef(null);
+  const trackControlsRef = useRef(null);
+
+  const handleTrackAction = useCallback((action, trackId, value) => {
+    const actions = {
+      volume: (id, val) => updateTrackVolume(id, val / 100, setTracks),
+      pan: (id, val) => updateTrackPanning(id, val, setTracks),
+      delete: (id) => deleteTrack(id, setTracks),
+      solo: (id) => muteAllExceptThis(id, setTracks),
+      mute: (id, muted) => updateTrackMuted(id, muted, setTracks),
+      rename: (id, name) =>
+        setTracks((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, name } : t))
+        ),
+    };
+
+    actions[action]?.(trackId, value);
+  }, []);
+
+  const handleLoadAudio = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+  
+    try {
+      const newTrack = await createTrack(file, audioContextRef.current, tracks); // Pasamos tracks como argumento
+      setTracks((prev) => [...prev, newTrack]);
+      scrollContainerRef.current?.scrollTo({ left: 0 });
+    } catch (error) {
+      console.error("Error loading audio:", error);
+    }
+  };
+
+  return (
+    <div>
+      <div className="editor-container">
+        <div className="track-controls-sidebar" ref={trackControlsRef}>
+          {tracks.map((track) => (
+            <TrackControls
+              key={track.id}
+              track={track}
+              showContent={showContent}
+              onAction={handleTrackAction}
+            />
+          ))}
+        </div>
+
+        <div className="timeline-container" ref={scrollContainerRef}>
+          <div className="tracks-container" ref={tracksContainerRef}>
+            {tracks.map((track) => (
+              <Track
+                key={track.id}
+                track={track}
+                pixelsPerSecond={PIXELS_PER_SECOND}
+                onSelectTime={(selectedTime) =>
+                  handleTimeSelect(
+                    selectedTime,
+                    tracks,
+                    isPlaying,
+                    scrollContainerRef,
+                    setCurrentTime,
+                    PIXELS_PER_SECOND
+                  )
+                }
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <GlobalControls
+          isPlaying={isPlaying}
+          isRecording={isRecording}
+          currentTime={currentTime}
+          onPlayPause={() =>
+            handlePlayPause(audioContextRef, tracks, currentTime, setIsPlaying)
+          }
+          onStop={() =>
+            handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
+          }
+          onRecord={() =>
+            handleRecord(
+              isRecording,
+              setIsRecording,
+              mediaRecorderRef,
+              audioContextRef,
+              setTracks
+            )
+          }
+          onDownload={() => handleDownloadMix(tracks)}
+          onToggleUI={() => setShowContent((prev) => !prev)}
+          onLoadAudio={handleLoadAudio}
+        />
+    </div>
+  );
+};
+
+export default AudioEditor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*"use client";
+
 import React, { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "../../estilos/music/audioEditor.css";
@@ -12,25 +174,40 @@ import EditToggleIcon from "./EditToggleIcon ";
 import RangeInput from "./rangeInput";
 import DownloadIcon from "./downloadIcon";
 import handleDownloadMix from "@/functions/music/handleDownloadMix";
-import drawWaveform from "@/functions/music/drawWaveform";
 import ResponsiveContent from "./responsiveContent";
 import ToggleMute from "./ToggleMute";
 import PanIcon from "./panIcon";
 import ToggleSolo from "./toggleSolo";
 import TrashIcon from "./trashIcon";
+import {
+  handlePlayPause,
+  handleStop,
+  handleRecord,
+} from "@/functions/music/DAW/audioHandlers";
+import {
+  updateTrackVolume,
+  updateTrackMuted,
+  updateTrackPanning,
+  deleteTrack,
+  muteAllExceptThis,
+} from "@/functions/music/DAW/trackHandlers";
+import {
+  formatTime,
+  getPixelsPerSecond,
+  handleTimeSelect,
+} from "@/functions/music/DAW/timeHandlers";
 
 const TimeRuler = dynamic(() => import("./timeRuler"), { ssr: false });
 
+// Constante base para la relación 1:1
+const PIXELS_PER_SECOND = 100; // 100px por segundo
+
 const AudioEditor = () => {
-  // Estados
   const [tracks, setTracks] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
-  const [hasEnded, setHasEnded] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [showContent, setShowContent] = useState(true);
 
   const scrollContainerRef = useRef(null);
@@ -39,343 +216,276 @@ const AudioEditor = () => {
   const mediaRecorderRef = useRef(null);
   const audioContextRef = useRef(null);
 
-  // Sincronizar scroll vertical
+  // Inicialización del AudioContext
   useEffect(() => {
-    const trackControls = trackControlsRef.current;
-    const tracksContainer = tracksContainerRef.current;
-
-    const syncScroll = (source, target) => {
-      if (source && target && source.scrollTop !== target.scrollTop) {
-        target.scrollTop = source.scrollTop;
+    const initAudioContext = async () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext({ sampleRate: 48000 });
+        // Esperar a la interacción del usuario para activar
+        document.addEventListener(
+          "click",
+          async () => {
+            await audioContextRef.current.resume();
+          },
+          { once: true }
+        );
       }
     };
-
-    const handleTrackControlsScroll = () => syncScroll(trackControls, tracksContainer);
-    const handleTracksScroll = () => syncScroll(tracksContainer, trackControls);
-
-    trackControls?.addEventListener("scroll", handleTrackControlsScroll);
-    tracksContainer?.addEventListener("scroll", handleTracksScroll);
-
-    return () => {
-      trackControls?.removeEventListener("scroll", handleTrackControlsScroll);
-      tracksContainer?.removeEventListener("scroll", handleTracksScroll);
-    };
+    initAudioContext();
   }, []);
 
-  // Actualizar dimensiones del contenedor
+  // Calcular el ancho del contenedor de tracks
   useEffect(() => {
-    const updateDimensions = () => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        setContainerWidth(container.offsetWidth);
+    if (!tracksContainerRef.current) return;
 
-        // Actualizar variable CSS con altura real de los controles
-        const globalControls = container.querySelector('.global-controls');
-        if (globalControls) {
-          document.documentElement.style.setProperty(
-            '--global-controls-height',
-            `${globalControls.offsetHeight}px`
-          );
-        }
-      }
-    };
+    const maxDuration = Math.max(...tracks.map((t) => t.duration)) || 0;
+    const totalWidth = maxDuration * PIXELS_PER_SECOND; // Ancho basado en la relación 1:1
 
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    console.log("Ancho total del contenedor:", totalWidth, "px");
+    tracksContainerRef.current.style.width = `${totalWidth}px`;
   }, [tracks]);
 
-  // Inicializar AudioContext
+  // Bucle de animación para el scroll dinámico
   useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    return () => audioContextRef.current?.close();
-  }, []);
+    let animationFrame;
+    const updateTime = () => {
+      if (!isPlaying || !scrollContainerRef.current) return;
 
-  // Efecto para el desplazamiento automático durante la reproducción
-  useEffect(() => {
-    if (isPlaying && autoScroll && tracks.length > 0 && scrollContainerRef.current) {
-      const pixelsPerSecond = 500 * zoomLevel;
-      const maxDurationTrack = tracks.reduce((prev, curr) =>
-        curr.duration > prev.duration ? curr : prev
-      );
-      const duration = maxDurationTrack.duration;
+      const container = scrollContainerRef.current;
+      const firstTrack = tracks[0];
+      if (!firstTrack?.audio) return;
 
-      // Añadir un margen adicional al contenedor (2 segundos en este caso)
-      const margin = 2; // Margen en segundos
-      const containerWidth = (duration + margin) * pixelsPerSecond;
+      const currentTime = firstTrack.audio.currentTime;
+      const duration = firstTrack.audio.duration;
+      setCurrentTime(currentTime);
 
-      // Ajustar el ancho del contenedor
-      const tracksContainer = scrollContainerRef.current.querySelector(".tracks-container");
-      if (tracksContainer) {
-        tracksContainer.style.width = `${containerWidth}px`;
-      }
+      if (autoScroll) {
+        const maxScroll = container.scrollWidth - container.offsetWidth;
+        const remainingTime = duration - currentTime;
+        const containerTimeView = container.offsetWidth / PIXELS_PER_SECOND;
 
-      const intervalId = setInterval(() => {
-        const currentTime = maxDurationTrack.audio?.currentTime || 0;
-
-        // Verificar si el audio ha terminado naturalmente
-        if (maxDurationTrack.audio?.ended || currentTime >= duration) {
-          scrollContainerRef.current.scrollLeft = duration * pixelsPerSecond;
-          setIsPlaying(false);
-          setHasEnded(true);
-          clearInterval(intervalId);
-          return;
+        let scrollPosition;
+        if (remainingTime <= containerTimeView) {
+          // Si queda menos tiempo que lo que cabe en el contenedor: scroll máximo
+          scrollPosition = maxScroll;
+        } else {
+          // Posición normal: tiempo actual al borde izquierdo
+          scrollPosition = currentTime * PIXELS_PER_SECOND;
         }
 
-        // Actualizar desplazamiento
-        scrollContainerRef.current.scrollLeft = currentTime * pixelsPerSecond;
-      }, 50);
+        
 
-      return () => clearInterval(intervalId);
-    }
-  }, [isPlaying, autoScroll, zoomLevel, tracks]);
-
-  // Reproducir/pausar todos los audios
-  const handlePlayPause = () => {
-    const newState = !isPlaying;
-    setIsPlaying(newState);
-
-    tracks.forEach((track) => {
-      if (!track.audio) return;
-      newState ? track.audio.play() : track.audio.pause();
-      track.audio.currentTime = currentTime;
-    });
-  };
-
-  // Detener todos los audios
-  const handleStop = () => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-    tracks.forEach((track) => {
-      if (track.audio) {
-        track.audio.pause();
-        track.audio.currentTime = 0;
+        container.scrollTo({
+          left: Math.min(scrollPosition, maxScroll),
+          behavior: "auto",
+        });
       }
-    });
-    if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = 0;
-  };
 
-  // Eliminar track (detener audio y limpiar)
-  const deleteTrack = (id) => {
-    setTracks((prev) =>
-      prev.filter((track) => {
-        if (track.id === id) {
-          track.audio?.pause();
-          URL.revokeObjectURL(track.url);
-        }
-        return track.id !== id;
-      })
-    );
-  };
+      animationFrame = requestAnimationFrame(updateTime);
+    };
 
-  // Grabación de audio
-  const handleRecord = async () => {
-    if (isRecording) {
-      mediaRecorderRef.current?.stop();
-      setIsRecording(false);
-      return;
+    if (isPlaying) {
+      animationFrame = requestAnimationFrame(updateTime);
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      const audioChunks = [];
+    return () => cancelAnimationFrame(animationFrame);
+  }, [isPlaying, tracks, autoScroll]);
 
-      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      // Dentro de la función handleRecord, modifica el evento onstop del mediaRecorder:
-mediaRecorder.onstop = async () => {
-  const blob = new Blob(audioChunks, { type: "audio/wav" });
-  const url = URL.createObjectURL(blob);
-  const arrayBuffer = await blob.arrayBuffer();
-  const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-
-  const audio = new Audio(url);
-  const pannerNode = audioContextRef.current.createStereoPanner();
-  const source = audioContextRef.current.createMediaElementSource(audio);
-  source.connect(pannerNode).connect(audioContextRef.current.destination);
-
-  // Detener todas las pistas del flujo de medios
-  stream.getTracks().forEach(track => track.stop());  // <-- Añade esta línea
-
-  setTracks((prev) => [
-    ...prev,
-    {
-      id: Date.now(),
-      url,
-      audio,
-      duration: audioBuffer.duration,
-      audioBuffer,
-      pannerNode,
-      volume: 1,
-      panning: 0,
-      muted: false,
-      name: `Track ${prev.length + 1}`,
-    },
-  ]);
-};
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error("Error al grabar:", error);
-    }
-  };
-
-  // Manejar la subida de un archivo de audio
-  const handleFileUpload = async (event) => {
+  // Cargar audio desde el dispositivo
+  const handleLoadAudio = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Asegurarse de que el AudioContext esté inicializado
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext({ sampleRate: 48000 });
+    }
+
     const url = URL.createObjectURL(file);
-    const audio = new Audio(url);
+    const arrayBuffer = await file.arrayBuffer();
 
-    audio.onloadedmetadata = async () => {
-      const duration = audio.duration;
+    try {
+      const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
 
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+      const audio = new Audio(url);
+      audio.style.display = "none";
+      document.body.appendChild(audio);
 
-        const pannerNode = audioContextRef.current.createStereoPanner();
-        const source = audioContextRef.current.createMediaElementSource(audio);
-        source.connect(pannerNode).connect(audioContextRef.current.destination);
+      const pannerNode = audioContextRef.current.createStereoPanner();
+      const source = audioContextRef.current.createMediaElementSource(audio);
+      source.connect(pannerNode).connect(audioContextRef.current.destination);
 
-        setTracks((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            url,
-            audio,
-            duration,
-            audioBuffer, // Asegúrate de que el audioBuffer esté asignado
-            pannerNode,
-            volume: 1,
-            panning: 0,
-            muted: false,
-            name: `Track ${prev.length + 1}`, // Nombre por defecto
-          },
-        ]);
-      } catch (error) {
-        console.error("Error al decodificar el archivo de audio:", error);
+      setTracks((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          url,
+          audio,
+          duration: audioBuffer.duration,
+          audioBuffer,
+          pannerNode,
+          volume: 1,
+          panning: 0,
+          muted: false,
+          name: `Track ${prev.length + 1}`,
+        },
+      ]);
+
+      // Resetear el scroll al cargar nuevo audio
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft = 0;
       }
-    };
-  };
-
-  // Cambiar zoom
-  const handleZoomChange = (newValue) => {
-    setZoomLevel(newValue);
+    } catch (error) {
+      console.error("Error al cargar el audio:", error);
+    }
   };
 
   return (
-    <div className="editor-container">
-      {/* Controles laterales */}
-      <div className="track-controls-sidebar" ref={trackControlsRef}>
-        {tracks.map((track) => (
-          <div key={track.id} className="track-controls">
-            <ResponsiveContent showContent={showContent}>
-              <div style={{ paddingBottom: "10px" }}>
-                <div style={{}}>
-                  <ToggleSolo
-                    size={30}
-                    isSolo={track.isSolo}
-                    onToggle={() => muteAllExceptThis(track.id)}
-                  />
-                  {/* Input editable para el nombre del track */}
-                  <input
-                    type="text"
-                    value={track.name}
-                    onChange={(e) => {
-                      setTracks((prevTracks) =>
-                        prevTracks.map((t) =>
-                          t.id === track.id ? { ...t, name: e.target.value } : t
-                        )
-                      );
-                    }}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      color: "white",
-                      fontSize: "14px",
-                      outline: "none",
-                      width: "100px", // Ajusta el ancho según sea necesario
-                    }}
-                  />
-                  <TrashIcon onClick={() => deleteTrack(track.id)} />
-                </div>
-                <RangeInput
-                  value={track.volume * 100}
-                  min={0}
-                  max={100}
-                  onChange={(val) => updateTrackVolume(track.id, val / 100)}
-                  children={
-                    <ToggleMute
-                      size={30}
-                      isMuted={track.muted}
-                      onToggle={() => updateTrackMuted(track.id, !track.muted)}
-                    />
-                  }
-                />
-                <RangeInput
-                  value={track.panning}
-                  min={-50}
-                  max={50}
-                  onChange={(val) => updateTrackPanning(track.id, val)}
-                  children={
-                    <PanIcon
-                      panValue={track.panning}
-                      onClick={(val) => updateTrackPanning(track.id, 0)}
-                    />
-                  }
-                />
-              </div>
-            </ResponsiveContent>
-          </div>
-        ))}
-      </div>
-
-      {/* Línea de tiempo con scroll */}
-      <div className="timeline-container" ref={scrollContainerRef}>
-        <div className="tracks-container" ref={tracksContainerRef}>
+    <div>
+      <div className="editor-container">
+        
+        <div className="track-controls-sidebar" ref={trackControlsRef}>
           {tracks.map((track) => (
-            <Track key={track.id} track={track} zoomLevel={zoomLevel} />
+            <div key={track.id} className="track-controls">
+              <ResponsiveContent showContent={showContent}>
+                <div style={{ paddingBottom: "10px" }}>
+                  <div>
+                    <ToggleSolo
+                      size={30}
+                      isSolo={track.isSolo}
+                      onToggle={() => muteAllExceptThis(track.id, setTracks)}
+                    />
+                    <input
+                      type="text"
+                      value={track.name}
+                      onChange={(e) => {
+                        setTracks((prevTracks) =>
+                          prevTracks.map((t) =>
+                            t.id === track.id ? { ...t, name: e.target.value } : t
+                          )
+                        );
+                      }}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "white",
+                        fontSize: "14px",
+                        outline: "none",
+                        width: "100px",
+                      }}
+                    />
+                    <TrashIcon onClick={() => deleteTrack(track.id, setTracks)} />
+                  </div>
+                  <RangeInput
+                    value={track.volume * 100}
+                    min={0}
+                    max={100}
+                    onChange={(val) => updateTrackVolume(track.id, val / 100, setTracks)}
+                    children={
+                      <ToggleMute
+                        size={30}
+                        isMuted={track.muted}
+                        onToggle={() => updateTrackMuted(track.id, !track.muted, setTracks)}
+                      />
+                    }
+                  />
+                  <RangeInput
+                    value={track.panning}
+                    min={-50}
+                    max={50}
+                    onChange={(val) => updateTrackPanning(track.id, val, setTracks)}
+                    children={
+                      <PanIcon
+                        panValue={track.panning}
+                        onClick={(val) => updateTrackPanning(track.id, 0, setTracks)}
+                      />
+                    }
+                  />
+                </div>
+              </ResponsiveContent>
+            </div>
           ))}
         </div>
-        <TimeRuler
-          duration={Math.max(...tracks.map((t) => t.duration))}
-          zoomLevel={zoomLevel}
-        />
+
+        
+        <div className="timeline-container" ref={scrollContainerRef}>
+          <div className="tracks-container" ref={tracksContainerRef}>
+            {tracks.map((track) => (
+              <Track
+                key={track.id}
+                track={track}
+                pixelsPerSecond={PIXELS_PER_SECOND}
+                onSelectTime={(selectedTime) =>
+                  handleTimeSelect(
+                    selectedTime,
+                    tracks,
+                    isPlaying,
+                    scrollContainerRef,
+                    setCurrentTime,
+                    PIXELS_PER_SECOND
+                  )
+                }
+              />
+            ))}
+          </div>
+        </div>
+
+        
+        <div style={{ display: "none" }}>
+          {tracks.map((track) => (
+            <audio
+              key={track.id}
+              src={track.url}
+              ref={(ref) => (track.audio = ref)}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Controles globales */}
+      
       <div className="global-controls">
-        <TogglePlayPause isPlaying={isPlaying} onToggle={handlePlayPause} />
-        <StopIcon onClick={handleStop} />
-        <RecordIcon isRecording={isRecording} onClick={handleRecord} />
-        <RangeInput
-          value={zoomLevel}
-          min={0.1}
-          max={3}
-          step={0.1}
-          onChange={handleZoomChange}
-          label="Zoom"
+        <TogglePlayPause
+          isPlaying={isPlaying}
+          onToggle={() =>
+            handlePlayPause(audioContextRef, tracks, currentTime, setIsPlaying)
+          }
+        />
+        <StopIcon
+          onClick={() =>
+            handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
+          }
+        />
+        <RecordIcon
+          isRecording={isRecording}
+          onClick={() =>
+            handleRecord(
+              isRecording,
+              setIsRecording,
+              mediaRecorderRef,
+              audioContextRef,
+              setTracks
+            )
+          }
         />
         <DownloadIcon onToggle={() => handleDownloadMix(tracks)} />
-        <EditToggleIcon size={30} onToggle={() => setShowContent((prev) => !prev)} />
-        {/* Botón para subir archivo de audio */}
+        <EditToggleIcon
+          size={30}
+          onToggle={() => setShowContent((prev) => !prev)}
+        />
         <input
           type="file"
           accept="audio/*"
-          onChange={handleFileUpload}
+          onChange={handleLoadAudio}
           style={{ display: "none" }}
-          id="file-upload"
+          id="audio-upload"
         />
-        <label style={{color: 'white'}} htmlFor="file-upload" className="upload-button">
-          Subir Audio
+        <label htmlFor="audio-upload" className="current-time-display">
+          Cargar Audio
         </label>
+        <div className="current-time-display">{formatTime(currentTime)}</div>
       </div>
     </div>
   );
 };
 
-export default AudioEditor;
+export default AudioEditor;*/
