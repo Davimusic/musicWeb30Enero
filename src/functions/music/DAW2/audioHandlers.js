@@ -1,36 +1,30 @@
-// handlePlayPause.js
+// audioHandlers.js (handlePlayPause)
 export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
     const ctx = audioContextRef.current;
-    
     if (ctx.state === "suspended") await ctx.resume();
   
     if (!isPlaying) {
-      startTimeRef.current = audioContextRef.current.currentTime - currentTime;
+        startTimeRef.current = ctx.currentTime - currentTime;
+        
+        tracks.forEach(track => {
+          if (track.sourceNode) {
+            track.sourceNode.disconnect();
+            try { track.sourceNode.stop(); } catch(e) {}
+          }
+          
+          track.sourceNode = ctx.createBufferSource();
+          track.sourceNode.buffer = track.audioBuffer;
+          track.sourceNode.connect(track.gainNode);
+          
+          // Iniciar en el punto correcto
+          track.sourceNode.start(0, currentTime % track.duration);
+        });
+      } else {
+      tracks.forEach(track => {
+        track.sourceNode?.stop();
+        track.offset += ctx.currentTime - track.startTime;
+      });
     }
-  
-    tracks.forEach(track => {
-      if (track.sourceNode && track.isPlaying) {
-        try {
-          track.sourceNode.stop();
-        } catch (error) {
-          console.warn("Error stopping node:", error);
-        }
-        track.sourceNode.disconnect();
-      }
-  
-      if (!isPlaying) {
-        track.sourceNode = ctx.createBufferSource();
-        track.sourceNode.buffer = track.audioBuffer;
-        track.sourceNode.connect(track.gainNode);
-        track.sourceNode.start(0, Math.min(currentTime, track.duration));
-        track.sourceNode.onended = () => {
-          track.isPlaying = false;
-          track.sourceNode = null;
-        };
-      }
-  
-      track.isPlaying = !isPlaying;
-    });
   
     setIsPlaying(!isPlaying);
   };
@@ -92,37 +86,35 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
       const audioChunks = [];
   
       mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunks, { type: "audio/webm; codecs=opus" });
-        const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+      // audioHandlers.js (handleRecord)
+mediaRecorder.onstop = async () => {
+    const blob = new Blob(audioChunks, { type: "audio/webm; codecs=opus" });
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
   
-        const audio = new Audio(URL.createObjectURL(blob));
-        audio.style.display = "none";
-        document.body.appendChild(audio);
+    // Crear nodos como en createTrack
+    const gainNode = audioContextRef.current.createGain();
+    const pannerNode = audioContextRef.current.createStereoPanner();
+    gainNode.connect(pannerNode).connect(audioContextRef.current.destination);
   
-        const pannerNode = audioContextRef.current.createStereoPanner();
-        const source = audioContextRef.current.createMediaElementSource(audio);
-        source.connect(pannerNode).connect(audioContextRef.current.destination);
-  
-        stream.getTracks().forEach((track) => track.stop());
-  
-        setTracks((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            url: URL.createObjectURL(blob),
-            audio,
-            duration: audioBuffer.duration,
-            audioBuffer,
-            pannerNode,
-            volume: 1,
-            panning: 0,
-            muted: false,
-            name: `Track ${prev.length + 1}`,
-          },
-        ]);
-      };
+    setTracks((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        audioBuffer,
+        gainNode,
+        pannerNode,
+        duration: audioBuffer.duration,
+        volume: 1,
+        panning: 0,
+        muted: false,
+        name: `Track ${prev.length + 1}`,
+        sourceNode: null,
+        startTime: 0,
+        offset: 0
+      }
+    ]);
+  };
   
       mediaRecorder.start();
       setIsRecording(true);
@@ -131,31 +123,22 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     }
   };
 
-  export const handleTimeSelect = (
-    selectedTime,
-    tracks,
-    isPlaying,
-    scrollContainerRef,
-    setCurrentTime,
-    pixelsPerSecond
-  ) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-  
-    const maxScroll = container.scrollWidth - container.offsetWidth;
-    const scrollPosition = Math.min(selectedTime * pixelsPerSecond, maxScroll);
-  
-    container.scrollTo({
-      left: scrollPosition,
-      behavior: "smooth",
-    });
-  
-    tracks.forEach((track) => {
-      if (track.audio) {
-        track.audio.currentTime = selectedTime;
-        if (isPlaying) track.audio.play();
+  export const handleTimeSelect = (selectedTime, tracks, scrollContainerRef, setCurrentTime, pixelsPerSecond) => {
+    setCurrentTime(selectedTime);
+    
+    tracks.forEach(track => {
+      track.offset = selectedTime;
+      if (track.sourceNode) {
+        track.sourceNode.stop();
+        track.sourceNode = audioContextRef.current.createBufferSource();
+        track.sourceNode.buffer = track.audioBuffer;
+        track.sourceNode.connect(track.gainNode);
+        track.sourceNode.start(0, selectedTime);
       }
     });
   
-    setCurrentTime(selectedTime);
+    if (scrollContainerRef.current) {
+      const scrollPos = selectedTime * pixelsPerSecond;
+      scrollContainerRef.current.scrollLeft = scrollPos;
+    }
   };

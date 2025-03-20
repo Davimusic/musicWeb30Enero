@@ -1,21 +1,20 @@
 export const PIXELS_PER_SECOND = 100;
 
+// audioUtils.js
 export const createTrack = async (file, audioContext, tracks) => {
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
   
-    // Crear nodos de Web Audio API
+    // Crear todos los nodos necesarios
     const gainNode = audioContext.createGain();
     const pannerNode = audioContext.createStereoPanner();
-    const sourceNode = audioContext.createBufferSource();
     
-    sourceNode.buffer = audioBuffer;
-    sourceNode.connect(gainNode).connect(pannerNode).connect(audioContext.destination);
+    // Conectar la cadena de nodos
+    gainNode.connect(pannerNode).connect(audioContext.destination);
   
     return {
       id: Date.now(),
       audioBuffer,
-      sourceNode,
       gainNode,
       pannerNode,
       duration: audioBuffer.duration,
@@ -23,8 +22,9 @@ export const createTrack = async (file, audioContext, tracks) => {
       panning: 0,
       muted: false,
       name: `Track ${tracks.length + 1}`,
-      startTime: 0,  // Nuevo: Tiempo de inicio de reproducción
-      offset: 0      // Nuevo: Offset de reproducción
+      sourceNode: null,
+      startTime: 0,
+      offset: 0
     };
   };
 

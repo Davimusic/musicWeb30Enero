@@ -24,28 +24,64 @@ import {
 
 const Track = dynamic(() => import("./track"), { ssr: false });
 
+
+
+
+
+
+
+
+
 const AudioEditor = () => {
   const [tracks, setTracks] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [showContent, setShowContent] = useState(true);
+  //const [audioDuration, setAudioDuration] = useState(0); // Duración total del audio
+
+  const currentTimeRef = useRef(currentTime);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   const { audioContextRef } = useAudioContext();
   const { scrollContainerRef, tracksContainerRef } = useAutoScroll(
     tracks,
     isPlaying,
-    currentTime,
+    currentTimeRef,
     PIXELS_PER_SECOND,
     setCurrentTime
   );
 
   const mediaRecorderRef = useRef(null);
   const trackControlsRef = useRef(null);
-  const startTimeRef = useRef(0); // Definir startTimeRef fuera del useEffect
+  const startTimeRef = useRef(0);
 
+  // Función para obtener el tiempo actual del track
+  const getTrackCurrentTime = (track, audioContextRef, startTimeRef) => {
+    const ctx = audioContextRef.current;
 
+    if (!track.sourceNode || !ctx) {
+      return 0; // Si no hay sourceNode o AudioContext, el tiempo es 0
+    }
 
+    // Calcular el tiempo transcurrido desde que se inició la reproducción
+    const elapsed = ctx.currentTime - startTimeRef.current;
+
+    // Asegurarse de que el tiempo no exceda la duración del track
+    return Math.min(elapsed, track.duration);
+  };
+
+  const getCurrentTime = (trackId) => {
+    const track = tracks.find((t) => t.id === trackId);
+    if (!track) return 0;
+
+    return getTrackCurrentTime(track, audioContextRef, startTimeRef);
+  };
+
+  // Manejador de acciones en las pistas
   const handleTrackAction = useCallback((action, trackId, value) => {
     const actions = {
       volume: (id, val) => updateTrackVolume(id, val / 100, setTracks),
@@ -62,54 +98,77 @@ const AudioEditor = () => {
     actions[action]?.(trackId, value);
   }, []);
 
-
+  // Actualización del scroll mediante setInterval
   useEffect(() => {
-    console.log(startTimeRef);
-  }, [startTimeRef]);
+    const ctx = audioContextRef.current;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || !ctx) return;
+  
+    scrollContainer.style.willChange = "scroll-position";
+  
+    let animationFrameId;
+    let lastUpdate = 0; // Tiempo del último frame procesado
+  
+    const updatePlayback = (timestamp) => {
+      if (!isPlaying || !ctx) return;
+  
+      // Verificar si han pasado 500ms desde la última actualización
+      if (timestamp - lastUpdate >= 100) {
+        const elapsed = ctx.currentTime - startTimeRef.current;
+        const scrollPosition = elapsed * PIXELS_PER_SECOND;
+  
+        scrollContainer.scrollLeft = scrollPosition;
+  
+        lastUpdate = timestamp; // Actualizamos el último tiempo procesado
+      }
+  
+      animationFrameId = requestAnimationFrame(updatePlayback);
+    };
+  
+    if (isPlaying) {
+      startTimeRef.current = ctx.currentTime - currentTime;
+      animationFrameId = requestAnimationFrame(updatePlayback);
+    }
+  
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isPlaying]);
+  
+  
+  
+  
+  
+  
+  
   
 
-useEffect(() => {
-  let rafId;
-
-  const updatePlayback = () => {
-    if (!isPlaying || !audioContextRef.current) return;
-    
-    const elapsed = audioContextRef.current.currentTime - startTimeRef.current;
-    setCurrentTime(elapsed);
-    
-    if (scrollContainerRef.current) {
-      const scrollPos = elapsed * PIXELS_PER_SECOND;
-      scrollContainerRef.current.scrollLeft = scrollPos;
-    }
-    
-    rafId = requestAnimationFrame(updatePlayback);
-  };
-
-  if (isPlaying) {
-    rafId = requestAnimationFrame(updatePlayback);
-  }
-
-  return () => {
-    cancelAnimationFrame(rafId);
-  };
-}, [isPlaying]);
-
+  // Cargar un archivo de audio
   const handleLoadAudio = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-  
+
     try {
-      const newTrack = await createTrack(file, audioContextRef.current, tracks); // Pasamos tracks como argumento
+      const newTrack = await createTrack(file, audioContextRef.current, tracks);
       setTracks((prev) => [...prev, newTrack]);
+
+      const audioBuffer = await audioContextRef.current.decodeAudioData(
+        await file.arrayBuffer()
+      );
+      //setAudioDuration(audioBuffer.duration);
+
       scrollContainerRef.current?.scrollTo({ left: 0 });
     } catch (error) {
-      console.error("Error loading audio:", error);
+      console.error("Error al cargar audio:", error);
     }
   };
 
   return (
     <div>
       <div className="editor-container">
+        {/* Controles de las pistas */}
         <div className="track-controls-sidebar" ref={trackControlsRef}>
           {tracks.map((track) => (
             <TrackControls
@@ -121,8 +180,17 @@ useEffect(() => {
           ))}
         </div>
 
-        <div className="timeline-container" ref={scrollContainerRef}>
-          <div className="tracks-container" ref={tracksContainerRef}>
+        {/* Contenedor de línea de tiempo */}
+        <div
+          className="timeline-container"
+          ref={scrollContainerRef}
+          id="scroll-container"
+        >
+          <div
+            className="tracks-container"
+            ref={tracksContainerRef}
+            style={{ width: `${tracks.length > 0 ? tracks[0].duration * PIXELS_PER_SECOND : 0}px` }}
+          >
             {tracks.map((track) => (
               <Track
                 key={track.id}
@@ -143,35 +211,43 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Controles globales */}
       <GlobalControls
-          isPlaying={isPlaying}
-          isRecording={isRecording}
-          currentTime={currentTime}
-          onPlayPause={() =>
-            handlePlayPause(audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef)
-          }
-          onStop={() =>
-            handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
-          }
-          onRecord={() =>
-            handleRecord(
-              isRecording,
-              setIsRecording,
-              mediaRecorderRef,
-              audioContextRef,
-              setTracks
-            )
-          }
-          onDownload={() => handleDownloadMix(tracks)}
-          onToggleUI={() => setShowContent((prev) => !prev)}
-          onLoadAudio={handleLoadAudio}
-        />
+        isPlaying={isPlaying}
+        isRecording={isRecording}
+        currentTime={currentTime}
+        onPlayPause={() =>
+          handlePlayPause(
+            audioContextRef,
+            tracks,
+            currentTime,
+            setIsPlaying,
+            isPlaying,
+            startTimeRef
+          )
+        }
+        onStop={() =>
+          handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
+        }
+        onRecord={() =>
+          handleRecord(
+            isRecording,
+            setIsRecording,
+            mediaRecorderRef,
+            audioContextRef,
+            setTracks
+          )
+        }
+        onDownload={() => handleDownloadMix(tracks)}
+        onToggleUI={() => setShowContent((prev) => !prev)}
+        onLoadAudio={handleLoadAudio}
+      />
     </div>
   );
 };
 
 export default AudioEditor;
-
 
 
 

@@ -20,84 +20,70 @@ export const useAudioContext = () => {
   return { audioContextRef };
 };
 
-export const useAutoScroll = (tracks, isPlaying, currentTime, pixelsPerSecond, setCurrentTime) => {
+
+
+export const useAutoScroll = (
+    tracks,
+    isPlaying,
+    currentTimeRef, // <-- Recibe currentTimeRef
+    pixelsPerSecond,
+    setCurrentTime
+  ) => {
     const scrollContainerRef = useRef(null);
     const tracksContainerRef = useRef(null);
-    const tracksRef = useRef(tracks); // Ref para tracks
-    const prevScrollLeft = useRef(0); // Nueva ref para seguimiento
+    const isScrollingManually = useRef(false);
+    const lastScrollTimeout = useRef(null);
   
-    // Actualizar ref cuando tracks cambie
+    // Efecto para el scroll automático
     useEffect(() => {
-      tracksRef.current = tracks;
-    }, [tracks]);
+      let rafId;
   
-    useEffect(() => {
-      if (!tracksContainerRef.current) return;
-      const maxDuration = Math.max(...tracks.map((t) => t.duration)) || 0;
-      tracksContainerRef.current.style.width = `${maxDuration * pixelsPerSecond}px`;
-    }, [tracks, pixelsPerSecond]);
+      const updateScroll = () => {
+        if (!isPlaying || !scrollContainerRef.current || isScrollingManually.current) return;
   
-    useEffect(() => {
-      let animationFrame;
-      const updateTime = () => {
-        if (!isPlaying || !scrollContainerRef.current) return;
-        
-        const container = scrollContainerRef.current;
-        const firstTrack = tracksRef.current[0]; // Usar tracksRef
-        
-        if (!firstTrack?.audio) return;
-        
-        // Calcular posición de scroll basada en tiempo actual
-        const currentTime = firstTrack.audio.currentTime;
-        const maxScroll = container.scrollWidth - container.offsetWidth;
-        const targetScroll = currentTime * pixelsPerSecond;
-        
-        // Suavizar el desplazamiento manualmente
-        const scrollStep = (targetScroll - prevScrollLeft.current) * 0.3;
-        prevScrollLeft.current += scrollStep;
-        
-        container.scrollLeft = prevScrollLeft.current;
-        
-        // Continuar animación solo si es necesario
-        if (Math.abs(scrollStep) > 0.5) {
-          animationFrame = requestAnimationFrame(updateTime);
-        }
-        setCurrentTime(currentTime);
+        // Usar currentTimeRef.current para el scroll
+        const scrollPos = currentTimeRef.current * pixelsPerSecond;
+        const maxScroll = scrollContainerRef.current.scrollWidth - 
+                         scrollContainerRef.current.offsetWidth;
+  
+        scrollContainerRef.current.scrollLeft = Math.min(scrollPos, maxScroll);
+  
+        rafId = requestAnimationFrame(updateScroll);
       };
   
-      if (isPlaying) {
-        prevScrollLeft.current = scrollContainerRef.current?.scrollLeft || 0;
-        animationFrame = requestAnimationFrame(updateTime);
-      }
+      if (isPlaying) rafId = requestAnimationFrame(updateScroll);
+      return () => cancelAnimationFrame(rafId);
+    }, [isPlaying]); // <-- Dependencia solo de isPlaying
   
-      return () => cancelAnimationFrame(animationFrame);
-    }, [isPlaying, pixelsPerSecond]); // Eliminar tracks de las dependencias
-
-    /*useEffect(() => {
-        if (!scrollContainerRef.current || !isPlaying) return;
-      
-        const scrollPosition = currentTime * pixelsPerSecond;
-        const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.offsetWidth;
-        
-        scrollContainerRef.current.scrollTo({
-          left: Math.min(scrollPosition, maxScroll),
-          behavior: 'smooth'
-        });
-      }, [currentTime, isPlaying]); // Actualiza scroll con cada cambio de currentTime*/
+    // Efecto para el scroll manual
+    useEffect(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
   
-      useEffect(() => {
-        if (!isPlaying || !scrollContainerRef.current) return;
-        
-        const scrollPos = currentTime * pixelsPerSecond;
-        const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.offsetWidth;
-        
-        // Scroll suavizado con comportamiento predictivo
-        scrollContainerRef.current.scrollTo({
-          left: Math.min(scrollPos, maxScroll),
-          behavior: 'auto' // Cambiar a 'auto' para mayor precisión
-        });
-      }, [currentTime]);  
-
-
-    return { scrollContainerRef, tracksContainerRef };
+      const handleScroll = () => {
+        // Activar el flag de scroll manual
+        isScrollingManually.current = true;
+  
+        // Calcular el tiempo manualmente
+        const manualTime = container.scrollLeft / pixelsPerSecond;
+        setCurrentTime(manualTime);
+  
+        // Resetear el flag después de 500ms de inactividad
+        clearTimeout(lastScrollTimeout.current);
+        lastScrollTimeout.current = setTimeout(() => {
+          isScrollingManually.current = false;
+        }, 500);
+      };
+  
+      container.addEventListener('scroll', handleScroll);
+      return () => {
+        container.removeEventListener('scroll', handleScroll);
+        clearTimeout(lastScrollTimeout.current); // Limpiar timeout
+      };
+    }, [isPlaying]);
+  
+    return { 
+      scrollContainerRef, 
+      tracksContainerRef 
+    };
   };

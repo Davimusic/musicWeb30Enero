@@ -18,11 +18,17 @@
   padding: 15px;
 }
 
-/* Contenedor de timeline */
+/* Contenedor de timeline 
 .timeline-container {
   padding-left: 0 !important;
   overflow-x: auto;
   scroll-behavior: smooth;
+}*/
+.timeline-container {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; /* Mejor scroll en móviles */
 }
 
 /* Estilo para el indicador de tiempo actual (borde izquierdo) */
@@ -38,14 +44,20 @@
   pointer-events: none;
 }
 
-/* Contenedor de tracks */
+/* Contenedor de tracks 
 .tracks-container {
   height: 100%;
   position: relative;
   transition: transform 0.1s linear;
   will-change: transform;
-  min-width: 100%; /* Asegura que el contenedor se expanda según el contenido */
+  min-width: 100%; /* Asegura que el contenedor se expanda según el contenido 
+}*/
+.tracks-container {
+  min-height: 100%;
+  position: relative;
+  transition: transform 0.1s linear; /* Suavizar desplazamiento */
 }
+
 
 /* Track individual */
 .track-waveform {
