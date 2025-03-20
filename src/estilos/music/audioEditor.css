@@ -212,3 +212,13 @@
 .pan-icon:hover {
   background-color: #555;
 }
+
+.fullscreen-div {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999; /* Asegúrate de que esté por encima de otros elementos */
+  background-color: rgba(0, 0, 0, 0.8); /* Color de fondo semitransparente como ejemplo */
+}

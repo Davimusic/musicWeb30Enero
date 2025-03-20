@@ -22,6 +22,7 @@ import {
   muteAllExceptThis,
 } from "@/functions/music/DAW/trackHandlers";
 
+
 const Track = dynamic(() => import("./track"), { ssr: false });
 
 
@@ -59,7 +60,7 @@ const AudioEditor = () => {
   const trackControlsRef = useRef(null);
   const startTimeRef = useRef(0);
 
-  // Función para obtener el tiempo actual del track
+  /*/ Función para obtener el tiempo actual del track
   const getTrackCurrentTime = (track, audioContextRef, startTimeRef) => {
     const ctx = audioContextRef.current;
 
@@ -79,7 +80,7 @@ const AudioEditor = () => {
     if (!track) return 0;
 
     return getTrackCurrentTime(track, audioContextRef, startTimeRef);
-  };
+  };*/
 
   // Manejador de acciones en las pistas
   const handleTrackAction = useCallback((action, trackId, value) => {
@@ -99,50 +100,7 @@ const AudioEditor = () => {
   }, []);
 
   // Actualización del scroll mediante setInterval
-  useEffect(() => {
-    const ctx = audioContextRef.current;
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer || !ctx) return;
-  
-    scrollContainer.style.willChange = "scroll-position";
-  
-    let animationFrameId;
-    let lastUpdate = 0; // Tiempo del último frame procesado
-  
-    const updatePlayback = (timestamp) => {
-      if (!isPlaying || !ctx) return;
-  
-      // Verificar si han pasado 500ms desde la última actualización
-      if (timestamp - lastUpdate >= 100) {
-        const elapsed = ctx.currentTime - startTimeRef.current;
-        const scrollPosition = elapsed * PIXELS_PER_SECOND;
-  
-        scrollContainer.scrollLeft = scrollPosition;
-  
-        lastUpdate = timestamp; // Actualizamos el último tiempo procesado
-      }
-  
-      animationFrameId = requestAnimationFrame(updatePlayback);
-    };
-  
-    if (isPlaying) {
-      startTimeRef.current = ctx.currentTime - currentTime;
-      animationFrameId = requestAnimationFrame(updatePlayback);
-    }
-  
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [isPlaying]);
-  
-  
-  
-  
-  
-  
-  
+  useEffect(() => { const ctx = audioContextRef.current; const scrollContainer = scrollContainerRef.current; if (!scrollContainer || !ctx) return; scrollContainer.style.willChange = "scroll-position"; let animationFrameId; let lastUpdate = 0;  const updatePlayback = (timestamp) => { if (!isPlaying || !ctx) return;  if (timestamp - lastUpdate >= 50) { const elapsed = ctx.currentTime - startTimeRef.current; const scrollPosition = elapsed * PIXELS_PER_SECOND; scrollContainer.scrollLeft = scrollPosition; lastUpdate = timestamp;  } animationFrameId = requestAnimationFrame(updatePlayback); }; if (isPlaying) { startTimeRef.current = ctx.currentTime - currentTime; animationFrameId = requestAnimationFrame(updatePlayback); } return () => { if (animationFrameId) { cancelAnimationFrame(animationFrameId); } }; }, [isPlaying]);
   
 
   // Cargar un archivo de audio
@@ -165,8 +123,13 @@ const AudioEditor = () => {
     }
   };
 
+  useEffect(() => {
+     console.log(isPlaying);
+     
+    }, [isPlaying]);
+
   return (
-    <div>
+    <div className="fullscreen-div ">
       <div className="editor-container">
         {/* Controles de las pistas */}
         <div className="track-controls-sidebar" ref={trackControlsRef}>
@@ -201,9 +164,11 @@ const AudioEditor = () => {
                     selectedTime,
                     tracks,
                     isPlaying,
+                    audioContextRef,
                     scrollContainerRef,
                     setCurrentTime,
-                    PIXELS_PER_SECOND
+                    PIXELS_PER_SECOND,
+                    setIsPlaying 
                   )
                 }
               />

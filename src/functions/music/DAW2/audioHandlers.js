@@ -123,22 +123,48 @@ mediaRecorder.onstop = async () => {
     }
   };
 
-  export const handleTimeSelect = (selectedTime, tracks, scrollContainerRef, setCurrentTime, pixelsPerSecond) => {
+  export const handleTimeSelect = (
+    selectedTime,
+    tracks,
+    isPlaying,
+    audioContextRef,
+    scrollContainerRef,
+    setCurrentTime,
+    pixelsPerSecond,
+    setIsPlaying 
+  ) => {
     setCurrentTime(selectedTime);
-    
-    tracks.forEach(track => {
-      track.offset = selectedTime;
-      if (track.sourceNode) {
-        track.sourceNode.stop();
-        track.sourceNode = audioContextRef.current.createBufferSource();
-        track.sourceNode.buffer = track.audioBuffer;
-        track.sourceNode.connect(track.gainNode);
-        track.sourceNode.start(0, selectedTime);
+  
+    tracks.forEach((track) => {
+      track.offset = selectedTime; // Actualiza el offset del track
+  
+      if (audioContextRef?.current && track.sourceNode) {
+        try {
+                setIsPlaying(false)
+                setTimeout(() => {
+                    console.log("¡Ahora hago algo!");
+                    if(track.sourceNode){
+                        track.sourceNode.stop(); // Detener el nodo actual si existe
+                    }
+                    track.sourceNode = audioContextRef.current.createBufferSource(); // Crear nuevo nodo
+                    track.sourceNode.buffer = track.audioBuffer; // Asignar el buffer del audio
+                    track.sourceNode.connect(track.gainNode); // Conectar el nodo
+                    setIsPlaying(true)
+                    track.sourceNode.start(0, selectedTime); // Reanudar desde el tiempo seleccionado
+                    console.log('sus');
+                    
+                }, 1000); // 1000 ms = 1 segundo
+                
+           
+        } catch (error) {
+          console.error("Error al sincronizar track:", error);
+        }
       }
     });
   
-    if (scrollContainerRef.current) {
+    if (scrollContainerRef?.current) {
       const scrollPos = selectedTime * pixelsPerSecond;
-      scrollContainerRef.current.scrollLeft = scrollPos;
+      scrollContainerRef.current.scrollLeft = scrollPos; // Actualiza el scroll según la referencia seleccionada
     }
   };
+  
