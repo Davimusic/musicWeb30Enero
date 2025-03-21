@@ -1,35 +1,74 @@
-/* Contenedor principal */
+/* Contenedor principal 
 .editor-container {
   display: flex;
-  height: 80vh;
+  height: 90vh;
   background: #1a1a1a;
   color: #ffffff;
   font-family: Arial, sans-serif;
   overflow: hidden;
+  overflow-y: auto;
+}*/
+
+.editor-container {
+  display: flex;
+  height: 90vh;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  overflow-y: auto;
 }
+
+
+.track-controls{
+  height: 100px;
+  margin-bottom: 10px;
+}
+
+
+
+/* Sidebar de controles 
+.track-controls-sidebar {
+  width: 250px; /* Ancho fijo del sidebar 
+  flex-shrink: 0;
+  /*background: #2d2d2d;
+  border-right: 1px solid #404040;
+  /*overflow-y: auto;
+  padding: 15px;
+}*/
 
 /* Sidebar de controles */
 .track-controls-sidebar {
-  width: 250px; /* Ancho fijo del sidebar */
+  width: 250px; /* Ancho fijo */
   flex-shrink: 0;
-  background: #2d2d2d;
-  border-right: 1px solid #404040;
-  overflow-y: auto;
-  padding: 15px;
 }
 
-/* Contenedor de timeline 
-.timeline-container {
-  padding-left: 0 !important;
-  overflow-x: auto;
-  scroll-behavior: smooth;
+/* Contenedor externo: gestiona exclusivamente el scroll horizontal 
+.timeline-scroll-wrapper {
+  overflow-x: auto;              
+  overflow-y: hidden;            
+  scroll-behavior: smooth;      
+  scroll-snap-type: x mandatory; 
+  -webkit-overflow-scrolling: touch; 
+  width: 100%;
+  position: relative; 
 }*/
-.timeline-container {
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
+
+.timeline-scroll-wrapper {
+  overflow-x: auto;              /* Activa el scroll horizontal */
+  overflow-y: hidden;            /* Oculta el scroll vertical */
+  scroll-behavior: smooth;       /* Desplazamiento suave */
+  scroll-snap-type: x mandatory; /* Snap horizontal, si lo requieres */
   -webkit-overflow-scrolling: touch; /* Mejor scroll en móviles */
+  width: 100%;
 }
+
+.timeline-content {
+  overflow-x: hidden;            /* Oculta el scroll horizontal */
+  overflow-y: visible;           /* Permite que el contenido se desborde verticalmente */
+  height: auto;                  /* Ajusta la altura automáticamente */
+}
+
 
 /* Estilo para el indicador de tiempo actual (borde izquierdo) */
 .current-time-indicator {

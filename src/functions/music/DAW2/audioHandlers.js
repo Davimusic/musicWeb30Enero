@@ -1,6 +1,10 @@
 // audioHandlers.js (handlePlayPause)
 export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
     const ctx = audioContextRef.current;
+
+    if(!tracks[0]) return null
+
+
     if (ctx.state === "suspended") await ctx.resume();
   
     if (!isPlaying) {
@@ -83,38 +87,41 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
       });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
+  
       const audioChunks = [];
-  
       mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      // audioHandlers.js (handleRecord)
-mediaRecorder.onstop = async () => {
-    const blob = new Blob(audioChunks, { type: "audio/webm; codecs=opus" });
-    const arrayBuffer = await blob.arrayBuffer();
-    const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
   
-    // Crear nodos como en createTrack
-    const gainNode = audioContextRef.current.createGain();
-    const pannerNode = audioContextRef.current.createStereoPanner();
-    gainNode.connect(pannerNode).connect(audioContextRef.current.destination);
+      mediaRecorder.onstop = async () => {
+        // Detener los tracks del stream para liberar el micrófono
+        stream.getTracks().forEach((track) => track.stop()); // <-- Corrección aquí
   
-    setTracks((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        audioBuffer,
-        gainNode,
-        pannerNode,
-        duration: audioBuffer.duration,
-        volume: 1,
-        panning: 0,
-        muted: false,
-        name: `Track ${prev.length + 1}`,
-        sourceNode: null,
-        startTime: 0,
-        offset: 0
-      }
-    ]);
-  };
+        const blob = new Blob(audioChunks, { type: "audio/webm; codecs=opus" });
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+  
+        // Crear nodos como en createTrack
+        const gainNode = audioContextRef.current.createGain();
+        const pannerNode = audioContextRef.current.createStereoPanner();
+        gainNode.connect(pannerNode).connect(audioContextRef.current.destination);
+  
+        setTracks((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            audioBuffer,
+            gainNode,
+            pannerNode,
+            duration: audioBuffer.duration,
+            volume: 1,
+            panning: 0,
+            muted: false,
+            name: `Track ${prev.length + 1}`,
+            sourceNode: null,
+            startTime: 0,
+            offset: 0,
+          },
+        ]);
+      };
   
       mediaRecorder.start();
       setIsRecording(true);
@@ -122,6 +129,7 @@ mediaRecorder.onstop = async () => {
       console.error("Error al grabar:", error);
     }
   };
+
 
   export const handleTimeSelect = (
     selectedTime,
