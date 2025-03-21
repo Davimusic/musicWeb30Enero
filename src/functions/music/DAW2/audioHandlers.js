@@ -139,6 +139,7 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     scrollContainerRef,
     setCurrentTime,
     pixelsPerSecond,
+    setTracks,
     setIsPlaying 
   ) => {
     setCurrentTime(selectedTime);

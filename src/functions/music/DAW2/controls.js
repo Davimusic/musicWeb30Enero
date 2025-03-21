@@ -10,6 +10,7 @@ import PanIcon from "../../../components/complex/panIcon";
 import ToggleSolo from "../../../components/complex/toggleSolo";
 import TrashIcon from "../../../components/complex/trashIcon";
 import ResponsiveContent from "../../../components/complex/responsiveContent";
+import { formatTime } from "./audioUtils";
 
 export const TrackControls = ({ track, showContent, onAction }) => (
   <div className="track-controls">
@@ -64,6 +65,6 @@ export const GlobalControls = ({
     <label htmlFor="audio-upload" className="current-time-display">
       Cargar Audio
     </label>
-    {/*<div className="current-time-display">{formatTime(currentTime)}</div>*/}
+    <div className="current-time-display">{formatTime(currentTime)}</div>
   </div>
 );

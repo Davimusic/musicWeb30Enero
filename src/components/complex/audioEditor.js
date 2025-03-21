@@ -21,6 +21,8 @@ import {
   deleteTrack, 
   muteAllExceptThis,
 } from "@/functions/music/DAW/trackHandlers";
+import TimeRuler from "./timeRuler";
+import { formatTime } from "@/functions/music/DAW2/timeHandlers";
 
 
 const Track = dynamic(() => import("./track"), { ssr: false });
@@ -83,27 +85,11 @@ const AudioEditor = () => {
   const trackControlsRef = useRef(null);
   const startTimeRef = useRef(0);
 
-  /*/ Función para obtener el tiempo actual del track
-  const getTrackCurrentTime = (track, audioContextRef, startTimeRef) => {
-    const ctx = audioContextRef.current;
+  useEffect(() => {
+    console.log(tracks);
+  }, [tracks]);
 
-    if (!track.sourceNode || !ctx) {
-      return 0; // Si no hay sourceNode o AudioContext, el tiempo es 0
-    }
-
-    // Calcular el tiempo transcurrido desde que se inició la reproducción
-    const elapsed = ctx.currentTime - startTimeRef.current;
-
-    // Asegurarse de que el tiempo no exceda la duración del track
-    return Math.min(elapsed, track.duration);
-  };
-
-  const getCurrentTime = (trackId) => {
-    const track = tracks.find((t) => t.id === trackId);
-    if (!track) return 0;
-
-    return getTrackCurrentTime(track, audioContextRef, startTimeRef);
-  };*/
+  
 
   // Manejador de acciones en las pistas
   const handleTrackAction = useCallback((action, trackId, value) => {
@@ -131,7 +117,7 @@ const AudioEditor = () => {
     let animationFrameId; let lastUpdate = 0;  
     const updatePlayback = (timestamp) => { 
       if (!isPlaying || !ctx) return;  
-      if (timestamp - lastUpdate >= 50) {
+      if (timestamp - lastUpdate >= 75) {
         const elapsed = ctx.currentTime - startTimeRef.current;
         const scrollPosition = elapsed * PIXELS_PER_SECOND; 
         scrollContainer.scrollLeft = scrollPosition; 
@@ -193,15 +179,6 @@ const AudioEditor = () => {
     };
   }, [isPlaying, tracks]);
 
-
-  
-  
-
-
-
-
-
-
   // Cargar un archivo de audio
   const handleLoadAudio = async (e) => {
     const file = e.target.files[0];
@@ -225,50 +202,66 @@ const AudioEditor = () => {
   return (
     <div className="fullscreen-div">
       <div className="editor-container" style={{ height: `${editorHeight}` }}>
-        {/* Controles de las pistas */}
-        <div className="track-controls-sidebar" ref={trackControlsRef}>
-          {tracks.map((track) => (
-            <TrackControls
-              key={track.id}
-              track={track}
-              showContent={showContent}
-              onAction={handleTrackAction}
-            />
-          ))}
-        </div>
-  
-        {/* Contenedor de línea de tiempo */}
-        <div className="timeline-scroll-wrapper" ref={scrollContainerRef} id="scroll-container">
+        {/* Contenedor de línea de tiempo (scroll horizontal y vertical) */}
+        <div
+          className="timeline-scroll-wrapper"
+          ref={scrollContainerRef}
+          id="scroll-container"
+        >
+          {/* Contenedor principal de la línea de tiempo */}
           <div
             className="timeline-content"
             style={{
               width: `${tracks.length > 0 ? tracks[0].duration * PIXELS_PER_SECOND : 0}px`,
+              minHeight: "100%", // Asegura altura mínima para scroll vertical
             }}
-          >
-            {tracks.map((track) => (
-              <Track
-                key={track.id}
-                track={track}
-                pixelsPerSecond={PIXELS_PER_SECOND}
-                onSelectTime={(selectedTime) =>
-                  handleTimeSelect(
-                    selectedTime,
-                    tracks,
-                    isPlaying,
-                    audioContextRef,
-                    scrollContainerRef,
-                    setCurrentTime,
-                    PIXELS_PER_SECOND,
-                    setIsPlaying
-                  )
-                }
-              />
-            ))}
+          > 
+            {/* Regla de tiempo (sticky horizontal) */}
+            
+              <TimeRuler pixelsPerSecond={PIXELS_PER_SECOND} tracks={tracks}/>
+            
+            {Array.isArray(tracks) ? (
+                tracks.map((track) => (
+                  <div key={track.id} className="track-container">
+                    {/* Controles del track (sticky horizontal) */}
+                    <div className="track-controls-sidebar">
+                      <TrackControls
+                        track={track}
+                        showContent={showContent}
+                        onAction={handleTrackAction}
+                      />
+                    </div>
+
+                    {/* Waveform del track */}
+                    <div className="track-waveform">
+                      <Track
+                        track={track}
+                        pixelsPerSecond={PIXELS_PER_SECOND}
+                        onSelectTime={(selectedTime) =>
+                          handleTimeSelect(
+                            selectedTime,
+                            tracks,
+                            isPlaying,
+                            audioContextRef,
+                            scrollContainerRef,
+                            setCurrentTime,
+                            PIXELS_PER_SECOND,
+                            setTracks,
+                            setIsPlaying
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No hay tracks disponibles</p>
+              )}
+
           </div>
         </div>
       </div>
-  
-      {/* Controles globales */}
+      {/* Controles globales (barra inferior) */}
       <div ref={controlsRef}>
         <GlobalControls
           isPlaying={isPlaying}
