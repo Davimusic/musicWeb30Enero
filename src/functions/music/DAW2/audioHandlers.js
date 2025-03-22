@@ -1,5 +1,5 @@
 // audioHandlers.js (handlePlayPause)
-export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
+/*export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
     const ctx = audioContextRef.current;
 
     if(!tracks[0]) return null
@@ -31,8 +31,68 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     }
   
     setIsPlaying(!isPlaying);
+  };*/
+
+  export const handlePlayPause = async (
+    audioContextRef,
+    tracks,
+    currentTime,
+    setIsPlaying,
+    isPlaying,
+    startTimeRef
+  ) => {
+    const ctx = audioContextRef.current;
+  
+    if (!tracks[0]) return null;
+  
+    // Reanudar el contexto si está suspendido
+    if (ctx.state === "suspended") await ctx.resume();
+  
+    if (!isPlaying) {
+      startTimeRef.current = ctx.currentTime - currentTime;
+  
+      tracks.forEach((track) => {
+        // Detener y desconectar el nodo anterior si existe
+        if (track.sourceNode) {
+          track.sourceNode.disconnect();
+          try {
+            track.sourceNode.stop();
+          } catch (e) {}
+        }
+  
+        // Crear un nuevo sourceNode
+        track.sourceNode = ctx.createBufferSource();
+        track.sourceNode.buffer = track.audioBuffer;
+  
+        // Conectar el sourceNode a la cadena de audio
+        track.sourceNode.connect(track.gainNode);
+  
+        // Calcular cuándo debe comenzar este track
+        const startTimeInContext = ctx.currentTime + (track.startTime - currentTime);
+  
+        // Calcular el offset dentro del archivo de audio
+        const startOffset = Math.max(currentTime - track.startTime, 0);
+  
+        // Calcular la duración restante del audio
+        const remaining = track.duration - startOffset;
+  
+        // Programar la reproducción solo si hay audio restante
+        if (remaining > 0) {
+          track.sourceNode.start(startTimeInContext, startOffset, remaining);
+        }
+      });
+    } else {
+      // Detener la reproducción
+      tracks.forEach((track) => {
+        track.sourceNode?.stop();
+        track.sourceNode = null;
+      });
+    }
+  
+    setIsPlaying(!isPlaying);
   };
   
+
   export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef) => {
     const now = performance.now(); // Usamos tiempo de alta precisión
   
@@ -132,7 +192,7 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
 
 
   export const handleTimeSelect = (
-    selectedTime,
+    selectedTimeGlobal, // <-- Tiempo global (línea de tiempo completa)
     tracks,
     isPlaying,
     audioContextRef,
@@ -142,29 +202,27 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     setTracks,
     setIsPlaying 
   ) => {
-    setCurrentTime(selectedTime);
+    setCurrentTime(selectedTimeGlobal); // Actualizar el tiempo global
   
     tracks.forEach((track) => {
-      track.offset = selectedTime; // Actualiza el offset del track
+      // Calcular el offset relativo al startTime del track
+      const startOffset = Math.max(selectedTimeGlobal - track.startTime, 0);
+      track.offset = startOffset;
   
       if (audioContextRef?.current && track.sourceNode) {
         try {
-                setIsPlaying(false)
-                setTimeout(() => {
-                    console.log("¡Ahora hago algo!");
-                    if(track.sourceNode){
-                        track.sourceNode.stop(); // Detener el nodo actual si existe
-                    }
-                    track.sourceNode = audioContextRef.current.createBufferSource(); // Crear nuevo nodo
-                    track.sourceNode.buffer = track.audioBuffer; // Asignar el buffer del audio
-                    track.sourceNode.connect(track.gainNode); // Conectar el nodo
-                    setIsPlaying(true)
-                    track.sourceNode.start(0, selectedTime); // Reanudar desde el tiempo seleccionado
-                    console.log('sus');
-                    
-                }, 1000); // 1000 ms = 1 segundo
-                
-           
+          setIsPlaying(false);
+          setTimeout(() => {
+            if (track.sourceNode) {
+              track.sourceNode.stop(); // Detener el nodo actual si existe
+            }
+            track.sourceNode = audioContextRef.current.createBufferSource(); // Crear nuevo nodo
+            track.sourceNode.buffer = track.audioBuffer; // Asignar el buffer del audio
+            track.sourceNode.connect(track.gainNode); // Conectar el nodo
+            setIsPlaying(true);
+            // Iniciar desde el offset relativo al track
+            track.sourceNode.start(0, startOffset); 
+          }, 1000); // 1000 ms = 1 segundo
         } catch (error) {
           console.error("Error al sincronizar track:", error);
         }
@@ -172,7 +230,7 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     });
   
     if (scrollContainerRef?.current) {
-      const scrollPos = selectedTime * pixelsPerSecond;
+      const scrollPos = selectedTimeGlobal * pixelsPerSecond; // Scroll basado en tiempo global
       scrollContainerRef.current.scrollLeft = scrollPos; // Actualiza el scroll según la referencia seleccionada
     }
   };

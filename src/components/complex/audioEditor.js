@@ -13,7 +13,6 @@ import {
   handleRecord,
   handleTimeSelect,
 } from "@/functions/music/DAW2/audioHandlers";
-import { handleDownloadMix } from "@/functions/music/handleDownloadMix";
 import {
   updateTrackVolume,
   updateTrackMuted,
@@ -22,12 +21,10 @@ import {
   muteAllExceptThis,
 } from "@/functions/music/DAW/trackHandlers";
 import TimeRuler from "./timeRuler";
-import { formatTime } from "@/functions/music/DAW2/timeHandlers";
+import handleDownloadMix from "@/functions/music/handleDownloadMix";
 
 
 const Track = dynamic(() => import("./track"), { ssr: false });
-
-
 
 
 
@@ -41,36 +38,15 @@ const AudioEditor = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [showContent, setShowContent] = useState(true);
-  
-
-
   const [editorHeight, setEditorHeight] = useState("100vh");
-  const controlsRef = useRef(null); 
-  //const [audioDuration, setAudioDuration] = useState(0); // Duración total del audio
+  const [sidebarWidth, setSidebarWidth] = useState(220); // Nuevo estado para el ancho del sidebar
 
+  const controlsRef = useRef(null);
+  const sidebarRef = useRef(null);
   const currentTimeRef = useRef(currentTime);
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (controlsRef.current) {
-        const controlsHeight = controlsRef.current.offsetHeight; // Detecta altura de .global-controls
-        const windowHeight = window.innerHeight; // Altura de la ventana
-        console.log(controlsHeight);
-        console.log(windowHeight);
-
-        setEditorHeight(`${windowHeight - controlsHeight }px`); // Ajusta altura dinámica
-      }
-    };
-
-    updateHeight(); // Actualización inicial
-    window.addEventListener("resize", updateHeight); // Detecta cambios en tamaño de ventana
-
-    return () => window.removeEventListener("resize", updateHeight); // Limpia el event listener
-  }, []);
-
-  useEffect(() => {
-    currentTimeRef.current = currentTime;
-  }, [currentTime]);
+  const mediaRecorderRef = useRef(null);
+  const trackControlsRef = useRef(null);
+  const startTimeRef = useRef(0);
 
   const { audioContextRef } = useAudioContext();
   const { scrollContainerRef, tracksContainerRef } = useAutoScroll(
@@ -81,19 +57,54 @@ const AudioEditor = () => {
     setCurrentTime
   );
 
-  const mediaRecorderRef = useRef(null);
-  const trackControlsRef = useRef(null);
-  const startTimeRef = useRef(0);
-
+  // Observar cambios en el ancho del sidebar
   useEffect(() => {
-    console.log(tracks);
-  }, [tracks]);
-
+    if (!sidebarRef.current) return;
   
+    const resizeObserver = new ResizeObserver((entries) => {
+      const newWidth = entries[0].contentRect.width;
+      setSidebarWidth(newWidth); // Actualiza el estado con el nuevo ancho
+    });
+  
+    resizeObserver.observe(sidebarRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+  
+  // Usa el estado sidebarWidth para ver el valor actualizado
+  useEffect(() => {
+    console.log("Ancho del sidebar:", sidebarWidth);
+  }, [sidebarWidth]); // Este efecto se ejecutará cada vez que sidebarWidth cambie
+
+  // Ajustar la altura del editor
+  useEffect(() => {
+    const updateHeight = () => {
+      if (controlsRef.current) {
+        const controlsHeight = controlsRef.current.offsetHeight;
+        const windowHeight = window.innerHeight;
+        setEditorHeight(`${windowHeight - controlsHeight}px`);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
+  // Actualizar currentTimeRef
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   // Manejador de acciones en las pistas
   const handleTrackAction = useCallback((action, trackId, value) => {
     const actions = {
+      setStartTime: (id, startTime) => {
+        setTracks((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, startTime: parseFloat(startTime) } : t
+          )
+        );
+      },
       volume: (id, val) => updateTrackVolume(id, val / 100, setTracks),
       pan: (id, val) => updateTrackPanning(id, val, setTracks),
       delete: (id) => deleteTrack(id, setTracks),
@@ -109,73 +120,65 @@ const AudioEditor = () => {
   }, []);
 
   // Actualización del scroll mediante setInterval
-  useEffect(() => { 
+  useEffect(() => {
     const ctx = audioContextRef.current;
     const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer || !ctx) return; 
-    scrollContainer.style.willChange = "scroll-position"; 
-    let animationFrameId; let lastUpdate = 0;  
-    const updatePlayback = (timestamp) => { 
-      if (!isPlaying || !ctx) return;  
+    if (!scrollContainer || !ctx) return;
+    scrollContainer.style.willChange = "scroll-position";
+    let animationFrameId;
+    let lastUpdate = 0;
+
+    const updatePlayback = (timestamp) => {
+      if (!isPlaying || !ctx) return;
       if (timestamp - lastUpdate >= 75) {
         const elapsed = ctx.currentTime - startTimeRef.current;
-        const scrollPosition = elapsed * PIXELS_PER_SECOND; 
-        scrollContainer.scrollLeft = scrollPosition; 
-        lastUpdate = timestamp;  
-      } 
-      animationFrameId = requestAnimationFrame(updatePlayback); 
-    }; 
+        const scrollPosition = elapsed * PIXELS_PER_SECOND;
+        scrollContainer.scrollLeft = scrollPosition;
+        lastUpdate = timestamp;
+      }
+      animationFrameId = requestAnimationFrame(updatePlayback);
+    };
+
     if (isPlaying) {
       startTimeRef.current = ctx.currentTime - currentTime;
-      animationFrameId = requestAnimationFrame(updatePlayback); 
-    } 
-    return () => { 
-      if (animationFrameId) { 
-        cancelAnimationFrame(animationFrameId); 
-      } 
-    }; 
-  }, [isPlaying]);
-  
-  useEffect(() => {
-    if (!isPlaying || !tracks.length) return;
-  
-    // Número total de tracks
-    console.log(`Número total de tracks: ${tracks.length}`);
-  
-    let completedTracks = 0; // contador para saber cuántos tracks han finalizado
-    const listeners = []; // Array para almacenar referencias a los listeners
-  
-    // Función que se llama cuando un track termina
-    const handleTrackEnd = (track) => {
-      completedTracks += 1;
-      console.log(`El track "${track.name}" ha terminado (${completedTracks}/${tracks.length}).`);
-  
-      if (completedTracks === tracks.length && isPlaying) {
-        setIsPlaying(false)
-        console.log("Todos los tracks han terminado de reproducirse.");
+      animationFrameId = requestAnimationFrame(updatePlayback);
+    }
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
-  
-    // Asignar el listener "ended" a cada sourceNode de cada track
-    tracks.forEach(track => {
-      if (track.sourceNode && typeof track.sourceNode.addEventListener === 'function') {
-        // Creamos una función listener para poder removerla después
+  }, [isPlaying]);
+
+  // Manejar el final de la reproducción de los tracks
+  useEffect(() => {
+    if (!isPlaying || !tracks.length) return;
+
+    let completedTracks = 0;
+    const listeners = [];
+
+    const handleTrackEnd = (track) => {
+      completedTracks += 1;
+      if (completedTracks === tracks.length && isPlaying) {
+        setIsPlaying(false);
+      }
+    };
+
+    tracks.forEach((track) => {
+      if (track.sourceNode && typeof track.sourceNode.addEventListener === "function") {
         const listener = () => handleTrackEnd(track);
         track.sourceNode.addEventListener("ended", listener);
         listeners.push({ track, listener });
-      } else {
-        console.warn("El track no tiene un sourceNode válido:", track);
       }
     });
-  
-    // Cleanup: removemos los listeners asignados
+
     return () => {
       listeners.forEach(({ track, listener }) => {
-        if (track.sourceNode && typeof track.sourceNode.removeEventListener === 'function') {
+        if (track.sourceNode && typeof track.sourceNode.removeEventListener === "function") {
           track.sourceNode.removeEventListener("ended", listener);
         }
       });
-      console.log("Limpieza de eventos 'ended' completada.");
     };
   }, [isPlaying, tracks]);
 
@@ -188,11 +191,7 @@ const AudioEditor = () => {
       const newTrack = await createTrack(file, audioContextRef.current, tracks);
       setTracks((prev) => [...prev, newTrack]);
 
-      const audioBuffer = await audioContextRef.current.decodeAudioData(
-        await file.arrayBuffer()
-      );
-      //setAudioDuration(audioBuffer.duration);
-
+      await audioContextRef.current.decodeAudioData(await file.arrayBuffer());
       scrollContainerRef.current?.scrollTo({ left: 0 });
     } catch (error) {
       console.error("Error al cargar audio:", error);
@@ -202,66 +201,66 @@ const AudioEditor = () => {
   return (
     <div className="fullscreen-div">
       <div className="editor-container" style={{ height: `${editorHeight}` }}>
-        {/* Contenedor de línea de tiempo (scroll horizontal y vertical) */}
         <div
           className="timeline-scroll-wrapper"
           ref={scrollContainerRef}
           id="scroll-container"
         >
-          {/* Contenedor principal de la línea de tiempo */}
           <div
             className="timeline-content"
             style={{
               width: `${tracks.length > 0 ? tracks[0].duration * PIXELS_PER_SECOND : 0}px`,
-              minHeight: "100%", // Asegura altura mínima para scroll vertical
+              minHeight: "100%",
             }}
-          > 
-            {/* Regla de tiempo (sticky horizontal) */}
-            
-              <TimeRuler pixelsPerSecond={PIXELS_PER_SECOND} tracks={tracks}/>
-            
+          >
+            <TimeRuler
+              pixelsPerSecond={PIXELS_PER_SECOND}
+              tracks={tracks}
+              sidebarWidth={sidebarWidth} // Pasamos el ancho del sidebar
+            />
+
             {Array.isArray(tracks) ? (
-                tracks.map((track) => (
-                  <div key={track.id} className="track-container">
-                    {/* Controles del track (sticky horizontal) */}
-                    <div className="track-controls-sidebar">
-                      <TrackControls
-                        track={track}
-                        showContent={showContent}
-                        onAction={handleTrackAction}
-                      />
-                    </div>
-
-                    {/* Waveform del track */}
-                    <div className="track-waveform">
-                      <Track
-                        track={track}
-                        pixelsPerSecond={PIXELS_PER_SECOND}
-                        onSelectTime={(selectedTime) =>
-                          handleTimeSelect(
-                            selectedTime,
-                            tracks,
-                            isPlaying,
-                            audioContextRef,
-                            scrollContainerRef,
-                            setCurrentTime,
-                            PIXELS_PER_SECOND,
-                            setTracks,
-                            setIsPlaying
-                          )
-                        }
-                      />
-                    </div>
+              tracks.map((track, index) => (
+                <div key={track.id} className="track-container">
+                  <div
+                    className="track-controls-sidebar"
+                    ref={index === 0 ? sidebarRef : null} // Ref solo en el primer track
+                  >
+                    <TrackControls
+                      track={track}
+                      showContent={showContent}
+                      onAction={handleTrackAction}
+                    />
                   </div>
-                ))
-              ) : (
-                <p>No hay tracks disponibles</p>
-              )}
 
+                  <div className="track-waveform">
+                    <Track
+                      track={track}
+                      pixelsPerSecond={PIXELS_PER_SECOND}
+                      onSelectTime={(selectedTime) =>
+                        handleTimeSelect(
+                          selectedTime,
+                          tracks,
+                          isPlaying,
+                          audioContextRef,
+                          scrollContainerRef,
+                          setCurrentTime,
+                          PIXELS_PER_SECOND,
+                          setTracks,
+                          setIsPlaying, 
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No hay tracks disponibles</p>
+            )}
           </div>
         </div>
       </div>
-      {/* Controles globales (barra inferior) */}
+
       <div ref={controlsRef}>
         <GlobalControls
           isPlaying={isPlaying}
