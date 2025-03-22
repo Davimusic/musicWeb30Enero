@@ -36,11 +36,24 @@
 }
 
 /* Contenedor de cada track */
+/*.track-container {
+  display: flex;
+  align-items: stretch;
+  min-height: 100px; 
+}*/
+
 .track-container {
   display: flex;
   align-items: stretch;
-  min-height: 100px; /* Altura mínima para cada track */
+  width: max-content; /* El contenedor se ajustará al ancho de su contenido */
+  min-height: 100px;
 }
+
+.track-waveform {
+  flex-shrink: 0; /* Asegura que el contenido interno no se reduzca */
+}
+
+
 
 /* Estilos para los controles de cada track */
 .track-controls {
@@ -80,6 +93,11 @@
   height: 30px;
   display: flex;
   align-items: center;
+}
+
+.time-mark{
+  width: 200px;
+  background-color: aqua;
 }
 
 /* Controles globales (barra inferior) */

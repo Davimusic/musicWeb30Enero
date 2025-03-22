@@ -4,30 +4,48 @@ import "../../estilos/general/general.css";
 import "../../estilos/music/audioEditor.css";
 import { formatTime } from "@/functions/music/mediaUtils";
 
+
+
+
+
+
+
 const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
-  // Eliminamos el ResizeObserver y usamos directamente el prop
+
+  console.log(pixelsPerSecond);
+  
   if (!tracks || tracks.length === 0) {
     return null;
   }
 
-  const maxDuration = Math.max(...tracks.map((track) => track.duration));
-  const rulerWidth = maxDuration * pixelsPerSecond;
+  // Calcular la duración máxima incluyendo el startTime de cada track
+  const maxDuration = Math.max(
+    ...tracks.map((track) => track.startTime + track.duration)
+  );
 
+  // Redondear el valor de pixelsPerSecond para evitar decimales
+  const adjustedPixelsPerSecond = Math.round(pixelsPerSecond);
+
+  // Ancho total del ruler basado en la duración máxima, redondeado
+  const rulerWidth = Math.round(maxDuration * adjustedPixelsPerSecond);
+
+  // Número de marcas (una por segundo)
   const numberOfMarks = Math.ceil(maxDuration);
 
   return (
     <div
       className="time-ruler"
       style={{
-        marginLeft: `${sidebarWidth}px`, // Usamos el prop directamente
-        width: `${rulerWidth}px`, // Eliminamos el window.innerWidth adicional
+        marginLeft: `200px`, // Si usas sidebarWidth, asegurate de aplicarlo correctamente
+        width: `${rulerWidth+100}px`,
+        marginRight: '100px'
       }}
     >
       {Array.from({ length: numberOfMarks + 1 }).map((_, i) => (
         <div
           key={i}
           className="time-mark"
-          style={{ width: `${pixelsPerSecond}px`}}
+          //style={{ width: `100px` }}
         >
           <div style={{ display: "flex" }}>
             <div className="time-label title-md color2">I</div>
@@ -40,17 +58,17 @@ const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
   );
 };
 
-// Mantenemos las PropTypes actualizadas
+
 TimeRuler.propTypes = {
   pixelsPerSecond: PropTypes.number.isRequired,
   tracks: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
       duration: PropTypes.number.isRequired,
-      // ... resto de las propiedades del track
+      startTime: PropTypes.number.isRequired,
     })
   ).isRequired,
-  sidebarWidth: PropTypes.number.isRequired, // Nueva prop
+  sidebarWidth: PropTypes.number.isRequired,
 };
 
-export default TimeRuler
+export default TimeRuler;

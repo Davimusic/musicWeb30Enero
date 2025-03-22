@@ -24,13 +24,19 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime }) => {
     const rect = canvas.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
   
-    // Calcular el tiempo local dentro del track
-    const selectedTimeLocal = (offsetX / canvas.offsetWidth) * track.audioBuffer.duration;
-  
-    // Convertir a tiempo global sumando el startTime del track
+    // 1. Calcular píxeles correspondientes al startTime del track
+    const startPixels = track.startTime * pixelsPerSecond;
+    
+    // 2. Ajustar el offsetX restando los píxeles del startTime
+    const effectiveOffsetX = Math.max(offsetX - startPixels, 0);
+    
+    // 3. Calcular tiempo local basado en el contenido real del track
+    const selectedTimeLocal = effectiveOffsetX / pixelsPerSecond;
+    
+    // 4. Calcular tiempo global sumando el startTime
     const selectedTimeGlobal = track.startTime + selectedTimeLocal;
   
-    onSelectTime(selectedTimeGlobal); // Pasar el tiempo global al handler
+    onSelectTime(selectedTimeGlobal);
   };
 
   return (

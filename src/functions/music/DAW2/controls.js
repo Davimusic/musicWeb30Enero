@@ -12,15 +12,46 @@ import TrashIcon from "../../../components/complex/trashIcon";
 import ResponsiveContent from "../../../components/complex/responsiveContent";
 import { formatTime } from "./audioUtils";
 
+
+
+
+
+
+
+
+
 export const TrackControls = ({ track, showContent, onAction }) => {
   const [showStartTimeModal, setShowStartTimeModal] = useState(false);
-  const [seconds, setSeconds] = useState(Math.floor(track.startTime || 0)); // Segundos
+  const [minutes, setMinutes] = useState(Math.floor((track.startTime || 0) / 60)); // Minutos
+  const [seconds, setSeconds] = useState(Math.floor((track.startTime || 0) % 60)); // Segundos
   const [milliseconds, setMilliseconds] = useState(
-    Math.round((track.startTime - Math.floor(track.startTime || 0)) * 1000) // Milisegundos
-  );
+    Math.round(((track.startTime || 0) - Math.floor(track.startTime || 0)) * 1000
+  ));
 
+  // Función para formatear el tiempo final (solo lectura)
+  const formatTime = (mins, secs, ms) => {
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+  };
+
+  // Función para manejar cambios en los inputs manuales (sin padding)
+  const handleManualChange = (setter, max) => (e) => {
+    const value = e.target.value.replace(/^0+/, ''); // Eliminar ceros iniciales
+    const numValue = parseInt(value || 0);
+
+    if (!isNaN(numValue)) {
+      const clampedValue = Math.min(Math.max(numValue, 0), max);
+      setter(clampedValue);
+    }
+  };
+
+  // Función para calcular el tiempo total en milisegundos
+  const calculateTotalMilliseconds = (mins, secs, ms) => {
+    return mins * 60000 + secs * 1000 + ms;
+  };
+
+  // Manejar el envío del tiempo de inicio
   const handleSetStartTime = () => {
-    const startTime = seconds + milliseconds / 1000; // Calcular el tiempo total en segundos
+    const startTime = calculateTotalMilliseconds(minutes, seconds, milliseconds) / 1000; // Convertir a segundos
     onAction("setStartTime", track.id, startTime); // Envía la acción al padre
     setShowStartTimeModal(false); // Cierra el modal
   };
@@ -34,11 +65,6 @@ export const TrackControls = ({ track, showContent, onAction }) => {
 
           {/* Controles principales */}
           <ToggleSolo onToggle={() => onAction("solo", track.id)} />
-          {/*<input
-            value={track.name}
-            onChange={(e) => onAction("rename", track.id, e.target.value)}
-            className="track-name-input"
-          />*/}
           <TrashIcon onClick={() => onAction("delete", track.id)} />
         </div>
 
@@ -61,29 +87,64 @@ export const TrackControls = ({ track, showContent, onAction }) => {
           <div className="modal-content">
             <h3>Set Start Time for {track.name}</h3>
 
-            {/* Input range para segundos */}
+            {/* Input manual y range para minutos */}
             <div>
-              <label>Segundos: {seconds}</label>
+              <label>Minutos: </label>
               <input
-                type="range"
-                value={seconds}
-                onChange={(e) => setSeconds(parseInt(e.target.value))}
+                type="text"
+                value={minutes === 0 ? '0' : minutes.toString().replace(/^0+/, '')} // Mostrar sin ceros iniciales
+                onChange={handleManualChange(setMinutes, 59)}
+                maxLength="2"
+              />
+              <RangeInput
+                value={minutes}
+                onChange={(val) => setMinutes(val)}
                 min="0"
-                max="600" // Máximo 10 minutos
-                step="1"
+                max="59"
               />
             </div>
 
-            {/* Input range para milisegundos */}
+            {/* Input manual y range para segundos */}
             <div>
-              <label>Milisegundos: {milliseconds}</label>
+              <label>Segundos: </label>
               <input
-                type="range"
+                type="text"
+                value={seconds === 0 ? '0' : seconds.toString().replace(/^0+/, '')}
+                onChange={handleManualChange(setSeconds, 59)}
+                maxLength="2"
+              />
+              <RangeInput
+                value={seconds}
+                onChange={(val) => setSeconds(val)}
+                min="0"
+                max="59"
+              />
+            </div>
+
+            {/* Input manual y range para milisegundos */}
+            <div>
+              <label>Milisegundos: </label>
+              <input
+                type="text"
+                value={milliseconds === 0 ? '0' : milliseconds.toString().replace(/^0+/, '')}
+                onChange={handleManualChange(setMilliseconds, 999)}
+                maxLength="3"
+              />
+              <RangeInput
                 value={milliseconds}
-                onChange={(e) => setMilliseconds(parseInt(e.target.value))}
+                onChange={(val) => setMilliseconds(val)}
                 min="0"
                 max="999"
-                step="1"
+              />
+            </div>
+
+            {/* Valor final en formato 00:00.000 (solo lectura) */}
+            <div>
+              <label>Tiempo final: </label>
+              <input
+                type="text"
+                value={formatTime(minutes, seconds, milliseconds)}
+                readOnly
               />
             </div>
 
@@ -96,7 +157,6 @@ export const TrackControls = ({ track, showContent, onAction }) => {
     </div>
   );
 };
-  
 
 
 /*export const TrackControls = ({ track, showContent, onAction }) => (
