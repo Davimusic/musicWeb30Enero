@@ -95,9 +95,8 @@
   align-items: center;
 }
 
-.time-mark{
-  width: 200px;
-  background-color: aqua;
+.time-mark {
+  flex-shrink: 0; /* Previene que se encojan en flex containers */
 }
 
 /* Controles globales (barra inferior) */

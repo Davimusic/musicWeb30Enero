@@ -1,3 +1,5 @@
+import { createFilterNode } from "./DAW2/audioHandlers";
+
 const handleDownloadMix = async (tracks) => {
   console.log('descarga');
   console.log(tracks);
@@ -34,7 +36,20 @@ const handleDownloadMix = async (tracks) => {
       const pannerNode = offlineContext.createStereoPanner();
       pannerNode.pan.value = track.panning / 50;
 
-      source.connect(gainNode).connect(pannerNode).connect(offlineContext.destination);
+      // Aplicar los filtros en el mismo orden que en la reproducción
+      let lastNode = source;
+      lastNode.connect(gainNode).connect(pannerNode);
+
+      if (track.filters && track.filters.length > 0) {
+        track.filters.forEach((filter) => {
+          const filterNode = createFilterNode(offlineContext, filter); // Crear el nodo de filtro
+          lastNode.connect(filterNode); // Conectar el último nodo al filtro
+          lastNode = filterNode; // Actualizar el último nodo
+        });
+      }
+
+      // Conectar el último nodo al destino del contexto offline
+      lastNode.connect(offlineContext.destination);
 
       // Iniciar en el startTime global y desde el offset del track
       source.start(track.startTime, track.offset); // <-- Línea corregida

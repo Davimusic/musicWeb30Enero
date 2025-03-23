@@ -1,39 +1,4 @@
-// audioHandlers.js (handlePlayPause)
-/*export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying, isPlaying, startTimeRef) => {
-    const ctx = audioContextRef.current;
-
-    if(!tracks[0]) return null
-
-
-    if (ctx.state === "suspended") await ctx.resume();
-  
-    if (!isPlaying) {
-        startTimeRef.current = ctx.currentTime - currentTime;
-        
-        tracks.forEach(track => {
-          if (track.sourceNode) {
-            track.sourceNode.disconnect();
-            try { track.sourceNode.stop(); } catch(e) {}
-          }
-          
-          track.sourceNode = ctx.createBufferSource();
-          track.sourceNode.buffer = track.audioBuffer;
-          track.sourceNode.connect(track.gainNode);
-          
-          // Iniciar en el punto correcto
-          track.sourceNode.start(0, currentTime % track.duration);
-        });
-      } else {
-      tracks.forEach(track => {
-        track.sourceNode?.stop();
-        track.offset += ctx.currentTime - track.startTime;
-      });
-    }
-  
-    setIsPlaying(!isPlaying);
-  };*/
-
-  export const handlePlayPause = async (
+  /*export const handlePlayPause = async (
     audioContextRef,
     tracks,
     currentTime,
@@ -79,25 +44,147 @@
         // Programar la reproducción solo si hay audio restante
         if (remaining > 0) {
           track.sourceNode.start(startTimeInContext, startOffset, remaining);
+          track.isPlaying = true; // Actualizar el estado de reproducción
         }
       });
     } else {
       // Detener la reproducción
       tracks.forEach((track) => {
-        track.sourceNode?.stop();
-        track.sourceNode = null;
+        if (track.sourceNode) {
+          try {
+            track.sourceNode.stop();
+          } catch (e) {}
+          track.sourceNode.disconnect();
+          track.sourceNode = null;
+        }
+        track.isPlaying = false; // Actualizar el estado de reproducción
+      });
+    }
+  
+    setIsPlaying(!isPlaying);
+  };*/
+  import { reconnectAudioChain } from "./controls";
+
+
+  export const handlePlayPause = async (
+    audioContextRef,
+    tracks,
+    currentTime,
+    setIsPlaying,
+    isPlaying,
+    startTimeRef
+  ) => {
+    const ctx = audioContextRef.current;
+  
+    if (!tracks[0]) return null;
+  
+    // Reanudar el contexto si está suspendido
+    if (ctx.state === "suspended") await ctx.resume();
+  
+    if (!isPlaying) {
+      startTimeRef.current = ctx.currentTime - currentTime;
+  
+      tracks.forEach((track) => {
+        // Detener y desconectar el nodo anterior si existe
+        if (track.sourceNode) {
+          track.sourceNode.disconnect();
+          try {
+            track.sourceNode.stop();
+          } catch (e) {}
+        }
+  
+        // Crear un nuevo sourceNode
+        track.sourceNode = ctx.createBufferSource();
+        track.sourceNode.buffer = track.audioBuffer;
+  
+        // Reconectar la cadena de audio
+        let lastNode = track.sourceNode;
+  
+        if (track.filters && track.filters.length > 0) {
+          track.filters.forEach((filter) => {
+            if (!filter.node) {
+              // Si el nodo del filtro no existe, crearlo
+              filter.node = createFilterNode(ctx, filter);
+            }
+            lastNode.connect(filter.node); // Conectar el último nodo al filtro
+            lastNode = filter.node; // Actualizar el último nodo
+          });
+        }
+  
+        // Conectar el último nodo al gainNode
+        lastNode.connect(track.gainNode);
+  
+        // Calcular cuándo debe comenzar este track
+        const startTimeInContext = ctx.currentTime + (track.startTime - currentTime);
+  
+        // Calcular el offset dentro del archivo de audio
+        const startOffset = Math.max(currentTime - track.startTime, 0);
+  
+        // Calcular la duración restante del audio
+        const remaining = track.duration - startOffset;
+  
+        // Programar la reproducción solo si hay audio restante
+        if (remaining > 0) {
+          track.sourceNode.start(startTimeInContext, startOffset, remaining);
+          track.isPlaying = true; // Actualizar el estado de reproducción
+        }
+      });
+    } else {
+      // Detener la reproducción
+      tracks.forEach((track) => {
+        if (track.sourceNode) {
+          try {
+            track.sourceNode.stop();
+          } catch (e) {}
+          track.sourceNode.disconnect();
+          track.sourceNode = null;
+        }
+        track.isPlaying = false; // Actualizar el estado de reproducción
       });
     }
   
     setIsPlaying(!isPlaying);
   };
-  
+
+
+
+  export const createFilterNode = (context, filterConfig) => {
+    switch(filterConfig.type) {
+      case 'lowpass':
+      case 'highpass':
+      case 'bandpass':
+      case 'notch': {
+        const filter = context.createBiquadFilter();
+        filter.type = filterConfig.type;
+        filter.frequency.value = filterConfig.params.frequency || 20000;
+        filter.Q.value = filterConfig.params.Q || 1;
+        return filter;
+      }
+      
+      case 'delay': {
+        const delay = context.createDelay();
+        delay.delayTime.value = filterConfig.params.time || 0.5;
+        return delay;
+      }
+      
+      case 'compressor': {
+        const compressor = context.createDynamicsCompressor();
+        // Configurar parámetros del compressor
+        return compressor;
+      }
+      
+      default:
+        return context.createGain(); // Nodo neutro si el tipo no es reconocido
+    }
+  };
+
+
 
   export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef) => {
     const now = performance.now(); // Usamos tiempo de alta precisión
   
-    tracks.forEach(track => {
-      if (track.sourceNode && track.isPlaying) {
+    tracks.forEach((track) => {
+      if (track.sourceNode) {
         try {
           // Verificamos si el nodo fue iniciado antes de intentar detenerlo
           if (track.sourceNode.playbackState === track.sourceNode.PLAYING_STATE ||
@@ -108,7 +195,7 @@
         } catch (error) {
           console.warn("Error stopping audio node:", error);
         }
-        
+  
         // Limpiar el nodo
         track.sourceNode = null;
       }
@@ -121,12 +208,15 @@
     // Resetear estado global
     setIsPlaying(false);
     setCurrentTime(0);
-    
+  
     // Resetear scroll
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollLeft = 0;
     }
   };
+  
+
+  
   
   export const handleRecord = async (
     isRecording,
@@ -216,12 +306,36 @@
             if (track.sourceNode) {
               track.sourceNode.stop(); // Detener el nodo actual si existe
             }
-            track.sourceNode = audioContextRef.current.createBufferSource(); // Crear nuevo nodo
+  
+            // Crear nuevo nodo
+            track.sourceNode = audioContextRef.current.createBufferSource();
             track.sourceNode.buffer = track.audioBuffer; // Asignar el buffer del audio
-            track.sourceNode.connect(track.gainNode); // Conectar el nodo
+  
+            // Reconectar la cadena de filtros si existen
+            if (track.filters && track.filters.length > 0) {
+              let lastNode = track.sourceNode;
+  
+              // Reconectar todos los filtros
+              track.filters.forEach((filter) => {
+                if (!filter.node) {
+                  // Si el nodo del filtro no existe, crearlo
+                  filter.node = createFilterNode(audioContextRef.current, filter);
+                }
+                lastNode.connect(filter.node); // Conectar el último nodo al filtro
+                lastNode = filter.node; // Actualizar el último nodo
+              });
+  
+              // Conectar el último nodo al gainNode
+              lastNode.connect(track.gainNode);
+            } else {
+              // Si no hay filtros, conectar directamente al gainNode
+              track.sourceNode.connect(track.gainNode);
+            }
+  
             setIsPlaying(true);
+  
             // Iniciar desde el offset relativo al track
-            track.sourceNode.start(0, startOffset); 
+            track.sourceNode.start(0, startOffset);
           }, 1000); // 1000 ms = 1 segundo
         } catch (error) {
           console.error("Error al sincronizar track:", error);

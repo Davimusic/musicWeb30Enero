@@ -22,14 +22,10 @@ import {
 } from "@/functions/music/DAW/trackHandlers";
 import TimeRuler from "./timeRuler";
 import handleDownloadMix from "@/functions/music/handleDownloadMix";
+import { reconnectAudioChain } from "../../functions/music/DAW2/controls";
 
 
 const Track = dynamic(() => import("./track"), { ssr: false });
-
-
-
-
-
 
 
 const AudioEditor = () => {
@@ -72,8 +68,9 @@ const AudioEditor = () => {
   
   // Usa el estado sidebarWidth para ver el valor actualizado
   useEffect(() => {
-    console.log("Ancho del sidebar:", sidebarWidth);
-  }, [sidebarWidth]); // Este efecto se ejecutará cada vez que sidebarWidth cambie
+    console.log("isPlaying:", isPlaying);
+    console.log(tracks);
+  }, [isPlaying]); // Este efecto se ejecutará cada vez que sidebarWidth cambie
 
   // Ajustar la altura del editor
   useEffect(() => {
@@ -102,6 +99,66 @@ const AudioEditor = () => {
         setTracks((prev) =>
           prev.map((t) =>
             t.id === id ? { ...t, startTime: parseFloat(startTime) } : t
+          )
+        );
+      },
+      addFilter: (id, filter) => {
+        setTracks((prev) =>
+          prev.map((track) =>
+            track.id === id
+              ? { ...track, filters: [...(track.filters || []), filter] }
+              : track
+          )
+        );
+  
+        // Reconectar la cadena de audio para el track modificado
+        const trackToUpdate = tracks.find((t) => t.id === id);
+        if (trackToUpdate && trackToUpdate.sourceNode) {
+          reconnectAudioChain(trackToUpdate);
+        }
+      },
+  
+      removeFilter: (id, index) => {
+        setTracks((prev) =>
+          prev.map((track) =>
+            track.id === id
+              ? { ...track, filters: track.filters.filter((_, i) => i !== index) }
+              : track
+          )
+        );
+  
+        // Reconectar la cadena de audio para el track modificado
+        const trackToUpdate = tracks.find((t) => t.id === id);
+        if (trackToUpdate && trackToUpdate.sourceNode) {
+          reconnectAudioChain(trackToUpdate);
+        }
+      },
+  
+      updateFilter: (id, filterIndex, newParams) => {
+        setTracks((prev) =>
+          prev.map((track) =>
+            track.id === id
+              ? {
+                  ...track,
+                  filters: track.filters.map((filter, i) =>
+                    i === filterIndex ? { ...filter, params: newParams } : filter
+                  ),
+                }
+              : track
+          )
+        );
+  
+        // Reconectar la cadena de audio para el track modificado
+        const trackToUpdate = tracks.find((t) => t.id === id);
+        if (trackToUpdate && trackToUpdate.sourceNode) {
+          reconnectAudioChain(trackToUpdate);
+        }
+      },
+  
+      redrawWaveform: (id) => {
+        setTracks((prev) =>
+          prev.map((track) =>
+            track.id === id ? { ...track, redraw: !track.redraw } : track
           )
         );
       },
@@ -273,11 +330,12 @@ const AudioEditor = () => {
               currentTime,
               setIsPlaying,
               isPlaying,
-              startTimeRef
+              startTimeRef,
+          
             )
           }
           onStop={() =>
-            handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef)
+            handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef )
           }
           onRecord={() =>
             handleRecord(
