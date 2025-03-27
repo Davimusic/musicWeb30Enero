@@ -37,7 +37,6 @@ const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
     <div
       className="time-ruler"
       style={{
-        marginLeft: `200px`, // Usa sidebarWidth adecuadamente ${sidebarWidth}
         width: `${rulerWidth + 900}px`, // Ancho exacto para las marcas
         display: 'flex' // Asegura layout horizontal
       }}

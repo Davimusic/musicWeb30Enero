@@ -1,81 +1,72 @@
-/* Contenedor principal */
+/* Contenedor principal (sin cambios) */
+.fullscreen-div {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
 .editor-container {
   display: flex;
   height: 90vh;
   background: #1a1a1a;
   color: #ffffff;
   font-family: Arial, sans-serif;
-  overflow: auto; /* Permite scroll vertical */
+  overflow: auto;
   scroll-behavior: smooth;
 }
 
-/* Sidebar de controles (fijo) */
-.track-controls-sidebar {
-  position: sticky;
-  left: 0; /* Se pega a la izquierda en scroll horizontal */
-  z-index: 3;
-  background: #1a1a1a;
-  flex-shrink: 0;
-   /* Compensa el padding para alineación perfecta */
-}
-
-/* Contenedor de scroll horizontal y vertical */
+/* Contenedor de scroll (modificado para sticky) */
 .timeline-scroll-wrapper {
-  overflow: auto; /* Permite ambos tipos de scroll */
+  overflow: auto;
   flex-grow: 1;
   position: relative;
   scroll-behavior: smooth;
 }
 
-/* Contenido de la línea de tiempo */
+/* Contenido de timeline (sin cambios) */
 .timeline-content {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Espacio vertical entre tracks */
-  padding: 10px 0; /* Espacio vertical para tracks */
+  gap: 10px;
+  padding: 10px 0;
 }
 
-/* Contenedor de cada track */
-/*.track-container {
-  display: flex;
-  align-items: stretch;
-  min-height: 100px; 
-}*/
-
+/* Track Container (modificado mínimamente) */
 .track-container {
-  display: flex;
-  align-items: stretch;
-  width: max-content; /* El contenedor se ajustará al ancho de su contenido */
-  min-height: 100px;
-}
-
-.track-waveform {
-  flex-shrink: 0; /* Asegura que el contenido interno no se reduzca */
-}
-
-
-
-/* Estilos para los controles de cada track */
-.track-controls {
-  height: 100px;
-  margin-bottom: 10px;
-  text-align: center;
-  justify-content: center;
-}
-
-/* Estilos para los tracks */
-.track-waveform {
-  flex-grow: 1;
-  height: 100px;
-  background: #333;
+  display: block; /* Cambiado de flex a block para sticky correcto */
   position: relative;
-  cursor: pointer;
-  border-radius: 5px;
-  overflow: hidden;
-  border-radius: 0.7em;
+  min-height: 100px;
+  /*background-color: aqua;*/
+  width: max-content;
+  margin-bottom: 10px;
 }
 
-/* Canvas dentro del track */
+/* Track Waveform (modificado para sticky) */
+.track-waveform {
+  position: relative;
+}
+
+/* Estilo para el nombre sticky (usa tu clase .mirar) */
+.mirar {
+  position: sticky;
+  left: 10px;
+  top: -20px;
+  z-index: 10;
+  
+  padding: 5px 10px;
+  
+  border-radius: 4px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  width: auto;
+  margin-left: -180px; /* Compensa el padding */
+  float: left; /* Mantiene posición */
+}
+
+/* Canvas del waveform (sin cambios) */
 .track-waveform canvas {
   display: block;
   width: 100%;
@@ -84,22 +75,35 @@
   border-radius: 0.7em;
 }
 
-/* Regla de tiempo */
+/* ------------------------- */
+/* Todos tus otros estilos EXISTENTES se mantienen IGUALES */
+/* ------------------------- */
+
+/* Sidebar de controles (comentado) */
+.track-controls-sidebar {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+/* Time ruler (comentado) */
 .time-ruler {
   position: sticky;
-  top: 0; /* Se pega arriba en scroll vertical */
-  left: 0; /* Se pega a la izquierda en scroll horizontal */
-  z-index: 4; /* Encima de los controles de track */
+  top: 0;
+  left: 0;
+  z-index: 4;
   height: 30px;
   display: flex;
   align-items: center;
 }
 
 .time-mark {
-  flex-shrink: 0; /* Previene que se encojan en flex containers */
+  flex-shrink: 0;
 }
 
-/* Controles globales (barra inferior) */
+/* Global Controls (sin cambios) */
 .global-controls {
   display: flex;
   align-items: center;
@@ -110,7 +114,6 @@
   flex-shrink: 0;
 }
 
-/* Botones y controles */
 .global-controls button {
   background-color: #444;
   border: none;
@@ -126,13 +129,11 @@
   background-color: #555;
 }
 
-/* Input de rango (zoom, volumen, etc.) */
 .global-controls input[type="range"] {
   width: 100px;
   margin: 0 10px;
 }
 
-/* Etiqueta para cargar audio */
 .global-controls label {
   background-color: #444;
   padding: 8px 12px;
@@ -145,14 +146,13 @@
   background-color: #555;
 }
 
-/* Mostrar el tiempo actual */
 .current-time-display {
   font-size: 14px;
   color: #ccc;
   margin: 0 10px;
 }
 
-/* Íconos */
+/* Iconos (sin cambios) */
 .icon {
   width: 24px;
   height: 24px;
@@ -164,80 +164,7 @@
   opacity: 0.8;
 }
 
-/* Contenido responsive */
-.responsive-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Botón de mute */
-.toggle-mute {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.toggle-mute:hover {
-  background-color: #555;
-}
-
-/* Botón de solo */
-.toggle-solo {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.toggle-solo:hover {
-  background-color: #555;
-}
-
-/* Botón de eliminar pista */
-.trash-icon {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.trash-icon:hover {
-  background-color: #555;
-}
-
-/* Botón de pan */
-.pan-icon {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.pan-icon:hover {
-  background-color: #555;
-}
-
-/* Contenedor fullscreen */
-.fullscreen-div {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9999;
-  background-color: rgba(0, 0, 0, 0.8);
-}
-
-
-
-
-
-
-
-
-
+/* Modal (sin cambios) */
 .modal {
   position: fixed;
   top: 0;
@@ -283,4 +210,22 @@
 
 .modal-content button:hover {
   background: #555;
+}
+
+/* Clases varias (sin cambios) */
+.responsive-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toggle-mute, .toggle-solo, .trash-icon, .pan-icon {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.toggle-mute:hover, .toggle-solo:hover, .trash-icon:hover, .pan-icon:hover {
+  background-color: #555;
 }

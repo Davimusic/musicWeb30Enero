@@ -1,152 +1,84 @@
+  import createNewTrack from "../DAW3/createTack";
+  
   /*export const handlePlayPause = async (
     audioContextRef,
     tracks,
     currentTime,
     setIsPlaying,
     isPlaying,
-    startTimeRef
+    startTimeRef,
+    filterNodesRef
   ) => {
     const ctx = audioContextRef.current;
-  
-    if (!tracks[0]) return null;
-  
-    // Reanudar el contexto si está suspendido
+    if (!tracks[0]) return;
+
     if (ctx.state === "suspended") await ctx.resume();
-  
+    console.log(isPlaying);
+    
     if (!isPlaying) {
+      // Iniciar reproducción
       startTimeRef.current = ctx.currentTime - currentTime;
-  
+
       tracks.forEach((track) => {
-        // Detener y desconectar el nodo anterior si existe
         if (track.sourceNode) {
           track.sourceNode.disconnect();
           try {
             track.sourceNode.stop();
           } catch (e) {}
         }
-  
-        // Crear un nuevo sourceNode
+
         track.sourceNode = ctx.createBufferSource();
         track.sourceNode.buffer = track.audioBuffer;
-  
-        // Conectar el sourceNode a la cadena de audio
-        track.sourceNode.connect(track.gainNode);
-  
-        // Calcular cuándo debe comenzar este track
-        const startTimeInContext = ctx.currentTime + (track.startTime - currentTime);
-  
-        // Calcular el offset dentro del archivo de audio
-        const startOffset = Math.max(currentTime - track.startTime, 0);
-  
-        // Calcular la duración restante del audio
-        const remaining = track.duration - startOffset;
-  
-        // Programar la reproducción solo si hay audio restante
-        if (remaining > 0) {
-          track.sourceNode.start(startTimeInContext, startOffset, remaining);
-          track.isPlaying = true; // Actualizar el estado de reproducción
-        }
-      });
-    } else {
-      // Detener la reproducción
-      tracks.forEach((track) => {
-        if (track.sourceNode) {
-          try {
-            track.sourceNode.stop();
-          } catch (e) {}
-          track.sourceNode.disconnect();
-          track.sourceNode = null;
-        }
-        track.isPlaying = false; // Actualizar el estado de reproducción
-      });
-    }
-  
-    setIsPlaying(!isPlaying);
-  };*/
-  import { reconnectAudioChain } from "./controls";
 
-
-  export const handlePlayPause = async (
-    audioContextRef,
-    tracks,
-    currentTime,
-    setIsPlaying,
-    isPlaying,
-    startTimeRef
-  ) => {
-    const ctx = audioContextRef.current;
-  
-    if (!tracks[0]) return null;
-  
-    // Reanudar el contexto si está suspendido
-    if (ctx.state === "suspended") await ctx.resume();
-  
-    if (!isPlaying) {
-      startTimeRef.current = ctx.currentTime - currentTime;
-  
-      tracks.forEach((track) => {
-        // Detener y desconectar el nodo anterior si existe
-        if (track.sourceNode) {
-          track.sourceNode.disconnect();
-          try {
-            track.sourceNode.stop();
-          } catch (e) {}
-        }
-  
-        // Crear un nuevo sourceNode
-        track.sourceNode = ctx.createBufferSource();
-        track.sourceNode.buffer = track.audioBuffer;
-  
-        // Reconectar la cadena de audio
+        // Reconectar cadena de audio (filtros, gainNode, etc.)
         let lastNode = track.sourceNode;
-  
         if (track.filters && track.filters.length > 0) {
-          track.filters.forEach((filter) => {
-            if (!filter.node) {
-              // Si el nodo del filtro no existe, crearlo
-              filter.node = createFilterNode(ctx, filter);
+          track.filters.forEach((filter, index) => {
+            if (!filterNodesRef.current[track.id]) {
+              filterNodesRef.current[track.id] = [];
             }
-            lastNode.connect(filter.node); // Conectar el último nodo al filtro
-            lastNode = filter.node; // Actualizar el último nodo
+            if (!filterNodesRef.current[track.id][index]) {
+              filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
+            }
+            lastNode.connect(filterNodesRef.current[track.id][index]);
+            lastNode = filterNodesRef.current[track.id][index];
           });
         }
-  
-        // Conectar el último nodo al gainNode
         lastNode.connect(track.gainNode);
-  
-        // Calcular cuándo debe comenzar este track
+
+        // Programar reproducción
         const startTimeInContext = ctx.currentTime + (track.startTime - currentTime);
-  
-        // Calcular el offset dentro del archivo de audio
         const startOffset = Math.max(currentTime - track.startTime, 0);
-  
-        // Calcular la duración restante del audio
         const remaining = track.duration - startOffset;
-  
-        // Programar la reproducción solo si hay audio restante
+
         if (remaining > 0) {
           track.sourceNode.start(startTimeInContext, startOffset, remaining);
-          track.isPlaying = true; // Actualizar el estado de reproducción
+          track.isPlaying = true;
         }
       });
     } else {
-      // Detener la reproducción
+      // Detener reproducción
       tracks.forEach((track) => {
         if (track.sourceNode) {
+          track.sourceNode.onended = null; // Eliminar listeners
           try {
             track.sourceNode.stop();
           } catch (e) {}
           track.sourceNode.disconnect();
           track.sourceNode = null;
         }
-        track.isPlaying = false; // Actualizar el estado de reproducción
+        track.isPlaying = false;
       });
+
+      // Limpiar filtros
+      Object.values(filterNodesRef.current).forEach((nodes) => {
+        nodes.forEach((node) => node.disconnect());
+      });
+      filterNodesRef.current = {};
     }
-  
+
     setIsPlaying(!isPlaying);
-  };
-
-
+  };*/
 
   export const createFilterNode = (context, filterConfig) => {
     switch(filterConfig.type) {
@@ -156,31 +88,37 @@
       case 'notch': {
         const filter = context.createBiquadFilter();
         filter.type = filterConfig.type;
-        filter.frequency.value = filterConfig.params.frequency || 20000;
-        filter.Q.value = filterConfig.params.Q || 1;
+        
+        // Usar parámetros actualizados del filterConfig
+        filter.frequency.value = filterConfig.params?.frequency ?? 20000;
+        filter.Q.value = filterConfig.params?.Q ?? 1;
+        
         return filter;
       }
       
       case 'delay': {
         const delay = context.createDelay();
-        delay.delayTime.value = filterConfig.params.time || 0.5;
+        delay.delayTime.value = filterConfig.params?.time ?? 0.5;
         return delay;
       }
       
       case 'compressor': {
         const compressor = context.createDynamicsCompressor();
-        // Configurar parámetros del compressor
+        // Configurar parámetros actualizados
+        compressor.threshold.value = filterConfig.params?.threshold ?? -24;
+        compressor.knee.value = filterConfig.params?.knee ?? 30;
+        compressor.ratio.value = filterConfig.params?.ratio ?? 12;
+        compressor.attack.value = filterConfig.params?.attack ?? 0.003;
+        compressor.release.value = filterConfig.params?.release ?? 0.25;
         return compressor;
       }
       
       default:
-        return context.createGain(); // Nodo neutro si el tipo no es reconocido
+        return context.createGain();
     }
   };
 
-
-
-  export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef) => {
+  export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef, filterNodesRef ) => {
     const now = performance.now(); // Usamos tiempo de alta precisión
   
     tracks.forEach((track) => {
@@ -213,17 +151,20 @@
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollLeft = 0;
     }
-  };
-  
 
-  
-  
+    Object.values(filterNodesRef.current).forEach(nodes => {
+      nodes.forEach(node => node.disconnect());
+    });
+    filterNodesRef.current = {};
+  };
+
   export const handleRecord = async (
     isRecording,
     setIsRecording,
     mediaRecorderRef,
     audioContextRef,
-    setTracks
+    setTracks,
+    tracks, 
   ) => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
@@ -254,23 +195,7 @@
         const pannerNode = audioContextRef.current.createStereoPanner();
         gainNode.connect(pannerNode).connect(audioContextRef.current.destination);
   
-        setTracks((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            audioBuffer,
-            gainNode,
-            pannerNode,
-            duration: audioBuffer.duration,
-            volume: 1,
-            panning: 0,
-            muted: false,
-            name: `Track ${prev.length + 1}`,
-            sourceNode: null,
-            startTime: 0,
-            offset: 0,
-          },
-        ]);
+        createNewTrack(setTracks, audioBuffer, audioContextRef, tracks)
       };
   
       mediaRecorder.start();
@@ -279,7 +204,6 @@
       console.error("Error al grabar:", error);
     }
   };
-
 
   export const handleTimeSelect = (
     selectedTimeGlobal, // <-- Tiempo global (línea de tiempo completa)
@@ -348,4 +272,29 @@
       scrollContainerRef.current.scrollLeft = scrollPos; // Actualiza el scroll según la referencia seleccionada
     }
   };
+
+  export const restartTracks = async (
+    audioContextRef,
+    tracksRef,
+    currentTime,
+    setIsPlaying,
+    isPlayingRef,
+    startTimeRef,
+    filterNodesRef,
+    setCurrentTime,
+    scrollContainerRef
+  ) => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
   
+    
+    console.log(isPlayingRef.current);
+    console.log(tracksRef);
+    
+    
+    if (isPlayingRef.current) {
+      isPlayingRef.current = false
+      
+      //handleStop(setIsPlaying, setCurrentTime, tracksRef, scrollContainerRef, filterNodesRef);
+    }
+  };

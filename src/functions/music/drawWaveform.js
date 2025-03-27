@@ -1,99 +1,126 @@
 import { createFilterNode } from "./DAW2/audioHandlers";
 
+export const drawWaveform = (canvas, audioBuffer, pixelsPerSecond, track, waveformColor = "#2196F3", clipColor = "#FF0000") => {
 
-export const drawWaveform = (canvas, audioBuffer, pixelsPerSecond, track) => {
+  console.log(waveformColor);
+  
   if (!canvas || !audioBuffer) return;
 
   const ctx = canvas.getContext("2d");
-  const data = audioBuffer.getChannelData(0);
-  const duration = audioBuffer.duration;
+  const { duration, numberOfChannels: numChannels } = audioBuffer;
   const totalWidth = duration * pixelsPerSecond;
   const height = canvas.height;
-  const centerY = height / 2;
 
-  // Ajustar el ancho del canvas para incluir el espacio antes del startTime
+  // Configuración inicial
   canvas.width = totalWidth + track.startTime * pixelsPerSecond;
-  canvas.style.width = `${totalWidth + track.startTime * pixelsPerSecond}px`;
+  canvas.style.width = `${canvas.width}px`;
   ctx.clearRect(0, 0, canvas.width, height);
 
-  const sampleRate = audioBuffer.sampleRate;
-  const totalSamples = data.length;
-  const samplesPerPixel = sampleRate / pixelsPerSecond;
-
-  // Crear un nuevo AudioContext offline para procesar los filtros
+  // Procesar audio
   const offlineContext = new OfflineAudioContext({
-    numberOfChannels: 1,
-    length: totalSamples,
-    sampleRate: sampleRate,
+    numberOfChannels: numChannels,
+    length: audioBuffer.length,
+    sampleRate: audioBuffer.sampleRate,
   });
 
-  // Crear un buffer source para el audio original
   const source = offlineContext.createBufferSource();
   source.buffer = audioBuffer;
 
-  // Aplicar los filtros en el mismo orden que en la reproducción
+  // Aplicar filtros
   let lastNode = source;
-
-  if (track.filters && track.filters.length > 0) {
-    track.filters.forEach((filter) => {
+  if (track.filters?.length > 0) {
+    track.filters.forEach(filter => {
       const filterNode = createFilterNode(offlineContext, filter);
       lastNode.connect(filterNode);
       lastNode = filterNode;
     });
   }
-
-  // Conectar el último nodo al destino del contexto offline
   lastNode.connect(offlineContext.destination);
-
-  // Iniciar la reproducción en el contexto offline
   source.start(0);
 
-  // Procesar el audio con los filtros aplicados
-  offlineContext.startRendering().then((renderedBuffer) => {
-    const filteredData = renderedBuffer.getChannelData(0);
-
-    // Dibujar la forma de onda filtrada
-    ctx.beginPath();
-    ctx.strokeStyle = "#2196f3";
-    ctx.lineWidth = 1;
-
-    for (let x = 0; x < totalWidth; x++) {
-      const startSample = Math.floor(x * samplesPerPixel);
-      const endSample = Math.min(startSample + Math.floor(samplesPerPixel), totalSamples - 1);
-
-      if (startSample >= totalSamples) break;
-
-      let max = -Infinity;
-      let min = Infinity;
-      for (let i = startSample; i <= endSample; i++) {
-        const value = filteredData[i];
-        max = Math.max(max, value);
-        min = Math.min(min, value);
+  offlineContext.startRendering().then(renderedBuffer => {
+    // 1. Calcular picos máximos y clipping
+    let hasGlobalClip = false;
+    const peaks = [];
+    const clippingMaps = [];
+    
+    for (let channel = 0; channel < numChannels; channel++) {
+      const data = renderedBuffer.getChannelData(channel);
+      let peak = 0;
+      clippingMaps[channel] = new Array(data.length).fill(false);
+      
+      for (let i = 0; i < data.length; i++) {
+        const absValue = Math.abs(data[i]);
+        if (absValue > peak) peak = absValue;
+        if (absValue >= 1.0) {
+          clippingMaps[channel][i] = true;
+          hasGlobalClip = true;
+        }
       }
-
-      const yMax = centerY - max * centerY;
-      const yMin = centerY - min * centerY;
-
-      // Desplazar la onda según el startTime
-      ctx.moveTo(x + track.startTime * pixelsPerSecond, yMax);
-      ctx.lineTo(x + track.startTime * pixelsPerSecond, yMin);
+      peaks[channel] = peak || 1; // Evitar división por cero
     }
 
-    ctx.stroke();
+    // 2. Configurar parámetros visuales
+    const channelHeight = numChannels === 2 ? height / 2 : height;
+    const verticalScale = channelHeight * 0.6 / Math.max(...peaks);
+    const displayColor = waveformColor;//hasGlobalClip ? clipColor : waveformColor;
+    
+    // 3. Dibujar cada canal
+    for (let channel = 0; channel < numChannels; channel++) {
+      const data = renderedBuffer.getChannelData(channel);
+      const samplesPerPixel = data.length / totalWidth;
+      const yCenter = numChannels === 2 ? 
+        (channel === 0 ? channelHeight / 2 : channelHeight * 1.5) : 
+        height / 2;
 
-    // Aplicar un gradiente para mejorar la visualización
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "rgba(33, 150, 243, 0.2)");
-    gradient.addColorStop(1, "rgba(33, 150, 243, 0.05)");
-    ctx.fillStyle = gradient;
-    ctx.globalCompositeOperation = "destination-over";
-    ctx.fillRect(0, 0, canvas.width, height);
-  }).catch((error) => {
-    console.error("Error al procesar el audio con filtros:", error);
-  });
+      // Dibujar forma de onda principal
+      ctx.beginPath();
+      ctx.strokeStyle = displayColor;
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x < totalWidth; x++) {
+        const startSample = Math.floor(x * samplesPerPixel);
+        const endSample = Math.floor((x + 1) * samplesPerPixel);
+        
+        let max = -Infinity;
+        let min = Infinity;
+        let hasClip = false;
+
+        // Calcular valores extremos
+        for (let i = startSample; i < endSample && i < data.length; i++) {
+          max = Math.max(max, data[i]);
+          min = Math.min(min, data[i]);
+          if (clippingMaps[channel][i]) hasClip = true;
+        }
+
+        // Aplicar escalado
+        const yMax = yCenter - (max * verticalScale);
+        const yMin = yCenter - (min * verticalScale);
+
+        // Dibujar línea principal
+        ctx.moveTo(x + track.startTime * pixelsPerSecond, yMax);
+        ctx.lineTo(x + track.startTime * pixelsPerSecond, yMin);
+
+        // Resaltar clipping si existe
+        if (hasClip && hasGlobalClip) {
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = clipColor;
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(x + track.startTime * pixelsPerSecond, yMax);
+          ctx.lineTo(x + track.startTime * pixelsPerSecond, yMin);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = displayColor;
+          ctx.lineWidth = 1;
+        }
+      }
+      ctx.stroke();
+    }
+
+  }).catch(console.error);
 };
 
 export default drawWaveform;
-
 
 

@@ -54,6 +54,7 @@ export const PIXELS_PER_SECOND = 100;
       startTime: 0,
       offset: 0,
       filters: [],
+      audioContext
     };
   };
 
