@@ -36,6 +36,7 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
       <div
         className={className}
         style={{
+          backgroundColor: 'black',
           ...style,
           ...styles.modal,
           transform: isVisible ? 'scale(1)' : 'scale(0.8)',
@@ -43,9 +44,11 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
           transition: 'transform 0.3s ease, opacity 0.3s ease',
         }}
       >
+        <div style={{padding: '20px'}}>
         <button className='color2' onClick={handleClose} style={styles.closeButton}>
           ×
         </button>
+        </div>
         {children}
       </div>
     </div>

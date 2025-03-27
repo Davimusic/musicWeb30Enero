@@ -48,8 +48,8 @@ const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
           style={{width: `${pixelsPerSecond}px`}}
         >
           <div style={{ display: "flex" }}>
-            <div className="time-label title-md color2">I</div>
-            <div className="time-label title-xxs color2">{formatTime(i)}</div>
+            <div className="time-label title-md color1">I</div>
+            <div className="time-label title-xxs color1">{formatTime(i)}</div>
             <div className="tick title-md color2"></div>
           </div>
         </div>

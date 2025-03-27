@@ -11,7 +11,7 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime }) => {
 
     // Redibujar la forma de onda cuando cambien los filtros o se fuerce la actualización
     drawWaveform(canvas, track.audioBuffer, pixelsPerSecond, track, track.backgroundColorTrack);
-  }, [track.audioBuffer, pixelsPerSecond, track.startTime, track.filters, track.redraw]); // <-- Agrega track.filters y track.redraw como dependencias
+  }, [track.audioBuffer, pixelsPerSecond, track.startTime, track.filters, track.redraw, track.backgroundColorTrack]); // <-- Agrega track.filters y track.redraw como dependencias
 
   const handleCanvasClick = (e) => {
     const canvas = canvasRef.current;

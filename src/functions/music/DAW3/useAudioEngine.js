@@ -17,6 +17,9 @@ const useAudioEngine = () => {
     const currentTimeRef = useRef(currentTime);
     const mediaRecorderRef = useRef(mediaRecorder);
     const tracksRef = useRef(tracks);
+    const audioNodesRef = useRef({});
+
+
 
     useEffect(() => {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -53,7 +56,8 @@ const useAudioEngine = () => {
       filterNodesRef,
       currentTimeRef,
       mediaRecorderRef,
-      tracksRef
+      tracksRef,
+      audioNodesRef
     };
   };
   

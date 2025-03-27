@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../estilos/music/icon.css";
 
 const PanIcon = ({ size = 24, panValue = 0, iconColor = "white", onClick }) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  
+
+  useEffect(() => {
+      console.log(panValue);
+    }, [panValue]);
+  
+  
 
   const handleClick = (event) => {
     event.stopPropagation();

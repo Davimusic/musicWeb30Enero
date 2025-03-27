@@ -12,6 +12,10 @@ import TrashIcon from "../../../components/complex/trashIcon";
 import ResponsiveContent from "../../../components/complex/responsiveContent";
 import { formatTime } from "./audioUtils";
 import { restartTracks, createFilterNode, handleStop } from "./audioHandlers";
+import ColorPickerModalContent from "@/components/complex/colorPicker";
+import SingleColorPickerModalContent from "@/components/complex/singleColorPickerModalContent";
+import Knob from "@/components/complex/knob";
+
 
 export const reconnectAudioChain = (track) => {
   const ctx = track.audioContext; // Asegúrate de que track tenga referencia al AudioContext
@@ -51,34 +55,27 @@ export const reconnectAudioChain = (track) => {
   }
 };
 
-export const TrackControls = ({ track, showContent, onAction, audioContextRef, tracks, setIsPlaying, filterNodesRef, isPlayingRef, currentTime, startTimeRef, setCurrentTime, scrollContainerRef }) => {
+export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filterNodesRef, insertModalContentAndShow, setIsModalOpen, setTracks, tracks, audioNodesRef }) => {
   const [showStartTimeModal, setShowStartTimeModal] = useState(false);
-  const [minutes, setMinutes] = useState(Math.floor((track.startTime || 0) / 60)); // Minutos
-  const [seconds, setSeconds] = useState(Math.floor((track.startTime || 0) % 60)); // Segundos
+  const [minutes, setMinutes] = useState(Math.floor((track.startTime || 0) / 60));
+  const [seconds, setSeconds] = useState(Math.floor((track.startTime || 0) % 60));
   const [milliseconds, setMilliseconds] = useState(
     Math.round(((track.startTime || 0) - Math.floor(track.startTime || 0)) * 1000
   ));
 
-  // Nuevo estado para el modal de filtros
+  console.log(audioNodesRef);
+  
+
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("");
   const [filterParams, setFilterParams] = useState({});
 
-
-  
-  
-  
-
-  // Función para formatear el tiempo final (solo lectura)
   const formatTime = (mins, secs, ms) => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
   };
 
-  
-
-  // Función para manejar cambios en los inputs manuales (sin padding)
   const handleManualChange = (setter, max) => (e) => {
-    const value = e.target.value.replace(/^0+/, ''); // Eliminar ceros iniciales
+    const value = e.target.value.replace(/^0+/, '');
     const numValue = parseInt(value || 0);
 
     if (!isNaN(numValue)) {
@@ -87,120 +84,118 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
     }
   };
 
-  // Función para calcular el tiempo total en milisegundos
   const calculateTotalMilliseconds = (mins, secs, ms) => {
     return mins * 60000 + secs * 1000 + ms;
   };
 
-  // Manejar el envío del tiempo de inicio
   const handleSetStartTime = () => {
-    const startTime = calculateTotalMilliseconds(minutes, seconds, milliseconds) / 1000; // Convertir a segundos
-    onAction("setStartTime", track.id, startTime); // Envía la acción al padre
-    setShowStartTimeModal(false); // Cierra el modal
+    const startTime = calculateTotalMilliseconds(minutes, seconds, milliseconds) / 1000;
+    onAction("setStartTime", track.id, setTracks, audioNodesRef, tracks, startTime);
+    setShowStartTimeModal(false);
   };
 
-  // Manejar la adición de un filtro
   const handleAddFilter = () => {
     if (!selectedFilter) return;
     
     const newFilter = {
       type: selectedFilter,
       params: filterParams,
-      node: null  // Se creará al reproducir
+      node: null
     };
     
-    onAction("addFilter", track.id, newFilter);
+    onAction("addFilter", track.id, setTracks, audioNodesRef, tracks, newFilter);
     setShowFilterModal(false);
-
-    // Forzar la actualización de la forma de onda
-    onAction("redrawWaveform", track.id);
-    setIsPlaying(false)
-    //handleStop(setIsPlaying, setCurrentTime, tracks, scrollContainerRef, filterNodesRef)
-    //restartTracks(audioContextRef, tracks, currentTime, setIsPlaying, isPlayingRef, startTimeRef, filterNodesRef, setCurrentTime, scrollContainerRef);
+    onAction("redrawWaveform", track.id, setTracks, audioNodesRef, tracks);
+    setIsPlaying(false);
   };
 
   const handleRemoveFilter = (index) => {
-    // Eliminar el filtro del estado
-    onAction("removeFilter", track.id, index);
+    onAction("removeFilter", track.id, setTracks, audioNodesRef, tracks, index);
     
-    // Limpiar la referencia del nodo de filtro
     if (filterNodesRef.current[track.id]?.[index]) {
       filterNodesRef.current[track.id][index].disconnect();
       filterNodesRef.current[track.id].splice(index, 1);
     }
     
-    // Forzar actualización
-    onAction("redrawWaveform", track.id);
-    setIsPlaying(false)
-    //restartTracks(audioContextRef, tracks, currentTime, setIsPlaying, isPlayingRef, startTimeRef, filterNodesRef, setCurrentTime, scrollContainerRef);
+    onAction("redrawWaveform", track.id, setTracks, audioNodesRef, tracks);
+    setIsPlaying(false);
   };
   
-  // Ejemplo para actualizar parámetros de un filtro existente
   const handleUpdateFilter = (index, newParams) => {
-    const updatedFilters = track.filters.map((filter, i) =>
-      i === index ? { ...filter, params: newParams } : filter
-    );
-    onAction("updateFilter", track.id, index, newParams);
+    onAction("updateFilter", track.id, setTracks, audioNodesRef, tracks, index, newParams);
   };
-
-  
 
   return (
     <div className="track-controls">
       <ResponsiveContent showContent={showContent}>
+        <button 
+          onClick={() => insertModalContentAndShow(
+            setIsModalOpen, 
+            <SingleColorPickerModalContent 
+              initialColor={track.backgroundColorTrack} 
+              onClose={() => setIsModalOpen(false)} 
+              onColorUpdate={(newColor) => onAction("updateColor", track.id, setTracks, audioNodesRef, tracks, newColor)} 
+            />
+          )}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '5px'
+          }}
+        >
+          🎨                             
+        </button>
         <div className="track-header">
-          {/* Botón para abrir el modal de tiempo de inicio */}
           <button onClick={() => setShowStartTimeModal(true)}>Set Start Time</button>
-
-          {/* Botón para abrir el modal de filtros */}
           <button onClick={() => setShowFilterModal(true)}>Add Filter</button>
 
-          {/* Controles principales */}
-          <ToggleSolo onToggle={() => onAction("solo", track.id)} />
-          <TrashIcon onClick={() => onAction("delete", track.id)} />
+          <ToggleSolo onToggle={() => onAction("solo", track.id, setTracks, audioNodesRef, tracks)} />
+          <TrashIcon onClick={() => onAction("delete", track.id, setTracks, audioNodesRef, tracks)} />
         </div>
 
-        {/* Controles adicionales */}
-        <RangeInput
-          value={track.volume * 100}
-          onChange={(val) => onAction("volume", track.id, val)}
-          icon={<ToggleMute onToggle={() => onAction("mute", track.id, !track.muted)} />}
-        />
-        <RangeInput
-          value={track.panning}
-          onChange={(val) => onAction("pan", track.id, val)}
-          icon={<PanIcon onClick={() => onAction("pan", track.id, 0)} />}
-        />
+        <Knob
+  size={90}
+  accentColor="#4CAF50"
+  baseColor="#3A3A3A"
+  value={track.volume}
+  min={0}
+  max={100}
+  onChange={(val) =>  onAction("volume", track.id, setTracks, audioNodesRef, tracks, val)}
+  children={<ToggleMute 
+    onToggle={() => onAction("mute", track.id, setTracks, audioNodesRef, tracks, !track.muted)}
+  />}
+/>
 
-        {/* Lista de filtros activos */}
-        // En el return del componente:
+<Knob
+  size={90}
+  accentColor="#2196F3"
+  baseColor="#3A3A3A"
+  value={track.panning}
+  min={-50}
+  max={50}
+  onChange={(val) => onAction("pan", track.id, setTracks, audioNodesRef, tracks, val)}
+  children={<PanIcon panValue={track.panning} size={30} onClick={() => onAction("pan", track.id, setTracks, audioNodesRef, tracks, 0)}
+  />}
+/>
         {track.filters?.map((filter, index) => (
           <div key={index} className="filter-item">
             <span>{filter.type}</span>
-            <button onClick={() => {
-              // Limpiar nodo específico al eliminar
-              if (filterNodesRef.current[track.id]?.[index]) {
-                filterNodesRef.current[track.id][index].disconnect();
-                filterNodesRef.current[track.id].splice(index, 1);
-              }
-              handleRemoveFilter(index);
-            }}>×</button>
+            <button onClick={() => handleRemoveFilter(index)}>×</button>
           </div>
         ))}
       </ResponsiveContent>
 
-      {/* Modal para seleccionar el tiempo de inicio */}
       {showStartTimeModal && (
         <div className="modal">
           <div className="modal-content">
             <h3>Set Start Time for {track.name}</h3>
 
-            {/* Input manual y range para minutos */}
             <div>
               <label>Minutos: </label>
               <input
                 type="text"
-                value={minutes === 0 ? '0' : minutes.toString().replace(/^0+/, '')} // Mostrar sin ceros iniciales
+                value={minutes === 0 ? '0' : minutes.toString().replace(/^0+/, '')}
                 onChange={handleManualChange(setMinutes, 59)}
                 maxLength="2"
               />
@@ -212,7 +207,6 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
               />
             </div>
 
-            {/* Input manual y range para segundos */}
             <div>
               <label>Segundos: </label>
               <input
@@ -229,7 +223,6 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
               />
             </div>
 
-            {/* Input manual y range para milisegundos */}
             <div>
               <label>Milisegundos: </label>
               <input
@@ -246,7 +239,6 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
               />
             </div>
 
-            {/* Valor final en formato 00:00.000 (solo lectura) */}
             <div>
               <label>Tiempo final: </label>
               <input
@@ -256,14 +248,12 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
               />
             </div>
 
-            {/* Botones de aceptar y cancelar */}
             <button onClick={handleSetStartTime}>Aceptar</button>
             <button onClick={() => setShowStartTimeModal(false)}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {/* Modal de Filtros */}
       {showFilterModal && (
         <div className="modal">
           <div className="modal-content">
@@ -307,8 +297,6 @@ export const TrackControls = ({ track, showContent, onAction, audioContextRef, t
               </div>
             )}
 
-            {/* Agregar más controles para otros tipos de filtros según sea necesario */}
-
             <button onClick={handleAddFilter}>Apply</button>
             <button onClick={() => setShowFilterModal(false)}>Cancel</button>
           </div>
@@ -328,6 +316,8 @@ export const GlobalControls = ({
   onDownload,
   onToggleUI,
   onLoadAudio,
+  setIsModalOpen,
+  insertModalContentAndShow
 }) => (
 
   <div className="global-controls">
@@ -346,6 +336,7 @@ export const GlobalControls = ({
     <label htmlFor="audio-upload" className="current-time-display">
       Cargar Audio
     </label>
+    <button onClick={()=>insertModalContentAndShow(setIsModalOpen, <ColorPickerModalContent onClose={() => setIsModalOpen(false)} />)}>x</button>
     <div className="current-time-display">{formatTime(currentTime)}</div>
   </div>
 );

@@ -13,6 +13,10 @@ import { handleRecord } from "@/functions/music/DAW2/audioHandlers";
 import createNewTrack from "@/functions/music/DAW3/createTack";
 import EditableTrackName from "@/functions/music/DAW3/editableTrackName";
 '../../estilos/music/audioEditor.css'
+import SingleColorPickerModalContent from "./singleColorPickerModalContent";
+import Modal from "./modal";
+import handleTrackAction from "@/functions/music/DAW3/handleTrackAction";
+import Knob from "./knob";
 
 
 const Track = dynamic(() => import("./track"), { ssr: false });
@@ -43,12 +47,20 @@ const AudioEditor = () => {
     filterNodesRef,
     currentTimeRef,
     mediaRecorderRef,
-    tracksRef
+    tracksRef,
+    audioNodesRef
   } = useAudioEngine();
 
   
   const [isRecording, setIsRecording] = useState(false); // Declarar isRecording
   const scrollContainerRef = useRef(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState(''); 
+
+
+
+
 
 
   
@@ -58,96 +70,110 @@ const AudioEditor = () => {
     if (!file) return;
   
     try {
-      // 1. Verificar que el AudioContext esté inicializado
       if (!audioContextRef.current) {
-        throw new Error("AudioContext no está inicializado.");
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
   
-      // 2. Decodificar el archivo de audio
       const arrayBuffer = await file.arrayBuffer();
       const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
   
-      // 3. Crear la nueva pista con el audioBuffer decodificado
-      createNewTrack(setTracks, audioBuffer, audioContextRef, tracks)
+      createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef);
   
-      // 5. Desplazar el scroll al inicio
+      // Resetear el input para permitir cargar el mismo archivo nuevamente
+      e.target.value = '';
+      
       scrollContainerRef.current?.scrollTo({ left: 0 });
     } catch (error) {
       console.error("Error al cargar audio:", error);
+      // Puedes agregar aquí notificación al usuario
     }
-  };
+};
 
-  
+useEffect(() => {
+  console.log("isPlaying:", isPlayingRef.current);
+  console.log("Tracks:", tracks);
 
-  useEffect(() => {
-    console.log("isPlaying:", isPlayingRef.current);
-    console.log("Tracks:", tracks);
-  
-    const ctx = audioContextRef.current;
-  
-    if (!isPlayingRef.current) {
-      tracks.forEach((track) => {
-        if (track.sourceNode) {
-          try {
-            track.sourceNode.stop();
-            track.sourceNode.disconnect();
-          } catch (error) {
-            console.error("Error stopping track:", error);
-          }
-          track.sourceNode = null;
-          track.isPlaying = false;
+  const ctx = audioContextRef.current;
+
+  if (!isPlayingRef.current) {
+    // Lógica de pausa
+    tracks.forEach((track) => {
+      if (track.sourceNode) {
+        try {
+          track.sourceNode.stop();
+          track.sourceNode.disconnect();
+        } catch (error) {
+          console.error("Error stopping track:", error);
         }
-      });
-  
-      Object.values(filterNodesRef.current).forEach((nodes) => {
-        nodes.forEach((node) => node.disconnect());
-      });
-      filterNodesRef.current = {};
-    } else {
-      console.log('Reanudar desde:', currentTimeRef.current);
-  
-      if (ctx.state === "suspended") {
-        ctx.resume().then(() => {
-          console.log("AudioContext resumido.");
-        });
+        track.sourceNode = null;
+        track.isPlaying = false;
       }
-  
-      tracks.forEach((track) => {
-        if (!track.sourceNode && track.audioBuffer) {
-          track.sourceNode = ctx.createBufferSource();
-          track.sourceNode.buffer = track.audioBuffer;
-  
-          let lastNode = track.sourceNode;
-          if (track.filters && track.filters.length > 0) {
-            track.filters.forEach((filter, index) => {
-              if (!filterNodesRef.current[track.id]) {
-                filterNodesRef.current[track.id] = [];
-              }
-              if (!filterNodesRef.current[track.id][index]) {
-                filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
-              }
-              lastNode.connect(filterNodesRef.current[rack.id][index]);
-              lastNode = filterNodesRef.current[track.id][index];
-            });
-          }
-          lastNode.connect(track.gainNode).connect(track.pannerNode).connect(ctx.destination);
-  
-          const startTimeInContext = ctx.currentTime;
-          const currentTimeValue = Number(currentTimeRef.current) || 0; // <-- Conversión numérica
-          const trackStartTime = Number(track.startTime) || 0; // <-- Valor por defecto
-          const startOffset = Math.max(currentTimeValue - trackStartTime, 0);
-  
-          if (isNaN(startOffset) || !isFinite(startOffset)) { // <-- Validación
-            console.error("startOffset inválido:", startOffset);
-            return;
-          }
-  
-          track.sourceNode.start(startTimeInContext, startOffset);
-          track.isPlaying = true;
-        }
+    });
+
+    Object.values(filterNodesRef.current).forEach((nodes) => {
+      nodes.forEach((node) => node.disconnect());
+    });
+    filterNodesRef.current = {};
+  } else {
+    console.log('Reanudar desde:', currentTimeRef.current);
+
+    if (ctx.state === "suspended") {
+      ctx.resume().then(() => {
+        console.log("AudioContext resumido.");
       });
     }
-  }, [isPlaying]);
+
+    const startTimeInContext = ctx.currentTime;
+    const currentTimeValue = Number(currentTimeRef.current) || 0;
+
+    tracks.forEach((track) => {
+      if (!track.sourceNode && track.audioBuffer) {
+        track.sourceNode = ctx.createBufferSource();
+        track.sourceNode.buffer = track.audioBuffer;
+
+        let lastNode = track.sourceNode;
+        
+        // Conexión de filtros
+        if (track.filters?.length > 0) {
+          track.filters.forEach((filter, index) => {
+            if (!filterNodesRef.current[track.id]) {
+              filterNodesRef.current[track.id] = [];
+            }
+            if (!filterNodesRef.current[track.id][index]) {
+              filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
+            }
+            lastNode.connect(filterNodesRef.current[track.id][index]);
+            lastNode = filterNodesRef.current[track.id][index];
+          });
+        }
+        
+        // Conexión a nodos de audio (usando audioNodesRef)
+        const audioNodes = audioNodesRef.current[track.id];
+        if (audioNodes) {
+          lastNode.connect(audioNodes.gainNode);
+          audioNodes.gainNode.connect(audioNodes.pannerNode);
+          audioNodes.pannerNode.connect(ctx.destination);
+        } else {
+          console.error('Nodos de audio no encontrados para el track:', track.id);
+          lastNode.connect(ctx.destination);
+        }
+
+        // Cálculo del offset
+        const trackStartTime = Number(track.startTime) || 0;
+        const startOffset = Math.max(currentTimeValue - trackStartTime, 0);
+
+        if (isNaN(startOffset) || !isFinite(startOffset)) {
+          console.error("startOffset inválido:", startOffset);
+          return;
+        }
+
+        // Iniciar reproducción
+        track.sourceNode.start(startTimeInContext, startOffset);
+        track.isPlaying = true;
+      }
+    });
+  }
+}, [isPlaying]);
 
   // Efecto para el desplazamiento automático durante la reproducción
   useEffect(() => {
@@ -169,8 +195,8 @@ const AudioEditor = () => {
   }, [tracks]);
 
   useEffect(() => {
-    console.log(currentTime);
-  }, [currentTime]);
+    console.log(audioContextRef);
+  }, [audioContextRef]);
   
 
 
@@ -210,50 +236,82 @@ const AudioEditor = () => {
     );
   };
 
+  const updateTrackColor = (trackId, newColor) => {
+    setTracks(prevTracks => 
+      prevTracks.map(track => 
+        track.id === trackId ? {...track, backgroundColorTrack: newColor} : track
+      )
+    );
+};
+
+  const insertModalContentAndShow = (setIsModalOpen, content) => {
+    setIsModalOpen(true)
+    setModalContent(content)
+  };
+
   
 
   return (
-    <div className="fullscreen-div">
-      <div className="editor-container">
+    <div className="fullscreen-div ">
+      <div className="editor-container backgroundColor1">
         <div className="timeline-scroll-wrapper" ref={scrollContainerRef}>
           <div className="timeline-content">
             <TimeRuler pixelsPerSecond={PIXELS_PER_SECOND} tracks={tracks} /> 
             {tracks.map((track) => (
               <div key={track.id} className="track-container">
-                {/*<div className="track-controls-sidebar">
-                    <TrackControls
-                          isPlaying={isPlaying}
-                          setIsPlaying={setIsPlaying}
-                          track={track} 
-                          tracks={tracks}
-                          setTracks={setTracks}
-                          isPlayingRef={isPlayingRef} // Pasar referencia
-                          tracksRef={tracksRef} // Pasar referencia
-                          showContent={true}
-                          onAction={()=>console.log('acciones')}
-                          audioContextRef={audioContextRef}
-                          filterNodesRef={filterNodesRef}
-                          setCurrentTime={setCurrentTime}
-                          scrollContainerRef={scrollContainerRef}
+                  <div 
+                    className="sticky-track-header"
+                    style={{
+                      position: 'sticky',
+                      left: '10px',
+                      top: '-20px',
+                      zIndex: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px', // Espacio entre elementos
+                      backgroundColor: 'white',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
+                      boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)',
+                      width: 'auto',
+                      marginLeft: '-180px',
+                      float: 'left'
+                    }}
+                  >
+                    <EditableTrackName 
+                      name={track.name} 
+                      onChange={(newName) => updateTrackName(track.id, newName)} 
+                      className={'mirar'}
+                      style={{
+                        backgroundColor: 'transparent',
+                        padding: 0,
+                        margin: 0,
+                        border: 'none',
+                        color: 'black'
+                      }}
                     />
-                </div>*/}
-                <EditableTrackName 
-                            name={track.name} 
-                            onChange={(newName) => updateTrackName(track.id, newName)} 
-                            className={'mirar'}
-                            style={{
-                              backgroundColor: 'white',
-                              
-                              position: 'sticky', // Mantiene la posición fija dentro del contenedor padre
-                              top: '10px',        // Distancia desde la parte superior del contenedor padre
-                              zIndex: 10,         // Asegura que el elemento esté por encima de otros si es necesario
-                              padding: '5px 10px',
-                              color: 'black',
-                              borderRadius: '4px',
-                            }}
-                          />
+                    
+                    <button 
+                      onClick={()=>insertModalContentAndShow(setIsModalOpen, 
+                      <TrackControls track={track} showContent={true} onAction={handleTrackAction} setIsPlaying={setIsPlaying} filterNodesRef={filterNodesRef}  insertModalContentAndShow={insertModalContentAndShow} setIsModalOpen={setIsModalOpen} updateTrackColor={updateTrackColor} tracks={tracks} setTracks={setTracks} audioNodesRef={audioNodesRef}/>
+                      //</div>onClick={()=>insertModalContentAndShow(setIsModalOpen, <SingleColorPickerModalContent initialColor={track.backgroundColorTrack} onClose={() => setIsModalOpen(false)} onColorUpdate={(newColor) => { updateTrackColor(track.id, newColor); }} />
+                    )}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '5px'
+                      }}
+                    >
+                      🎨 
+                    </button>
+                    
+                    
+                    <Modal className={'backgroundColor2 color2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+                      {modalContent}
+                    </Modal>
+                  </div>
                 <div className="track-waveform">
-                  
                   <Track
                     key={track.id}
                     track={track}
@@ -278,6 +336,10 @@ const AudioEditor = () => {
           onDownload={handleDownload}
           onToggleUI={handleToggleUI}
           onLoadAudio={handleLoadAudio}
+          
+          insertModalContentAndShow={insertModalContentAndShow}
+          setIsModalOpen={setIsModalOpen}
+          
         />
       </div>
     </div>

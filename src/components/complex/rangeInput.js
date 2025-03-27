@@ -1,40 +1,57 @@
 import { useState, useEffect } from 'react';
-import '../../estilos/music/rangeInput.css'; // Asegúrate de importar los estilos correctamente
+import '../../estilos/music/rangeInput.css';
 
 const RangeInput = ({
   min = 0,
   max = 100,
   step = 1,
-  value = 0, // Valor predeterminado si es undefined
+  value: propValue = 0,
   onChange,
   colorClass = 'color3',
   backgroundColorClass = 'backgroundColor1',
   children
 }) => {
+  const [localValue, setLocalValue] = useState(propValue);
+
+  useEffect(() => {
+    console.log(localValue);
+    
+  }, [localValue]);
+
+  // Sincronizar con el valor prop cuando cambie
+  useEffect(() => {
+    setLocalValue(propValue);
+  }, [propValue]);
+
   const handleChange = (e) => {
     const newValue = Number(e.target.value);
+    setLocalValue(newValue);
     if (onChange) {
       onChange(newValue);
     }
   };
 
   return (
-    <div style={{display: 'flex'}}>
-        {children}
-        <div className={'rangeContainer'}>
+    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+      {children}
+      <div className={'rangeContainer'}>
         <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={handleChange}
-            className={'rangeInput'}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={localValue}
+          onChange={handleChange}
+          className={'rangeInput'}
+          style={{
+            '--thumb-color': colorClass,
+            '--track-color': backgroundColorClass
+          }}
         />
         <div className={'rangeValue'}>
-            {Number.isInteger(value) ? value : parseFloat((value || 0).toFixed(1))}
+          {Number.isInteger(localValue) ? localValue : parseFloat(localValue.toFixed(1))}
         </div>
-        </div>
+      </div>
     </div>
   );
 };
