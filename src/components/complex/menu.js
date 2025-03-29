@@ -148,13 +148,3 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
 
 export default Menu;
 
-/**
- * 
- <Modal className={'backgroundColor2 color2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
- <ColorPickerModalContent
-     colors={colors}
-     onUpdateColor={updateColor}
-     onClose={() => setIsModalOpen(false)}
- />
-</Modal>
- */

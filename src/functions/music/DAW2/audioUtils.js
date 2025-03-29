@@ -1,4 +1,4 @@
-export const PIXELS_PER_SECOND = 100;
+export const PIXELS_PER_SECOND = 200;
 
 // audioUtils.js
 /*export const createTrack = async (file, audioContext, tracks) => {

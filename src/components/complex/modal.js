@@ -31,6 +31,7 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
         ...styles.overlay,
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.3s ease',
+        backgroundColor: '#000000b2'
       }}
     >
       <div

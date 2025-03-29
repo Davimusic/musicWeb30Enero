@@ -1,31 +1,38 @@
-export const createNewTrack = (setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef) => {
-  const trackId = Date.now().toString();
+export const createNewTrack = (
+  setTracks, 
+  audioBuffer, 
+  audioContextRef, 
+  tracks, 
+  audioNodesRef,
+  tempTrackId = null // Nuevo parámetro opcional
+) => {
+  const trackId = tempTrackId || Date.now().toString(); // Usa tempTrackId si existe
   
   const ctx = audioContextRef.current;
   const gainNode = ctx.createGain();
   const pannerNode = ctx.createStereoPanner();
 
-  // Configuración inicial
-  gainNode.gain.value = 1; // Volumen inicial
-  pannerNode.pan.value = 0; // Panorama centrado
+  // Configuración inicial (sin cambios)
+  gainNode.gain.value = 1;
+  pannerNode.pan.value = 0;
 
-  // Conexión básica
+  // Conexión básica (sin cambios)
   gainNode.connect(pannerNode);
   pannerNode.connect(ctx.destination);
 
-  // Almacenar los nodos en audioNodesRef
+  // Almacenar los nodos (sin cambios)
   audioNodesRef.current[trackId] = {
     gainNode,
     pannerNode,
     context: ctx,
-    lastVolume: 1 // Valor inicial de volumen
+    lastVolume: 1
   };
 
   const newTrack = {
     id: trackId,
     audioBuffer,
     duration: audioBuffer.duration,
-    volume: 100,//en web audio api es de 0 a 100
+    volume: 100,
     panning: 0,
     muted: false,
     name: `Track ${tracks.length + 1}`,
@@ -33,12 +40,11 @@ export const createNewTrack = (setTracks, audioBuffer, audioContextRef, tracks, 
     offset: 0,
     filters: [],
     backgroundColorTrack: 'gold',
-    // No almacenamos los nodos aquí, solo en audioNodesRef
     sourceNode: null
   };
 
   setTracks((prev) => [...prev, newTrack]);
   return trackId;
-}
+};
 
 export default createNewTrack;

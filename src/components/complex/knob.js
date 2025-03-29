@@ -1,61 +1,43 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react';
+import React,{ useRef, useState, useEffect, useCallback } from 'react';
 import '../../estilos/music/knob.css';
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export default function Knob({
+const Knob = React.memo(({
     size = 120,
-    accentColor = '#a8d8f8',
-    baseColor = '#3A3A3A',
     value = 0,
     min = 0,
     max = 100,
     showValue = true,
+    title = '',
     onChange = () => {},
     children
-  }) {
+  }) => {
     const knobRef = useRef(null);
     const fillRef = useRef(null);
     const valueRef = useRef(null);
     const [angle, setAngle] = useState(0);
     const startAngle = useRef(0);
     const startValue = useRef(value);
-  
-    const [va, setVa] = useState(value);
+    const isDragging = useRef(false);
   
     // Función para convertir valor a ángulo (0-270 grados)
-    const valueToAngle = (val) => {
+    const valueToAngle = useCallback((val) => {
       const clampedValue = Math.max(min, Math.min(max, val));
       return ((clampedValue - min) / (max - min)) * 270;
-    };
+    }, [min, max]);
   
     // Función para convertir ángulo a valor
-    const angleToValue = (angle) => {
+    const angleToValue = useCallback((angle) => {
       const clampedAngle = Math.max(0, Math.min(270, angle));
       return min + (clampedAngle / 270) * (max - min);
-    };
+    }, [min, max]);
   
     // Actualizar visualización
-    const updateVisuals = (newAngle) => {
+    const updateVisuals = useCallback((newAngle) => {
       if (!knobRef.current || !fillRef.current) return;
       
       const currentValue = angleToValue(newAngle);
@@ -63,39 +45,35 @@ export default function Knob({
         ? currentValue 
         : currentValue.toFixed(1);
   
-      // Rotar el knob
       knobRef.current.style.transform = `rotate(${newAngle}deg)`;
       
-      // Actualizar el relleno del arco
+      // Usamos las variables CSS directamente en el gradiente
       fillRef.current.style.background = `
         conic-gradient(
-          ${accentColor} 0deg,
-          ${accentColor} ${newAngle}deg,
-          ${baseColor} ${newAngle}deg 360deg
+          var(--accent-color) 0deg,
+          var(--accent-color) ${newAngle}deg,
+          var(--base-color) ${newAngle}deg 360deg
         )
       `;
       
-      // Actualizar texto del valor si está habilitado
       if (showValue && valueRef.current) {
         valueRef.current.textContent = displayValue;
       }
-    };
+    }, [angleToValue, showValue]);
   
-    // Sincronizar con valor externo
+    // Sincronizar con valor externo cuando no está siendo arrastrado
     useEffect(() => {
-      const newAngle = valueToAngle(value);
-      setAngle(newAngle);
-      startValue.current = value;
-      updateVisuals(newAngle);
-    }, [value, min, max]);
-  
-  
-    useEffect(() => {
-      console.log(va);
-    }, [va]);
+      if (!isDragging.current) {
+        const newAngle = valueToAngle(value);
+        setAngle(newAngle);
+        startValue.current = value;
+        updateVisuals(newAngle);
+      }
+    }, [value, valueToAngle, updateVisuals]);
   
     // Manejador de inicio de arrastre
-    const handleStart = (clientX, clientY) => {
+    const handleStart = useCallback((clientX, clientY) => {
+      isDragging.current = true;
       const knob = knobRef.current;
       const rect = knob.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -108,11 +86,11 @@ export default function Knob({
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('touchend', handleEnd);
-    };
+    }, [valueToAngle]);
   
     // Manejador de movimiento
-    const handleMove = (e) => {
-      if (!knobRef.current) return;
+    const handleMove = useCallback((e) => {
+      if (!knobRef.current || !isDragging.current) return;
       
       const knob = knobRef.current;
       const rect = knob.getBoundingClientRect();
@@ -135,55 +113,69 @@ export default function Knob({
       const newValue = angleToValue(newAngle);
       startValue.current = newValue;
       onChange(newValue);
-    };
+    }, [angleToValue, onChange, updateVisuals]);
   
     // Manejador de fin de arrastre
-    const handleEnd = () => {
+    const handleEnd = useCallback(() => {
+      isDragging.current = false;
       document.removeEventListener('mousemove', handleMove);
       document.removeEventListener('mouseup', handleEnd);
       document.removeEventListener('touchmove', handleMove);
       document.removeEventListener('touchend', handleEnd);
-    };
+    }, [handleMove]);
+  
+    // Limpieza de event listeners
+    useEffect(() => {
+      return () => {
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('touchend', handleEnd);
+      };
+    }, [handleMove, handleEnd]);
   
     return (
-      <div className="knob-container" style={{
-        '--size': `${size}px`,
-        '--accent-color': accentColor,
-        '--base-color': baseColor
-      }}>
-        <div className="knob-outer">
-          <div className="knob-fill" ref={fillRef} />
-          <div className="knob-inner">
-            <div 
-              ref={knobRef}
-              className="knob-handle"
-              style={{ transform: `rotate(${angle}deg)` }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleStart(e.clientX, e.clientY);
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                handleStart(e.touches[0].clientX, e.touches[0].clientY);
-              }}
-            />
-            
-            <div className="knob-content">
-              {children && (
-                <div className="knob-icon" onClick={(e) => e.stopPropagation()}>
-                  {children}
-                </div>
-              )}
-              {showValue && (
-                <div ref={valueRef} className="knob-value">
-                  {Number.isInteger(angleToValue(angle)) 
-                    ? angleToValue(angle) 
-                    : angleToValue(angle).toFixed(1)}
-                </div>
-              )}
+      <div className="knob-wrapper">
+        {title && <div className="knob-title">{title}</div>}
+        <div className="knob-container" style={{
+          '--size': `${size}px`,
+        }}>
+          <div className="knob-outer">
+            <div className="knob-fill" ref={fillRef} />
+            <div className="knob-inner">
+              <div 
+                ref={knobRef}
+                className="knob-handle"
+                style={{ transform: `rotate(${angle}deg)` }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleStart(e.clientX, e.clientY);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleStart(e.touches[0].clientX, e.touches[0].clientY);
+                }}
+              />
+              
+              <div className="knob-content">
+                {children && (
+                  <div className="knob-icon" onClick={(e) => e.stopPropagation()}>
+                    {children}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        {showValue && (
+          <div ref={valueRef} className="knob-value-display">
+            {Number.isInteger(angleToValue(angle)) 
+              ? angleToValue(angle) 
+              : angleToValue(angle).toFixed(1)}
+          </div>
+        )}
       </div>
     );
-  }
+  });
+  
+  export default Knob;

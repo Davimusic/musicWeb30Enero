@@ -164,7 +164,8 @@
     mediaRecorderRef,
     audioContextRef,
     setTracks,
-    tracks, 
+    tracks,
+    audioNodesRef 
   ) => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
@@ -195,7 +196,7 @@
         const pannerNode = audioContextRef.current.createStereoPanner();
         gainNode.connect(pannerNode).connect(audioContextRef.current.destination);
   
-        createNewTrack(setTracks, audioBuffer, audioContextRef, tracks)
+        createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef)
       };
   
       mediaRecorder.start();

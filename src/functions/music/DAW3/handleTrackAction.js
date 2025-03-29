@@ -90,23 +90,29 @@ const handleTrackAction = (actionType, trackId, setTracks, audioNodesRef, tracks
       updateAudioNode('pan', trackId, audioNodesRef, panValue);
       break;
       
-    case "mute":
-      const [isMuted] = args;
-      setTracks(prevTracks =>
+      case "mute":
+    const [isMuted] = args;
+    setTracks(prevTracks =>
         prevTracks.map(track => {
-          if (track.id === trackId) {
-            // Guardar último volumen antes de mutear
-            if (isMuted && !track.muted && audioNodesRef.current[trackId]) {
-              audioNodesRef.current[trackId].lastVolume = track.volume;
+            if (track.id === trackId) {
+                // Guardar último volumen antes de mutear
+                if (isMuted && !track.muted && audioNodesRef.current[trackId]) {
+                    // Get the gainNode from audioNodesRef
+                    const nodeData = audioNodesRef.current[trackId];
+                    if (nodeData && nodeData.gainNode) {
+                        // Store the exact current volume
+                        nodeData.lastVolume = nodeData.gainNode.gain.value;
+                        console.log("Saved volume for unmute:", nodeData.gainNode.gain.value);
+                    }
+                }
+                return {...track, muted: isMuted};
             }
-            return {...track, muted: isMuted};
-          }
-          return track;
+            return track;
         })
-      );
-      
-      updateAudioNode('mute', trackId, audioNodesRef, isMuted);
-      break;
+    );
+    
+    updateAudioNode('mute', trackId, audioNodesRef, isMuted);
+    break;
       
     case "solo":
       setTracks(prevTracks => {

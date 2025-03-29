@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import TogglePlayPause from "../../../components/complex/TogglePlayPause";
 import RecordIcon from "../../../components/complex/recordIcon";
 import StopIcon from "../../../components/complex/stopIcon";
@@ -15,6 +15,8 @@ import { restartTracks, createFilterNode, handleStop } from "./audioHandlers";
 import ColorPickerModalContent from "@/components/complex/colorPicker";
 import SingleColorPickerModalContent from "@/components/complex/singleColorPickerModalContent";
 import Knob from "@/components/complex/knob";
+
+
 
 
 export const reconnectAudioChain = (track) => {
@@ -55,7 +57,22 @@ export const reconnectAudioChain = (track) => {
   }
 };
 
-export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filterNodesRef, insertModalContentAndShow, setIsModalOpen, setTracks, tracks, audioNodesRef }) => {
+
+export const TrackControls = React.memo(({
+  track,
+  showContent,
+  onAction,
+  setIsPlaying,
+  filterNodesRef,
+  updateTrackColor,
+  tracks,
+  setTracks,
+  audioNodesRef,
+  onClose,
+  openModal
+}) => {
+  if (!track) return null; // Al inicio del componente
+
   const [showStartTimeModal, setShowStartTimeModal] = useState(false);
   const [minutes, setMinutes] = useState(Math.floor((track.startTime || 0) / 60));
   const [seconds, setSeconds] = useState(Math.floor((track.startTime || 0) % 60));
@@ -63,12 +80,43 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
     Math.round(((track.startTime || 0) - Math.floor(track.startTime || 0)) * 1000
   ));
 
-  console.log(audioNodesRef);
-  
-
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("");
   const [filterParams, setFilterParams] = useState({});
+
+  // Handlers optimizados con useCallback
+  const handleVolumeChange = useCallback(
+    (val) => onAction("volume", track.id, setTracks, audioNodesRef, tracks, val),
+    [onAction, track.id, setTracks, audioNodesRef, tracks]
+  );
+
+  const handlePanChange = useCallback(
+    (val) => onAction("pan", track.id, setTracks, audioNodesRef, tracks, val),
+    [onAction, track.id, setTracks, audioNodesRef, tracks]
+  );
+
+  const handleToggleMute = useCallback(
+    () => onAction("mute", track.id, setTracks, audioNodesRef, tracks, !track.muted),
+    [onAction, track.id, setTracks, audioNodesRef, tracks, track.muted]
+  );
+
+  const handleResetPan = useCallback(
+    () => onAction("pan", track.id, setTracks, audioNodesRef, tracks, 0),
+    [onAction, track.id, setTracks, audioNodesRef, tracks]
+  );
+
+  const handleToggleSolo = useCallback(
+    () => onAction("solo", track.id, setTracks, audioNodesRef, tracks),
+    [onAction, track.id, setTracks, audioNodesRef, tracks]
+  );
+
+  const handleDeleteTrack = useCallback(
+    () => {
+      onAction("delete", track.id, setTracks, audioNodesRef, tracks);
+      onClose();
+    },
+    [onAction, track.id, setTracks, audioNodesRef, tracks, onClose]
+  );
 
   const formatTime = (mins, secs, ms) => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
@@ -122,62 +170,61 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
   };
   
   const handleUpdateFilter = (index, newParams) => {
-    onAction("updateFilter", track.id, setTracks, audioNodesRef, tracks, index, newParams);
+    onAction("updateFilter", track.id, setTracks, audioNodesRef, tracks, { index, newParams });
+  };
+
+  const handleColorUpdate = (newColor) => {
+    updateTrackColor(track.id, newColor);
+    onClose();
   };
 
   return (
     <div className="track-controls">
       <ResponsiveContent showContent={showContent}>
         <button 
-          onClick={() => insertModalContentAndShow(
-            setIsModalOpen, 
-            <SingleColorPickerModalContent 
-              initialColor={track.backgroundColorTrack} 
-              onClose={() => setIsModalOpen(false)} 
-              onColorUpdate={(newColor) => onAction("updateColor", track.id, setTracks, audioNodesRef, tracks, newColor)} 
-            />
-          )}
+          onClick={() => openModal( track.id, 'SingleColorPickerModalContent')}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            padding: '5px'
+            padding: '5px',
+            fontSize: '30px' 
           }}
         >
-          🎨                             
+          🎨
         </button>
+
         <div className="track-header">
           <button onClick={() => setShowStartTimeModal(true)}>Set Start Time</button>
           <button onClick={() => setShowFilterModal(true)}>Add Filter</button>
 
-          <ToggleSolo onToggle={() => onAction("solo", track.id, setTracks, audioNodesRef, tracks)} />
-          <TrashIcon onClick={() => onAction("delete", track.id, setTracks, audioNodesRef, tracks)} />
+          <ToggleSolo onToggle={handleToggleSolo} />
+          <TrashIcon onClick={handleDeleteTrack} />
+        </div>
+        <div style={{display: 'flex'}}>
+          <Knob
+            title={'Volume'}
+            size={90}
+            value={track.volume}
+            min={0}
+            max={100}
+            onChange={handleVolumeChange}
+            children={<ToggleMute isMuted={track.muted} size={30} onToggle={handleToggleMute} />}
+          />
+
+          <Knob
+            title={'Pannigg'}
+            size={90}
+            value={track.panning}
+            min={-50}
+            max={50}
+            onChange={handlePanChange}
+            children={<PanIcon panValue={track.panning} size={30} onClick={handleResetPan} />}
+          />
         </div>
 
-        <Knob
-  size={90}
-  accentColor="#4CAF50"
-  baseColor="#3A3A3A"
-  value={track.volume}
-  min={0}
-  max={100}
-  onChange={(val) =>  onAction("volume", track.id, setTracks, audioNodesRef, tracks, val)}
-  children={<ToggleMute 
-    onToggle={() => onAction("mute", track.id, setTracks, audioNodesRef, tracks, !track.muted)}
-  />}
-/>
+        
 
-<Knob
-  size={90}
-  accentColor="#2196F3"
-  baseColor="#3A3A3A"
-  value={track.panning}
-  min={-50}
-  max={50}
-  onChange={(val) => onAction("pan", track.id, setTracks, audioNodesRef, tracks, val)}
-  children={<PanIcon panValue={track.panning} size={30} onClick={() => onAction("pan", track.id, setTracks, audioNodesRef, tracks, 0)}
-  />}
-/>
         {track.filters?.map((filter, index) => (
           <div key={index} className="filter-item">
             <span>{filter.type}</span>
@@ -192,7 +239,7 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
             <h3>Set Start Time for {track.name}</h3>
 
             <div>
-              <label>Minutos: </label>
+              <label>Minutes: </label>
               <input
                 type="text"
                 value={minutes === 0 ? '0' : minutes.toString().replace(/^0+/, '')}
@@ -208,7 +255,7 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
             </div>
 
             <div>
-              <label>Segundos: </label>
+              <label>Seconds: </label>
               <input
                 type="text"
                 value={seconds === 0 ? '0' : seconds.toString().replace(/^0+/, '')}
@@ -224,7 +271,7 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
             </div>
 
             <div>
-              <label>Milisegundos: </label>
+              <label>Milliseconds: </label>
               <input
                 type="text"
                 value={milliseconds === 0 ? '0' : milliseconds.toString().replace(/^0+/, '')}
@@ -240,7 +287,7 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
             </div>
 
             <div>
-              <label>Tiempo final: </label>
+              <label>Final Time: </label>
               <input
                 type="text"
                 value={formatTime(minutes, seconds, milliseconds)}
@@ -248,8 +295,8 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
               />
             </div>
 
-            <button onClick={handleSetStartTime}>Aceptar</button>
-            <button onClick={() => setShowStartTimeModal(false)}>Cancelar</button>
+            <button onClick={handleSetStartTime}>Accept</button>
+            <button onClick={() => setShowStartTimeModal(false)}>Cancel</button>
           </div>
         </div>
       )}
@@ -304,7 +351,10 @@ export const TrackControls = ({ track, showContent, onAction, setIsPlaying, filt
       )}
     </div>
   );
-};
+});
+
+
+
 
 export const GlobalControls = ({
   isPlaying,
@@ -316,27 +366,47 @@ export const GlobalControls = ({
   onDownload,
   onToggleUI,
   onLoadAudio,
-  setIsModalOpen,
-  insertModalContentAndShow
-}) => (
+  onShowColorPicker,
+  toggleMenu
+}) => {
+  return (
+    <div className="global-controls">
+      <div className="transport-controls">
+        <TogglePlayPause isPlaying={isPlaying} onToggle={onPlayPause} />
+        <StopIcon onClick={onStop} />
+        <RecordIcon isRecording={isRecording} onClick={onRecord} />
+      </div>
 
-  <div className="global-controls">
-    <TogglePlayPause isPlaying={isPlaying} onToggle={onPlayPause} />
-    <StopIcon onClick={onStop} />
-    <RecordIcon isRecording={isRecording} onClick={onRecord} />
-    <DownloadIcon onToggle={onDownload} />
-    <EditToggleIcon size={30} onToggle={onToggleUI} />
-    <input
-      type="file"
-      accept="audio/*"
-      onChange={onLoadAudio}
-      style={{ display: "none" }}
-      id="audio-upload"
-    />
-    <label htmlFor="audio-upload" className="current-time-display">
-      Cargar Audio
-    </label>
-    <button onClick={()=>insertModalContentAndShow(setIsModalOpen, <ColorPickerModalContent onClose={() => setIsModalOpen(false)} />)}>x</button>
-    <div className="current-time-display">{formatTime(currentTime)}</div>
-  </div>
-);
+      <div className="utility-controls">
+        <DownloadIcon onToggle={onDownload} />
+        {/* Input oculto para cargar audio */}
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={onLoadAudio}
+          style={{ display: "none" }}
+          id="audio-upload"
+        />
+        <label htmlFor="audio-upload" className="upload-button">
+          Cargar Audio
+        </label>
+      </div>
+
+      <div className="time-display">
+        {formatTime(currentTime)}
+      </div>
+      {/* Botón del menú */}
+      <button 
+        onClick={toggleMenu}
+        style={{
+          
+          color: "white"
+        }}
+      >
+        ☰ Menu
+      </button>
+    </div>
+  );
+};
+
+

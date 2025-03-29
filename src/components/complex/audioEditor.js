@@ -17,6 +17,13 @@ import SingleColorPickerModalContent from "./singleColorPickerModalContent";
 import Modal from "./modal";
 import handleTrackAction from "@/functions/music/DAW3/handleTrackAction";
 import Knob from "./knob";
+import { createFilterNode } from "@/functions/music/DAW2/audioHandlers";
+import ColorPickerModalContent from "./colorPicker";
+import ControlsIcon from "./controlsIcon";
+import Menu from "./menu";
+import MainLogo from "./mainLogo";
+
+
 
 
 const Track = dynamic(() => import("./track"), { ssr: false });
@@ -33,12 +40,39 @@ const scrollToCurrentTime = (currentTime, scrollContainerRef, PIXELS_PER_SECOND)
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const AudioEditor = () => {
   const {
     audioContextRef,
     isPlaying,
     currentTime,
-    //handlePlayPause,
     setIsPlaying,
     setCurrentTime,
     tracks,
@@ -51,137 +85,146 @@ const AudioEditor = () => {
     audioNodesRef
   } = useAudioEngine();
 
-  
-  const [isRecording, setIsRecording] = useState(false); // Declarar isRecording
+  const [isRecording, setIsRecording] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [loadingTrackId, setLoadingTrackId] = useState(null);
   const scrollContainerRef = useRef(null);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    trackId: null,
+    content: null
+  });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState(''); 
+  // Efecto para sincronizar el estado de carga
+  useEffect(() => {
+    if (loadingTrackId && tracks.some(track => track.id === loadingTrackId)) {
+      setLoadingTrackId(null);
+    }
+  }, [tracks, loadingTrackId]);
 
+  const openModal = (trackId, content) => {
+    setModalState({
+      isOpen: true,
+      trackId,
+      content
+    });
+  };
 
+  const closeModal = () => {
+    setModalState(prev => ({...prev, isOpen: false}));
+  };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
-
-
-  
+  const openUpdateBackgroundColor = () => {
+    openModal(null, 'ColorPickerModalContent');
+    setIsMenuOpen(false);
+  };
 
   const handleLoadAudio = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-  
+
+    const tempTrackId = `loading-${Date.now()}`;
+    setLoadingTrackId(tempTrackId);
+
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
-  
+
       const arrayBuffer = await file.arrayBuffer();
       const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-  
-      createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef);
-  
-      // Resetear el input para permitir cargar el mismo archivo nuevamente
+
+      createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef, tempTrackId);
       e.target.value = '';
-      
       scrollContainerRef.current?.scrollTo({ left: 0 });
     } catch (error) {
       console.error("Error al cargar audio:", error);
-      // Puedes agregar aquí notificación al usuario
+      setLoadingTrackId(null);
     }
-};
+  };
 
-useEffect(() => {
-  console.log("isPlaying:", isPlayingRef.current);
-  console.log("Tracks:", tracks);
+  useEffect(() => {
+    const ctx = audioContextRef.current;
 
-  const ctx = audioContextRef.current;
-
-  if (!isPlayingRef.current) {
-    // Lógica de pausa
-    tracks.forEach((track) => {
-      if (track.sourceNode) {
-        try {
-          track.sourceNode.stop();
-          track.sourceNode.disconnect();
-        } catch (error) {
-          console.error("Error stopping track:", error);
+    if (!isPlayingRef.current) {
+      tracks.forEach((track) => {
+        if (track.sourceNode) {
+          try {
+            track.sourceNode.stop();
+            track.sourceNode.disconnect();
+          } catch (error) {
+            console.error("Error stopping track:", error);
+          }
+          track.sourceNode = null;
+          track.isPlaying = false;
         }
-        track.sourceNode = null;
-        track.isPlaying = false;
+      });
+
+      Object.values(filterNodesRef.current).forEach((nodes) => {
+        nodes.forEach((node) => node.disconnect());
+      });
+      filterNodesRef.current = {};
+    } else {
+      if (ctx.state === "suspended") {
+        ctx.resume().then(() => {
+          console.log("AudioContext resumido.");
+        });
       }
-    });
 
-    Object.values(filterNodesRef.current).forEach((nodes) => {
-      nodes.forEach((node) => node.disconnect());
-    });
-    filterNodesRef.current = {};
-  } else {
-    console.log('Reanudar desde:', currentTimeRef.current);
+      const startTimeInContext = ctx.currentTime;
+      const currentTimeValue = Number(currentTimeRef.current) || 0;
 
-    if (ctx.state === "suspended") {
-      ctx.resume().then(() => {
-        console.log("AudioContext resumido.");
+      tracks.forEach((track) => {
+        if (!track.sourceNode && track.audioBuffer) {
+          track.sourceNode = ctx.createBufferSource();
+          track.sourceNode.buffer = track.audioBuffer;
+
+          let lastNode = track.sourceNode;
+          
+          if (track.filters?.length > 0) {
+            track.filters.forEach((filter, index) => {
+              if (!filterNodesRef.current[track.id]) {
+                filterNodesRef.current[track.id] = [];
+              }
+              if (!filterNodesRef.current[track.id][index]) {
+                filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
+              }
+              lastNode.connect(filterNodesRef.current[track.id][index]);
+              lastNode = filterNodesRef.current[track.id][index];
+            });
+          }
+          
+          const audioNodes = audioNodesRef.current[track.id];
+          if (audioNodes) {
+            lastNode.connect(audioNodes.gainNode);
+            audioNodes.gainNode.connect(audioNodes.pannerNode);
+            audioNodes.pannerNode.connect(ctx.destination);
+          } else {
+            lastNode.connect(ctx.destination);
+          }
+
+          const trackStartTime = Number(track.startTime) || 0;
+          const startOffset = Math.max(currentTimeValue - trackStartTime, 0);
+
+          if (isNaN(startOffset) || !isFinite(startOffset)) return;
+
+          track.sourceNode.start(startTimeInContext, startOffset);
+          track.isPlaying = true;
+        }
       });
     }
+  }, [isPlaying]);
 
-    const startTimeInContext = ctx.currentTime;
-    const currentTimeValue = Number(currentTimeRef.current) || 0;
-
-    tracks.forEach((track) => {
-      if (!track.sourceNode && track.audioBuffer) {
-        track.sourceNode = ctx.createBufferSource();
-        track.sourceNode.buffer = track.audioBuffer;
-
-        let lastNode = track.sourceNode;
-        
-        // Conexión de filtros
-        if (track.filters?.length > 0) {
-          track.filters.forEach((filter, index) => {
-            if (!filterNodesRef.current[track.id]) {
-              filterNodesRef.current[track.id] = [];
-            }
-            if (!filterNodesRef.current[track.id][index]) {
-              filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
-            }
-            lastNode.connect(filterNodesRef.current[track.id][index]);
-            lastNode = filterNodesRef.current[track.id][index];
-          });
-        }
-        
-        // Conexión a nodos de audio (usando audioNodesRef)
-        const audioNodes = audioNodesRef.current[track.id];
-        if (audioNodes) {
-          lastNode.connect(audioNodes.gainNode);
-          audioNodes.gainNode.connect(audioNodes.pannerNode);
-          audioNodes.pannerNode.connect(ctx.destination);
-        } else {
-          console.error('Nodos de audio no encontrados para el track:', track.id);
-          lastNode.connect(ctx.destination);
-        }
-
-        // Cálculo del offset
-        const trackStartTime = Number(track.startTime) || 0;
-        const startOffset = Math.max(currentTimeValue - trackStartTime, 0);
-
-        if (isNaN(startOffset) || !isFinite(startOffset)) {
-          console.error("startOffset inválido:", startOffset);
-          return;
-        }
-
-        // Iniciar reproducción
-        track.sourceNode.start(startTimeInContext, startOffset);
-        track.isPlaying = true;
-      }
-    });
-  }
-}, [isPlaying]);
-
-  // Efecto para el desplazamiento automático durante la reproducción
   useEffect(() => {
     if (!isPlaying) return;
 
     const scrollInterval = setInterval(() => {
       setCurrentTime(prevTime => {
-        const newTime = prevTime + 0.1; // Actualizar cada 100ms
+        const newTime = prevTime + 0.1;
         scrollToCurrentTime(newTime, scrollContainerRef, PIXELS_PER_SECOND);
         return newTime;
       });
@@ -190,41 +233,20 @@ useEffect(() => {
     return () => clearInterval(scrollInterval);
   }, [isPlaying]);
 
-  useEffect(() => {
-    console.log(tracks);
-  }, [tracks]);
-
-  useEffect(() => {
-    console.log(audioContextRef);
-  }, [audioContextRef]);
-  
-
-
-
-  // Funciones de control
   const handlePlayPause = () => {
-    tracks.length !== 0 
-      ? (console.log(!isPlayingRef.current), setIsPlaying((prev) => !prev)) 
-      : null;
+    tracks.length !== 0 && setIsPlaying((prev) => !prev);
   };
-  
 
   const handleStop = () => {
-    setIsPlaying(false); // Detener la reproducción
-    setCurrentTime(0); // Reiniciar el tiempo
+    setIsPlaying(false);
+    setCurrentTime(0);
   };
 
-  /*const handleRecord = () => {
-    setIsRecording((prev) => !prev); // Alternar entre grabar y detener
-  };*/
-
   const handleDownload = () => {
-    // Lógica para descargar la mezcla
     console.log("Descargando mezcla...");
   };
 
   const handleToggleUI = () => {
-    // Lógica para alternar la UI
     console.log("Alternando UI...");
   };
 
@@ -242,23 +264,73 @@ useEffect(() => {
         track.id === trackId ? {...track, backgroundColorTrack: newColor} : track
       )
     );
-};
-
-  const insertModalContentAndShow = (setIsModalOpen, content) => {
-    setIsModalOpen(true)
-    setModalContent(content)
   };
 
-  
+  const renderModalContent = () => {
+    const track = tracks.find(t => t.id === modalState.trackId);
+
+    if (modalState.content === 'ColorPickerModalContent') {
+      return (
+        <ColorPickerModalContent 
+          onClose={closeModal}
+        />
+      );
+    } 
+    
+    if (modalState.content === 'trackControl') {
+      return (
+        <TrackControls 
+          track={track}
+          showContent={true}
+          onAction={handleTrackAction}
+          setIsPlaying={setIsPlaying}
+          filterNodesRef={filterNodesRef}
+          updateTrackColor={updateTrackColor}
+          tracks={tracks}
+          setTracks={setTracks}
+          audioNodesRef={audioNodesRef}
+          openModal={openModal}
+          onClose={closeModal}
+        />
+      );
+    }
+
+    if (modalState.content === 'SingleColorPickerModalContent') {
+      return <SingleColorPickerModalContent 
+        initialColor={track.backgroundColorTrack}
+        onClose={closeModal}
+        onColorUpdate={(newColor)=>updateTrackColor(track.id, newColor)}/>
+    }
+  };
 
   return (
-    <div className="fullscreen-div ">
+    <div className="fullscreen-div">
+      <Menu 
+        isOpen={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)}
+        openUpdateBackgroundColor={openUpdateBackgroundColor}
+        className="backgroundColor2"
+      />
+
       <div className="editor-container backgroundColor1">
         <div className="timeline-scroll-wrapper" ref={scrollContainerRef}>
           <div className="timeline-content">
             <TimeRuler pixelsPerSecond={PIXELS_PER_SECOND} tracks={tracks} /> 
             {tracks.map((track) => (
               <div key={track.id} className="track-container">
+                {loadingTrackId === track.id && (
+                  <div className="track-loading-overlay">
+                    <div className="loading-content">
+                      <MainLogo size={50} animate={true} />
+                      <p style={{color: 'black'}}>Cargando audio...</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ 
+                  visibility: loadingTrackId === track.id ? 'hidden' : 'visible',
+                  height: loadingTrackId === track.id ? '100px' : 'auto'
+                }}>
                   <div 
                     className="sticky-track-header"
                     style={{
@@ -268,7 +340,7 @@ useEffect(() => {
                       zIndex: 10,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px', // Espacio entre elementos
+                      gap: '10px',
                       backgroundColor: 'white',
                       padding: '5px 10px',
                       borderRadius: '4px',
@@ -281,7 +353,6 @@ useEffect(() => {
                     <EditableTrackName 
                       name={track.name} 
                       onChange={(newName) => updateTrackName(track.id, newName)} 
-                      className={'mirar'}
                       style={{
                         backgroundColor: 'transparent',
                         padding: 0,
@@ -290,41 +361,30 @@ useEffect(() => {
                         color: 'black'
                       }}
                     />
-                    
-                    <button 
-                      onClick={()=>insertModalContentAndShow(setIsModalOpen, 
-                      <TrackControls track={track} showContent={true} onAction={handleTrackAction} setIsPlaying={setIsPlaying} filterNodesRef={filterNodesRef}  insertModalContentAndShow={insertModalContentAndShow} setIsModalOpen={setIsModalOpen} updateTrackColor={updateTrackColor} tracks={tracks} setTracks={setTracks} audioNodesRef={audioNodesRef}/>
-                      //</div>onClick={()=>insertModalContentAndShow(setIsModalOpen, <SingleColorPickerModalContent initialColor={track.backgroundColorTrack} onClose={() => setIsModalOpen(false)} onColorUpdate={(newColor) => { updateTrackColor(track.id, newColor); }} />
-                    )}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '5px'
-                      }}
-                    >
-                      🎨 
-                    </button>
-                    
-                    
-                    <Modal className={'backgroundColor2 color2'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                      {modalContent}
-                    </Modal>
+                    <ControlsIcon size={30} onToggle={() => openModal(track.id, 'trackControl')} />
                   </div>
-                <div className="track-waveform">
-                  <Track
-                    key={track.id}
-                    track={track}
-                    pixelsPerSecond={PIXELS_PER_SECOND}
-                    onSelectTime={() => console.log('hi')}
-                  />
+                  <div className="track-waveform">
+                    <Track
+                      track={track}
+                      pixelsPerSecond={PIXELS_PER_SECOND}
+                      onSelectTime={() => console.log('hi')}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-  
+      
+      <Modal 
+        className={'backgroundColor2 color2'} 
+        isOpen={modalState.isOpen} 
+        onClose={closeModal}
+      >
+        {renderModalContent()}
+      </Modal>
+
       <div>
         <GlobalControls
           isPlaying={isPlaying}
@@ -332,14 +392,11 @@ useEffect(() => {
           currentTime={currentTime}
           onPlayPause={handlePlayPause}
           onStop={handleStop}
-          onRecord={() => handleRecord(isRecording, setIsRecording, mediaRecorderRef, audioContextRef, setTracks, tracks)}
+          onRecord={() => handleRecord(isRecording, setIsRecording, mediaRecorderRef, audioContextRef, setTracks, tracks, audioNodesRef)}
           onDownload={handleDownload}
           onToggleUI={handleToggleUI}
           onLoadAudio={handleLoadAudio}
-          
-          insertModalContentAndShow={insertModalContentAndShow}
-          setIsModalOpen={setIsModalOpen}
-          
+          toggleMenu={toggleMenu}
         />
       </div>
     </div>
@@ -347,6 +404,9 @@ useEffect(() => {
 };
 
 export default AudioEditor;
+
+
+
 
 
 

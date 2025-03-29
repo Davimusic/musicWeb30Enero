@@ -82,8 +82,10 @@ export const updateAudioNode = (nodeType, trackId, audioNodesRef, value) => {
                         0.03 // Suavizado rápido
                     );
                 } else { // Mute desactivado
+                    // Use the exact lastVolume without any fallback or max operations
+                    const targetVolume = nodeData.lastVolume !== undefined ? nodeData.lastVolume : 0.7;
                     gainNode.gain.setTargetAtTime(
-                        Math.max(0.0001, nodeData.lastVolume || 0.7),
+                        targetVolume,
                         currentTime,
                         0.03
                     );
@@ -92,7 +94,6 @@ export const updateAudioNode = (nodeType, trackId, audioNodesRef, value) => {
                 console.error('Error al actualizar mute:', error);
             }
             break;
-
         default:
             console.warn(`Tipo de nodo no reconocido: ${nodeType}`);
     }
