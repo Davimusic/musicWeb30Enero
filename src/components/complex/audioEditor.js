@@ -68,6 +68,9 @@ const scrollToCurrentTime = (currentTime, scrollContainerRef, PIXELS_PER_SECOND)
 
 
 
+
+
+
 const AudioEditor = () => {
   const {
     audioContextRef,
@@ -88,6 +91,7 @@ const AudioEditor = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loadingTrackId, setLoadingTrackId] = useState(null);
+  const [globalLoading, setGlobalLoading] = useState(false);
   const scrollContainerRef = useRef(null);
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -95,10 +99,10 @@ const AudioEditor = () => {
     content: null
   });
 
-  // Efecto para sincronizar el estado de carga
   useEffect(() => {
     if (loadingTrackId && tracks.some(track => track.id === loadingTrackId)) {
       setLoadingTrackId(null);
+      setGlobalLoading(false);
     }
   }, [tracks, loadingTrackId]);
 
@@ -128,6 +132,7 @@ const AudioEditor = () => {
     if (!file) return;
 
     const tempTrackId = `loading-${Date.now()}`;
+    setGlobalLoading(true);
     setLoadingTrackId(tempTrackId);
 
     try {
@@ -141,8 +146,11 @@ const AudioEditor = () => {
       createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef, tempTrackId);
       e.target.value = '';
       scrollContainerRef.current?.scrollTo({ left: 0 });
+      setGlobalLoading(false);
+      setLoadingTrackId(null);
     } catch (error) {
       console.error("Error al cargar audio:", error);
+      setGlobalLoading(false);
       setLoadingTrackId(null);
     }
   };
@@ -305,6 +313,32 @@ const AudioEditor = () => {
 
   return (
     <div className="fullscreen-div">
+      {globalLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          color: 'white'
+        }}>
+          <MainLogo size={80} animate={true} />
+          <p style={{ 
+            marginTop: '20px', 
+            fontSize: '1.2rem',
+            animation: 'pulse-opacity 1.5s infinite'
+          }}>
+            Procesando archivo de audio...
+          </p>
+        </div>
+      )}
+
       <Menu 
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)}
@@ -404,6 +438,7 @@ const AudioEditor = () => {
 };
 
 export default AudioEditor;
+
 
 
 
