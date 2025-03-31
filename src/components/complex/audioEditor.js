@@ -2,13 +2,13 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import useAudioEngine from "@/functions/music/DAW3/useAudioEngine";
-import useTrackManager from "@/functions/music/DAW3/useTrackManager";
-import { useAudioControls } from "@/functions/music/DAW3/useAudioControls";
+//import useTrackManager from "@/functions/music/DAW3/useTrackManager";
+//import { useAudioControls } from "@/functions/music/DAW3/useAudioControls";
 import { TrackControls } from "@/functions/music/DAW2/controls";
 //import { PIXELS_PER_SECOND, setPixelsPerSecond } from "@/functions/music/DAW2/audioUtils";
 import TimeRuler from "./timeRuler";
 import { GlobalControls } from "@/functions/music/DAW2/controls";
-import { createTrack } from "@/functions/music/DAW2/audioUtils";
+//import { createTrack } from "@/functions/music/DAW2/audioUtils";
 import { handleRecord, handleTimeSelect } from "@/functions/music/DAW2/audioHandlers";
 import { createNewTrack } from "@/functions/music/DAW3/createTack";
 import EditableTrackName from "@/functions/music/DAW3/editableTrackName";
@@ -292,74 +292,7 @@ const AudioEditor = () => {
 
   
 
-  const [levels, setLevels] = useState({});
-  useEffect(() => {
-    console.log(levels);
-  }, [levels]);
-
-  useEffect(() => {
-    if (!isPlaying || tracks.length === 0) {
-      setLevels({});
-      return;
-    }
-
-    const audioContexts = {};
-    const analyzers = {};
-    const gainNodes = {}; // GainNode para manejar niveles
-    const meteringInterval = 100; // Intervalo en ms para el metering
-    let meteringTimer;
-
-    const startMetering = () => {
-      meteringTimer = setInterval(() => {
-        const newLevels = {};
-        tracks.forEach((track) => {
-          if (!track.audioBuffer || !track.isPlaying || track.muted) return;
-
-          if (!analyzers[track.id]) {
-            console.error(`No se encontró analyser para el track con ID: ${track.id}`);
-            return;
-          }
-
-          const { analyser, dataArray } = analyzers[track.id];
-          analyser.getFloatTimeDomainData(dataArray);
-
-          const maxLevel = Math.max(...dataArray.map(Math.abs));
-          newLevels[track.id] = maxLevel; // Guardar nivel actual
-        });
-
-        setLevels(newLevels);
-      }, meteringInterval);
-    };
-
-    tracks.forEach((track) => {
-      if (!track.audioBuffer || !track.isPlaying || track.muted) return;
-
-      const audioContext = new AudioContext();
-      const gainNode = audioContext.createGain();
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      const dataArray = new Float32Array(analyser.frequencyBinCount);
-
-      const source = audioContext.createBufferSource();
-      source.buffer = track.audioBuffer;
-      source.connect(gainNode);
-      gainNode.connect(analyser);
-      analyser.connect(audioContext.destination);
-
-      source.start();
-
-      audioContexts[track.id] = audioContext;
-      gainNodes[track.id] = gainNode; // Almacenar GainNode para control adicional
-      analyzers[track.id] = { analyser, dataArray };
-    });
-
-    startMetering();
-
-    return () => {
-      Object.values(audioContexts).forEach((audioContext) => audioContext.close());
-      clearInterval(meteringTimer); // Limpiar el temporizador
-    };
-  }, [isPlaying, tracks]);
+ 
 
   
   
