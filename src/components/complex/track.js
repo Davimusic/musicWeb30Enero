@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, memo } from "react";
 import drawWaveform from "@/functions/music/drawWaveform";
 
-const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks }) => {
+const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -10,7 +10,7 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks }) => {
 
     // Redibujar la forma de onda cuando cambien los filtros o se fuerce la actualización
     drawWaveform(canvas, track.audioBuffer, pixelsPerSecond, track, track.backgroundColorTrack);
-  }, [track.audioBuffer, pixelsPerSecond, track.startTime, track.filters, track.redraw, track.backgroundColorTrack]); // <-- Agrega track.filters y track.redraw como dependencias
+  }, [track.audioBuffer, pixelsPerSecond, track.startTime, track.filters, track.redraw, track.backgroundColorTrack, pixelsHeight]); // <-- Agrega track.filters y track.redraw como dependencias
 
   const handleCanvasClick = (e) => {
     const canvas = canvasRef.current;
@@ -44,7 +44,7 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks }) => {
     opacity: track.muted ? 0.5 : (isSoloActive && !track.solo ? 0.3 : 1),
   }}
 >
-  <canvas ref={canvasRef} height="100" />
+  <canvas ref={canvasRef} height={pixelsHeight} />
 </div>
 
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+/*import { useEffect, useRef } from "react";
 
 export const useAudioContext = () => {
   const audioContextRef = useRef(null);
@@ -86,4 +86,4 @@ export const useAutoScroll = (
       scrollContainerRef, 
       tracksContainerRef 
     };
-  };
+  };*/

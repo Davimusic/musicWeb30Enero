@@ -1,4 +1,4 @@
-export const getPixelsPerSecond = (zoomLevel) => {
+/*export const getPixelsPerSecond = (zoomLevel) => {
     const BASE_PIXELS_PER_SECOND = 100;
     return BASE_PIXELS_PER_SECOND * zoomLevel;
   };
@@ -36,4 +36,4 @@ export const getPixelsPerSecond = (zoomLevel) => {
     });
   
     setCurrentTime(selectedTime);
-  };
+  };*/

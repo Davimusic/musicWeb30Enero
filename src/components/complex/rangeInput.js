@@ -14,7 +14,7 @@ const RangeInput = ({
   const [localValue, setLocalValue] = useState(propValue);
 
   useEffect(() => {
-    console.log(localValue);
+    //console.log(localValue);
     
   }, [localValue]);
 
@@ -32,7 +32,7 @@ const RangeInput = ({
   };
 
   return (
-    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+    <div  style={{textAlign: 'center', display: 'flex', justifyContent: 'center'}}>
       {children}
       <div className={'rangeContainer'}>
         <input
@@ -45,7 +45,7 @@ const RangeInput = ({
           className={'rangeInput'}
           style={{
             '--thumb-color': colorClass,
-            '--track-color': backgroundColorClass
+            '--track-color': backgroundColorClass,
           }}
         />
         <div className={'rangeValue'}>

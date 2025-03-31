@@ -5,7 +5,7 @@ import useAudioEngine from "@/functions/music/DAW3/useAudioEngine";
 import useTrackManager from "@/functions/music/DAW3/useTrackManager";
 import { useAudioControls } from "@/functions/music/DAW3/useAudioControls";
 import { TrackControls } from "@/functions/music/DAW2/controls";
-import { PIXELS_PER_SECOND } from "@/functions/music/DAW2/audioUtils";
+//import { PIXELS_PER_SECOND, setPixelsPerSecond } from "@/functions/music/DAW2/audioUtils";
 import TimeRuler from "./timeRuler";
 import { GlobalControls } from "@/functions/music/DAW2/controls";
 import { createTrack } from "@/functions/music/DAW2/audioUtils";
@@ -13,6 +13,7 @@ import { handleRecord, handleTimeSelect } from "@/functions/music/DAW2/audioHand
 import { createNewTrack } from "@/functions/music/DAW3/createTack";
 import EditableTrackName from "@/functions/music/DAW3/editableTrackName";
 '../../estilos/music/audioEditor.css'
+'../../../src/estilos/general/general.css'
 import SingleColorPickerModalContent from "./singleColorPickerModalContent";
 import Modal from "./modal";
 import handleTrackAction from "@/functions/music/DAW3/handleTrackAction";
@@ -24,6 +25,8 @@ import Menu from "./menu";
 import MainLogo from "./mainLogo";
 import { useRouter } from 'next/router';
 import handleDownloadMix from "@/functions/music/handleDownloadMix";
+import RangeInput from "./rangeInput";
+import AudioLevelMeter from "@/functions/music/DAW3/audioLevelMeter";
 
 
 
@@ -99,6 +102,11 @@ const AudioEditor = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loadingTrackId, setLoadingTrackId] = useState(null);
   const [globalLoading, setGlobalLoading] = useState(false);
+  //para pixeles
+  const [PIXELS_PER_SECOND, set_PIXELS_PER_SECOND] = useState(40);
+  const [pixelsHeight, setPixelsHeight] = useState(100);
+
+
   const scrollContainerRef = useRef(null);
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -192,6 +200,14 @@ const AudioEditor = () => {
     return () => document.head.removeChild(style);
   }, []);
 
+  useEffect(() => {
+    console.log(tracks);
+  }, [tracks]);
+
+  useEffect(() => {
+    console.log(PIXELS_PER_SECOND);
+  }, [PIXELS_PER_SECOND]);
+
   // ==============================================
   // === AQUÍ COMIENZA TU CÓDIGO ORIGINAL ===
   // ==============================================
@@ -273,6 +289,81 @@ const AudioEditor = () => {
     }
   };
 
+
+  
+
+  const [levels, setLevels] = useState({});
+  useEffect(() => {
+    console.log(levels);
+  }, [levels]);
+
+  useEffect(() => {
+    if (!isPlaying || tracks.length === 0) {
+      setLevels({});
+      return;
+    }
+
+    const audioContexts = {};
+    const analyzers = {};
+    const gainNodes = {}; // GainNode para manejar niveles
+    const meteringInterval = 100; // Intervalo en ms para el metering
+    let meteringTimer;
+
+    const startMetering = () => {
+      meteringTimer = setInterval(() => {
+        const newLevels = {};
+        tracks.forEach((track) => {
+          if (!track.audioBuffer || !track.isPlaying || track.muted) return;
+
+          if (!analyzers[track.id]) {
+            console.error(`No se encontró analyser para el track con ID: ${track.id}`);
+            return;
+          }
+
+          const { analyser, dataArray } = analyzers[track.id];
+          analyser.getFloatTimeDomainData(dataArray);
+
+          const maxLevel = Math.max(...dataArray.map(Math.abs));
+          newLevels[track.id] = maxLevel; // Guardar nivel actual
+        });
+
+        setLevels(newLevels);
+      }, meteringInterval);
+    };
+
+    tracks.forEach((track) => {
+      if (!track.audioBuffer || !track.isPlaying || track.muted) return;
+
+      const audioContext = new AudioContext();
+      const gainNode = audioContext.createGain();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      const dataArray = new Float32Array(analyser.frequencyBinCount);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = track.audioBuffer;
+      source.connect(gainNode);
+      gainNode.connect(analyser);
+      analyser.connect(audioContext.destination);
+
+      source.start();
+
+      audioContexts[track.id] = audioContext;
+      gainNodes[track.id] = gainNode; // Almacenar GainNode para control adicional
+      analyzers[track.id] = { analyser, dataArray };
+    });
+
+    startMetering();
+
+    return () => {
+      Object.values(audioContexts).forEach((audioContext) => audioContext.close());
+      clearInterval(meteringTimer); // Limpiar el temporizador
+    };
+  }, [isPlaying, tracks]);
+
+  
+  
+
   useEffect(() => {
     const ctx = audioContextRef.current;
   
@@ -285,7 +376,7 @@ const AudioEditor = () => {
   
     const handlePlayback = async () => {
       if (!isPlayingRef.current) {
-        // Limpieza al pausar
+        // Limpieza al pausar (IDÉNTICO A TU VERSIÓN ORIGINAL)
         tracks.forEach((track) => {
           if (track.sourceNode) {
             try {
@@ -297,7 +388,6 @@ const AudioEditor = () => {
             track.sourceNode = null;
             track.isPlaying = false;
           }
-          // Limpiar el offset temporal al pausar manualmente
           if (track.isTimeSelectOffset) {
             track.offset = undefined;
             track.isTimeSelectOffset = false;
@@ -309,15 +399,28 @@ const AudioEditor = () => {
         });
         filterNodesRef.current = {};
       } else {
-        // Lógica de reproducción
+        // Lógica de reproducción (IDÉNTICO A TU VERSIÓN ORIGINAL)
         if (ctx.state === "suspended") {
           await ctx.resume();
         }
   
         const startTimeInContext = ctx.currentTime;
         const globalCurrentTime = Number(currentTimeRef.current) || 0;
+
+        // --- INICIO DE LA ÚNICA MODIFICACIÓN ---
+        let finishedTracks = 0;
+        const totalTracks = tracks.filter(t => t.audioBuffer).length;
+
+        const checkAllTracksFinished = () => {
+          finishedTracks++;
+          if (finishedTracks === totalTracks) {
+            console.log("Todos los tracks han terminado de reproducirse");
+            // IMPORTANTE: NO reiniciamos currentTimeRef aquí para no afectar tu lógica
+          }
+        };
+        // --- FIN DE LA ÚNICA MODIFICACIÓN ---
   
-        // Primero detener todos los nodos existentes
+        // Primero detener todos los nodos existentes (IDÉNTICO A TU VERSIÓN ORIGINAL)
         tracks.forEach((track) => {
           if (track.sourceNode) {
             track.sourceNode.stop();
@@ -326,18 +429,20 @@ const AudioEditor = () => {
           }
         });
   
-        // Crear nuevos nodos para cada track
+        // Crear nuevos nodos (IDÉNTICO A TU VERSIÓN ORIGINAL excepto por la línea del onended)
         const updatedTracks = tracks.map((track) => {
           const shouldPlay = !track.muted && (!hasSoloTracks || (hasSoloTracks && track.solo));
   
           if (track.audioBuffer) {
             track.sourceNode = ctx.createBufferSource();
             track.sourceNode.buffer = track.audioBuffer;
+            
+            // ÚNICA ADICIÓN: Esta línea es lo único nuevo
+            track.sourceNode.onended = checkAllTracksFinished;
   
-            // Cadena de conexión
+            // Cadena de conexión (IDÉNTICO A TU VERSIÓN ORIGINAL)
             let lastNode = track.sourceNode;
   
-            // Conectar filtros
             if (track.filters?.length > 0) {
               track.filters.forEach((filter, index) => {
                 if (!filterNodesRef.current[track.id]) {
@@ -349,7 +454,6 @@ const AudioEditor = () => {
               });
             }
   
-            // Inicializar nodos de audio si no existen
             if (!audioNodesRef.current[track.id]) {
               audioNodesRef.current[track.id] = {
                 gainNode: ctx.createGain(),
@@ -358,7 +462,6 @@ const AudioEditor = () => {
               };
             }
   
-            // Configurar volumen
             const targetGain = shouldPlay
               ? Math.min(track.volume || 0.7, 0.7) * (hasSoloTracks && track.solo ? 1 : 0.8)
               : 0;
@@ -368,20 +471,16 @@ const AudioEditor = () => {
               ctx.currentTime
             );
   
-            // Conectar cadena de audio
             lastNode.connect(audioNodesRef.current[track.id].gainNode);
             audioNodesRef.current[track.id].gainNode.connect(audioNodesRef.current[track.id].pannerNode);
             audioNodesRef.current[track.id].pannerNode.connect(ctx.destination);
   
-            // Lógica de inicio modificada
+            // Lógica de inicio (IDÉNTICO A TU VERSIÓN ORIGINAL - SIN CAMBIOS EN LA LÓGICA DE TIEMPO)
             if (track.isTimeSelectOffset && track.offset !== undefined) {
-              // Caso 1: Offset temporal de handleTimeSelect
               track.sourceNode.start(startTimeInContext, track.offset);
-              // Limpiar el offset después de usarlo
               track.offset = undefined;
               track.isTimeSelectOffset = false;
             } else {
-              // Caso 2: Reproducción normal
               const relativeTime = globalCurrentTime - (track.startTime || 0);
               if (relativeTime >= 0) {
                 track.sourceNode.start(
@@ -399,12 +498,11 @@ const AudioEditor = () => {
           return track;
         });
   
-        // Actualizar tracks si hubo cambios (limpieza de offsets)
         if (tracks.some(t => t.isTimeSelectOffset)) {
           setTracks(updatedTracks);
         }
   
-        // Log para depuración
+        // Log para depuración (IDÉNTICO A TU VERSIÓN ORIGINAL)
         tracks.forEach(track => {
           if (track.audioBuffer) {
             console.log(`Track ${track.id} - StartTime: ${track.startTime || 0}, 
@@ -419,6 +517,7 @@ const AudioEditor = () => {
     handlePlayback();
   }, [isPlaying, tracks]);
 
+
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -431,7 +530,7 @@ const AudioEditor = () => {
     }, 100);
 
     return () => clearInterval(scrollInterval);
-  }, [isPlaying]);
+  }, [isPlaying, PIXELS_PER_SECOND]);
 
   const handlePlayPause = () => {
     tracks.length !== 0 && setIsPlaying((prev) => !prev);
@@ -501,6 +600,26 @@ const AudioEditor = () => {
         onClose={closeModal}
         onColorUpdate={(newColor)=>updateTrackColor(track.id, newColor)}/>
     }
+
+    if (modalState.content === 'zoomSliders') {
+      return (
+        <div>
+            <RangeInput
+              min={40}
+              max={200}
+              value={PIXELS_PER_SECOND}
+              onChange={set_PIXELS_PER_SECOND}
+            />
+
+            <RangeInput
+              min={40}
+              max={200}
+              value={pixelsHeight}
+              onChange={setPixelsHeight}
+            />
+        </div>
+      );
+    } 
   };
 
   return (
@@ -588,11 +707,17 @@ const AudioEditor = () => {
                       }}
                     />
                     <ControlsIcon size={30} onToggle={() => openModal(track.id, 'trackControl')} />
+                    <AudioLevelMeter 
+      analyser={audioNodesRef.current[track.id]?.analyser}
+      volume={track.volume}
+      muted={track.muted}
+    />
                   </div>
                   <div className="track-waveform">
                     <Track
                       track={track}
-                      pixelsPerSecond={PIXELS_PER_SECOND}
+                      pixelsPerSecond={PIXELS_PER_SECOND} 
+                      pixelsHeight={pixelsHeight}
                       onSelectTime={(selectedTime) =>
                         handleTimeSelect(
                           selectedTime,
@@ -604,7 +729,7 @@ const AudioEditor = () => {
                           PIXELS_PER_SECOND,
                           setTracks,
                           setIsPlaying,
-                          audioNodesRef 
+                          audioNodesRef, 
                         )
                       }
                       tracks={tracks}
@@ -712,6 +837,7 @@ const AudioEditor = () => {
           onToggleUI={handleToggleUI}
           onLoadAudio={handleLoadAudio}
           toggleMenu={toggleMenu}
+          openModal={()=>openModal('', 'zoomSliders')}
         />
       </div>
     </div>

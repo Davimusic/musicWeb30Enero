@@ -1,30 +1,67 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import "../../estilos/general/general.css";
 import "../../estilos/music/audioEditor.css";
 import { formatTime } from "@/functions/music/mediaUtils";
 
+
+
+
+
+
+
+
 const TimeRuler = ({ pixelsPerSecond, tracks }) => {
-  if (!tracks || tracks.length === 0) {
-    return null;
-  }
+  const [windowWidth, setWindowWidth] = useState(0);
+  const rulerRef = useRef(null);
 
-  // Calcular la duración máxima (en segundos)
+  // 1. Efecto solo para cliente que observa el ancho de la ventana
+  useEffect(() => {
+    // Solo ejecutar en cliente
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    // Inicializar con el ancho actual
+    setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  if (!tracks || tracks.length === 0) return null;
+
+  // 2. Calcular ancho base basado en los tracks
   const maxDuration = Math.max(
-    ...tracks.map((track) => track.startTime + track.duration)
+    ...tracks.map(track => track.startTime + track.duration)
   );
+  const tracksWidth = maxDuration * pixelsPerSecond;
 
-  // Ancho total basado en la duración máxima y los píxeles por segundo
-  const rulerWidth = maxDuration * pixelsPerSecond;
+  // 3. Ancho TOTAL = ancho de tracks + ancho de ventana (extra)
+  const totalWidth = tracksWidth + windowWidth;
 
-  // Número de marcas (cada segundo)
-  const numberOfMarks = Math.ceil(maxDuration) + 1;
+  // 4. Calcular marcas (cada segundo)
+  const totalSeconds = Math.ceil(totalWidth / pixelsPerSecond);
+  const numberOfMarks = totalSeconds + 1;
+
+  // Render seguro para SSR
+  if (typeof window === "undefined") {
+    return (
+      <div className="time-ruler" style={{ width: "100%", height: "30px", backgroundColor: "white" }} />
+    );
+  }
 
   return (
     <div 
+      ref={rulerRef}
       className="time-ruler"
       style={{
-        width: `${rulerWidth}px`, // Ancho exacto basado en la duración
+        width: `${totalWidth}px`,
+        minWidth: `calc(100% + ${windowWidth}px)`, // Por si acaso
         height: "30px",
         position: "sticky",
         top: 0,
@@ -40,7 +77,7 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
           key={i}
           className="time-mark"
           style={{
-            width: `${pixelsPerSecond}px`, // Cada marca ocupa 1 segundo
+            width: `${pixelsPerSecond}px`,
             flexShrink: 0
           }}
         >

@@ -36,7 +36,7 @@ export const createNewTrack = (setTracks, audioBuffer, audioContextRef, tracks, 
       startTime: 0,
       offset: 0,
       filters: [],
-      backgroundColorTrack: 'gold',
+      backgroundColorTrack: '#2bc6c8',
       isLoading: !!tempTrackId // Marcar si es un track temporal
     };
 

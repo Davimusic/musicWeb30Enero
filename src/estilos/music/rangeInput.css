@@ -5,7 +5,7 @@
     
     
     border-radius: 15px;
-    background-color: var(--backgroundColor1);
+    /*background-color: var(--backgroundColor1);*/
     transition: background-color 0.3s ease;
     width: 200px;
 }
@@ -63,6 +63,7 @@
     font-weight: bold;
     color: var(--color2);
     transition: color 0.3s ease, text-shadow 0.3s ease;
+    margin-left: 10px;
 }
 
 /* Media query para dispositivos móviles */

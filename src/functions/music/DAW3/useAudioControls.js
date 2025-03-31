@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+/*import { useState, useEffect, useRef } from "react";
 import { GlobalControls } from "../DAW2/controls";
 
 export const useAudioControls = (props) => {
@@ -20,4 +20,4 @@ export const useAudioControls = (props) => {
     GlobalControlsComponent: () => <div ref={controlsRef}><GlobalControls {...props} /></div>,
     editorHeight
   };
-};
+};*/

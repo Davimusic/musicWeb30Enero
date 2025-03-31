@@ -117,7 +117,7 @@
     }
   };
 
-  export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef, filterNodesRef ) => {
+  /*export const handleStop = (setIsPlaying, setCurrentTime, tracks, scrollContainerRef, filterNodesRef ) => {
     const now = performance.now(); // Usamos tiempo de alta precisión
   
     tracks.forEach((track) => {
@@ -155,7 +155,7 @@
       nodes.forEach(node => node.disconnect());
     });
     filterNodesRef.current = {};
-  };
+  };*/
 
 
 
@@ -225,6 +225,8 @@
       return;
     }
   
+    console.log(selectedTimeGlobal);
+    
     // 1. Actualizar tiempo global
     setCurrentTime(selectedTimeGlobal);
   
@@ -261,7 +263,7 @@
 
 
   
-  export const restartTracks = async (
+  /*export const restartTracks = async (
     audioContextRef,
     tracksRef,
     currentTime,
@@ -285,4 +287,4 @@
       
       //handleStop(setIsPlaying, setCurrentTime, tracksRef, scrollContainerRef, filterNodesRef);
     }
-  };
+  };*/

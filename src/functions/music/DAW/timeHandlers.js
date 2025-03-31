@@ -1,4 +1,4 @@
-// src/functions/music/DAW/timeHandlers.js
+/*/ src/functions/music/DAW/timeHandlers.js
 
 export const getPixelsPerSecond = (zoomLevel) => {
     const BASE_PIXELS_PER_SECOND = 100; // 100px por segundo en zoom 1
@@ -52,4 +52,4 @@ export const getPixelsPerSecond = (zoomLevel) => {
   
     // Actualizar el estado del tiempo actual
     setCurrentTime(selectedTime);
-  };
+  };*/

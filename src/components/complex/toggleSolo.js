@@ -32,7 +32,7 @@ const ToggleSolo = ({ size = 24, isSolo = false, onToggle, buttonColor = "#fffff
       ) : (
         <>
           {/* Ícono inactivo - solo borde blanco */}
-          <circle cx="12" cy="12" r="10" stroke={buttonColor} strokeWidth="1" fill="none" />
+          <circle cx="12" cy="12" r="10" stroke={buttonColor} strokeWidth="2" fill="none" />
           <text x="12" y="16" fontSize="12" textAnchor="middle" fill={buttonColor}>S</text>
         </>
       )}

@@ -1,4 +1,4 @@
-// useTrackManager.js
+/*/ useTrackManager.js
 import { useState, useCallback, useRef } from "react";
 //import { createTrack, updateTrack } from "@/utils/trackUtils";
 import { createTrack, updateTrack } from "../DAW2/audioUtils";
@@ -24,4 +24,4 @@ const useTrackManager = (audioContextRef) => {
     };
   };
   
-  export default useTrackManager;
+  export default useTrackManager;*/

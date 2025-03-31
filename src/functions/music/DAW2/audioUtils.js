@@ -1,33 +1,13 @@
-export const PIXELS_PER_SECOND = 40;
+//export const PIXELS_PER_SECOND = 40;
 
-// audioUtils.js
-/*export const createTrack = async (file, audioContext, tracks) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-  
-    // Crear todos los nodos necesarios
-    const gainNode = audioContext.createGain();
-    const pannerNode = audioContext.createStereoPanner();
-    
-    // Conectar la cadena de nodos
-    gainNode.connect(pannerNode).connect(audioContext.destination);
-  
-    return {
-      id: Date.now(),
-      audioBuffer,
-      gainNode,
-      pannerNode,
-      duration: audioBuffer.duration,
-      volume: 1,
-      panning: 0,
-      muted: false,
-      name: `Track ${tracks.length + 1}`,
-      sourceNode: null,
-      startTime: 0,
-      offset: 0
-    };
-  };*/
-  
+export let PIXELS_PER_SECOND = 40;
+
+export const setPixelsPerSecond = (value) => {
+  PIXELS_PER_SECOND = value;
+};
+
+
+
 
   export const createTrack = async (file, audioContext, tracks) => {
     const arrayBuffer = await file.arrayBuffer();

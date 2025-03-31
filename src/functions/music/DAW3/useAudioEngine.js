@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 //import { handlePlayPause, handleStop } from "../DAW2/audioHandlers";
-import { handlePlayPause, handleStop } from "../DAW/audioHandlers";
+//import { handlePlayPause, handleStop } from "../DAW/audioHandlers";
 
 const useAudioEngine = () => {
     const audioContextRef = useRef(null);
@@ -47,8 +47,8 @@ const useAudioEngine = () => {
       setIsPlaying,
       currentTime,
       setCurrentTime,
-      handlePlayPause: useCallback(() => handlePlayPause(audioContextRef, setIsPlaying), []),
-      handleStop: useCallback(() => handleStop(audioContextRef, setIsPlaying, setCurrentTime), []),
+      //handlePlayPause: useCallback(() => handlePlayPause(audioContextRef, setIsPlaying), []),
+      //handleStop: useCallback(() => handleStop(audioContextRef, setIsPlaying, setCurrentTime), []),
       scrollRefs,
       tracks,
       setTracks,

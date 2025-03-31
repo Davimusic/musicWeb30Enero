@@ -1,4 +1,4 @@
-
+/*
   
   export const updateTrackMuted = (trackId, muted, setTracks) => {
     setTracks((prev) =>
@@ -51,4 +51,4 @@
         return track;
       })
     );
-  };
+  };*/

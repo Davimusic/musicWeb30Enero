@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../../estilos/music/icon.css'
 
-const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
+const MenuIcon = ({ size = 30, onClick = () => {}, style = {}, className }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
@@ -19,7 +19,7 @@ const MenuIcon = ({ size = 30, onClick = () => {}, style = {} }) => {
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
         onClick={handleClick}
-        className={isAnimating ? 'pulse' : ''}
+        className={isAnimating ? `pulse ${className}` : ''}
         style={{ 
           cursor: 'pointer', 
           transition: 'transform 0.3s ease',

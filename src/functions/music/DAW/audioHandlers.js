@@ -1,4 +1,4 @@
-export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying) => {
+/*export const handlePlayPause = async (audioContextRef, tracks, currentTime, setIsPlaying) => {
     try {
       if (audioContextRef.current.state === "suspended") {
         await audioContextRef.current.resume();
@@ -89,4 +89,4 @@ export const handlePlayPause = async (audioContextRef, tracks, currentTime, setI
     } catch (error) {
       console.error("Error al grabar:", error);
     }
-  };
+  };*/

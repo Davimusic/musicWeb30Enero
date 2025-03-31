@@ -15,11 +15,15 @@ import { restartTracks, createFilterNode, handleStop } from "./audioHandlers";
 import ColorPickerModalContent from "@/components/complex/colorPicker";
 import SingleColorPickerModalContent from "@/components/complex/singleColorPickerModalContent";
 import Knob from "@/components/complex/knob";
+import MenuIcon from "@/components/complex/menuIcon";
+import ControlsIcon from "@/components/complex/controlsIcon";
+'../../../estilos/general/general.css'
 
 
 
 
-export const reconnectAudioChain = (track) => {
+
+/*export const reconnectAudioChain = (track) => {
   const ctx = track.audioContext; // Asegúrate de que track tenga referencia al AudioContext
   if (!ctx || !track.sourceNode) return;
 
@@ -55,7 +59,7 @@ export const reconnectAudioChain = (track) => {
     track.sourceNode.start(ctx.currentTime, startOffset);
     track.isPlaying = true;
   }
-};
+};*/
 
 
 export const TrackControls = React.memo(({
@@ -182,27 +186,30 @@ export const TrackControls = React.memo(({
   return (
     <div className="track-controls">
       <ResponsiveContent showContent={showContent}>
-        <button 
-          onClick={() => openModal( track.id, 'SingleColorPickerModalContent')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '5px',
-            fontSize: '30px' 
-          }}
-        >
-          🎨
-        </button>
+        
 
-        <div className="track-header">
+
+        <div style={{textAlign: 'center', display: 'flex', justifyContent: 'space-around'}}>
           <button onClick={() => setShowStartTimeModal(true)}>Set Start Time</button>
           <button onClick={() => setShowFilterModal(true)}>Add Filter</button>
-
-          <ToggleSolo isSolo={track.solo} onToggle={handleToggleSolo} />
-          <TrashIcon onClick={handleDeleteTrack} />
         </div>
-        <div style={{display: 'flex'}}>
+        <div style={{textAlign: 'center', display: 'flex', justifyContent: 'space-around', padding: '10px'}}>
+          <ToggleSolo size={30} isSolo={track.solo} onToggle={handleToggleSolo} />
+          <button 
+            onClick={() => openModal( track.id, 'SingleColorPickerModalContent')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px', 
+              padding: '0px'
+            }}
+          >
+            🎨
+          </button>
+          <TrashIcon size={30} onClick={handleDeleteTrack} />
+        </div>
+        <div style={{textAlign: 'center', display: 'flex', justifyContent: 'space-between'}}>
           <Knob
             title={'Volume'}
             size={90}
@@ -246,6 +253,8 @@ export const TrackControls = React.memo(({
                 value={minutes === 0 ? '0' : minutes.toString().replace(/^0+/, '')}
                 onChange={handleManualChange(setMinutes, 59)}
                 maxLength="2"
+                style={{border: 'none', padding: '5px'}}
+                className="borderRadius1"
               />
               <RangeInput
                 value={minutes}
@@ -262,6 +271,8 @@ export const TrackControls = React.memo(({
                 value={seconds === 0 ? '0' : seconds.toString().replace(/^0+/, '')}
                 onChange={handleManualChange(setSeconds, 59)}
                 maxLength="2"
+                style={{border: 'none', padding: '5px'}}
+                className="borderRadius1"
               />
               <RangeInput
                 value={seconds}
@@ -278,6 +289,8 @@ export const TrackControls = React.memo(({
                 value={milliseconds === 0 ? '0' : milliseconds.toString().replace(/^0+/, '')}
                 onChange={handleManualChange(setMilliseconds, 999)}
                 maxLength="3"
+                className="borderRadius1"
+                style={{border: 'none', padding: '5px'}}
               />
               <RangeInput
                 value={milliseconds}
@@ -293,11 +306,14 @@ export const TrackControls = React.memo(({
                 type="text"
                 value={formatTime(minutes, seconds, milliseconds)}
                 readOnly
+                style={{border: 'none', padding: '5px'}}
+                className="borderRadius1"
               />
             </div>
-
-            <button onClick={handleSetStartTime}>Accept</button>
-            <button onClick={() => setShowStartTimeModal(false)}>Cancel</button>
+            <div style={{padding: '20px', textAlign: 'center', display: 'flex', justifyContent: 'space-around' }}>
+              <div className="borderRadius1 backgroundColor3" style={{width: 'min-content', padding: '10px'}} onClick={handleSetStartTime}>Accept</div>
+              <div className="borderRadius1 backgroundColor3" style={{width: 'min-content', padding: '10px'}} onClick={() => setShowStartTimeModal(false)}>Cancel</div>
+            </div>
           </div>
         </div>
       )}
@@ -368,7 +384,8 @@ export const GlobalControls = ({
   onToggleUI,
   onLoadAudio,
   onShowColorPicker,
-  toggleMenu
+  toggleMenu,
+  openModal
 }) => {
   return (
     <div className="global-controls backgroundColor2 color2">
@@ -381,50 +398,39 @@ export const GlobalControls = ({
       <div style={{display: 'flex'}}>
         <DownloadIcon onToggle={onDownload} />
         <div className="backgroundColor2" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-  {/* Hidden audio file input */}
-  <input
-    type="file"
-    accept="audio/*"  // Only accepts audio files
-    onChange={onLoadAudio}
-    style={{ display: "none" }}
-    id="audio-upload"
+          {/* Hidden audio file input */}
+          <input
+            type="file"
+            accept="audio/*"  // Only accepts audio files
+            onChange={onLoadAudio}
+            style={{ display: "none" }}
+            id="audio-upload"
 
-  />
-  
-  {/* Audio upload label */}
-  <label 
-    htmlFor="audio-upload" 
-    style={{ 
-      cursor: "pointer",
-      padding: "8px 16px",
-      
-      color: "white",
-      borderRadius: "4px",
-      fontWeight: "500",
-      fontSize: "0.875rem",
-      textTransform: "uppercase",
-      '&:hover': {
-        backgroundColor: "red"
-      }
-    }}
-  >
-    Select Audio File
-  </label>
+          />
+          
+          {/* Audio upload label */}
+          <label 
+            htmlFor="audio-upload" 
+            style={{ 
+              cursor: "pointer",
+              padding: "8px 16px",
+              
+              color: "white",
+              borderRadius: "4px",
+              fontWeight: "500",
+              fontSize: "0.875rem",
+              textTransform: "uppercase",
+              '&:hover': {
+                backgroundColor: "red"
+              }
+            }}
+          >
+            Select Audio File
+          </label>
+          <ControlsIcon size={30} onToggle={openModal}/>
         </div>
       </div>
-
-
-      <button 
-        onClick={toggleMenu}
-        className="backgroundColor2"
-        style={{
-          border: '1px solid white',
-          borderRadius: '0.7em',
-          color: "white"
-        }}
-      >
-        ☰
-      </button>
+      <MenuIcon className="backgroundColor2" size={30} onClick={toggleMenu} style={{color: "white"}}/>
       <div className="time-display">
         {formatTime(currentTime)}
       </div>

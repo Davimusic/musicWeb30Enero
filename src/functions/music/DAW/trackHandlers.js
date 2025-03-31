@@ -1,4 +1,4 @@
-export const updateTrackVolume = (trackId, volume, setTracks) => {
+/*export const updateTrackVolume = (trackId, volume, setTracks) => {
     setTracks((prev) =>
       prev.map((track) => {
         if (track.id === trackId) {
@@ -47,4 +47,4 @@ export const updateTrackVolume = (trackId, volume, setTracks) => {
         return { ...track, muted: track.isSolo ? false : true };
       })
     );
-  };
+  };*/

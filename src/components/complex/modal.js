@@ -6,25 +6,20 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
 
   useEffect(() => {
     if (isOpen) {
-      // Activar la visibilidad para la animación de entrada
       setIsVisible(true);
     } else {
-      // Iniciar la animación de salida
       setIsVisible(false);
     }
   }, [isOpen]);
 
   const handleClose = () => {
-    // Iniciar la animación de salida
     setIsVisible(false);
-    // Esperar a que termine la animación antes de cerrar el modal
     setTimeout(() => {
       onClose();
-    }, 300); // 300ms debe coincidir con la duración de la animación
+    }, 300);
   };
 
   const handleOverlayClick = (e) => {
-    // Solo cerrar si se hace clic directamente en el overlay (no en sus hijos)
     if (e.target === e.currentTarget) {
       handleClose();
     }
@@ -39,11 +34,11 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
         ...styles.overlay,
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.3s ease',
-        backgroundColor: '#000000b2'
+        backgroundColor: '#000000b2',
       }}
     >
       <div
-        className={className}
+        className={`${className} borderRadius1`}
         style={{
           backgroundColor: 'black',
           ...style,
@@ -51,15 +46,23 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
           transform: isVisible ? 'scale(1)' : 'scale(0.8)',
           opacity: isVisible ? 1 : 0,
           transition: 'transform 0.3s ease, opacity 0.3s ease',
+          maxHeight: '80vh',
         }}
-        onClick={(e) => e.stopPropagation()} // Prevenir que el clic se propague al overlay
+        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{padding: '20px'}}>
-          <button className='color2' onClick={handleClose} style={styles.closeButton}>
+        <div style={styles.header}>
+          <button 
+            className='color2' 
+            onClick={handleClose} 
+            style={styles.closeButton}
+            aria-label="Cerrar modal"
+          >
             ×
           </button>
         </div>
-        {children}
+        <div style={styles.content}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -76,24 +79,59 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10001,
-    cursor: 'pointer', // Cambia el cursor para indicar que es clickeable
+    cursor: 'pointer',
   },
   modal: {
-    padding: '20px',
+    padding: '0',
     borderRadius: '8px',
     position: 'relative',
     zIndex: 1001,
-    cursor: 'default', // Restaura el cursor normal para el modal
+    cursor: 'default',
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: '90vw',
+    width: 'auto',
+  },
+  header: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
+    background: 'black',
+    padding: '5px 15px',
+    minHeight: '40px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    borderTopLeftRadius: '8px',
+    borderTopRightRadius: '8px',
   },
   closeButton: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
     background: 'none',
     border: 'none',
-    fontSize: '40px',
+    fontSize: '32px',
     cursor: 'pointer',
+    padding: '0 10px',
+    lineHeight: '1',
+  },
+  content: {
+    overflowY: 'auto',
+    maxHeight: 'calc(80vh - 40px)',
+    scrollbarWidth: 'none', // Para Firefox
+    msOverflowStyle: 'none', // Para IE/Edge
+    '&::-webkit-scrollbar': {
+      display: 'none', // Para Chrome/Safari
+    },
+    padding: '0 15px 15px',
   },
 };
+
+// Añadimos los estilos para ocultar scroll en navegadores WebKit
+const styleElement = document.createElement('style');
+styleElement.innerHTML = `
+  .modal-content::-webkit-scrollbar {
+    display: none;
+  }
+`;
+document.head.appendChild(styleElement);
 
 export default Modal;
