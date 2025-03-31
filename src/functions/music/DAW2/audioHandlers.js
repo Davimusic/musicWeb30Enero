@@ -1,5 +1,4 @@
-  import createNewTrack from "../DAW3/createTack";
-  
+  import { createNewTrack } from "../DAW3/createTack";
   /*export const handlePlayPause = async (
     audioContextRef,
     tracks,
@@ -159,7 +158,7 @@
   };
 
 
-  
+
 
   export const handleRecord = async (
     isRecording,

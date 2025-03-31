@@ -504,7 +504,7 @@ const AudioEditor = () => {
   };
 
   return (
-    <div className="fullscreen-div">
+    <div className="fullscreen-div backgroundColor1">
       {globalLoading && (
         <div style={{
           position: 'fixed',
@@ -538,7 +538,7 @@ const AudioEditor = () => {
         className="backgroundColor2"
       />
 
-      <div className="editor-container backgroundColor1">
+      <div className="editor-container">
         <div className="timeline-scroll-wrapper" ref={scrollContainerRef}>
           <div className="timeline-content">
             <TimeRuler pixelsPerSecond={PIXELS_PER_SECOND} tracks={tracks} /> 

@@ -1,51 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import "../../estilos/general/general.css";
 import "../../estilos/music/audioEditor.css";
 import { formatTime } from "@/functions/music/mediaUtils";
 
-
-
-
-
-
-
-const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
-  
+const TimeRuler = ({ pixelsPerSecond, tracks }) => {
   if (!tracks || tracks.length === 0) {
     return null;
   }
 
-  // Calcular la duración máxima
+  // Calcular la duración máxima (en segundos)
   const maxDuration = Math.max(
     ...tracks.map((track) => track.startTime + track.duration)
   );
 
-  // Número de marcas (de 0 a máximo segundos inclusive)
+  // Ancho total basado en la duración máxima y los píxeles por segundo
+  const rulerWidth = maxDuration * pixelsPerSecond;
+
+  // Número de marcas (cada segundo)
   const numberOfMarks = Math.ceil(maxDuration) + 1;
 
-  // Ancho total basado en marcas de 100px
-  const rulerWidth = numberOfMarks * 100;
-
-
-
-
-  
-  
-
   return (
-    <div
+    <div 
       className="time-ruler"
       style={{
-        width: `${rulerWidth + 900}px`, // Ancho exacto para las marcas
-        display: 'flex' // Asegura layout horizontal
+        width: `${rulerWidth}px`, // Ancho exacto basado en la duración
+        height: "30px",
+        position: "sticky",
+        top: 0,
+        left: 0,
+        zIndex: 11,
+        backgroundColor: "white",
+        display: "flex",
+        overflow: "visible"
       }}
     >
       {Array.from({ length: numberOfMarks }).map((_, i) => (
         <div
           key={i}
           className="time-mark"
-          style={{width: `${pixelsPerSecond}px`}}
+          style={{
+            width: `${pixelsPerSecond}px`, // Cada marca ocupa 1 segundo
+            flexShrink: 0
+          }}
         >
           <div style={{ display: "flex" }}>
             <div className="time-label title-md color1">I</div>
@@ -57,7 +54,6 @@ const TimeRuler = ({ pixelsPerSecond, tracks, sidebarWidth }) => {
     </div>
   );
 };
-
 
 TimeRuler.propTypes = {
   pixelsPerSecond: PropTypes.number.isRequired,
