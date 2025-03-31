@@ -1,44 +1,50 @@
-export const createNewTrack = (setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef) => {
-  const trackId = Date.now().toString();
-  
+export const createNewTrack = (setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef, tempTrackId = null) => {
+  // Usar el tempTrackId si existe, o crear uno nuevo
+  const trackId = tempTrackId || Date.now().toString();
   const ctx = audioContextRef.current;
-  const gainNode = ctx.createGain();
-  const pannerNode = ctx.createStereoPanner();
 
-  // Configuración inicial
-  gainNode.gain.value = 1; // Volumen inicial
-  pannerNode.pan.value = 0; // Panorama centrado
+  if (!ctx) {
+    console.error("AudioContext no disponible al crear track");
+    return null;
+  }
 
-  // Conexión básica
-  gainNode.connect(pannerNode);
-  pannerNode.connect(ctx.destination);
+  try {
+    const gainNode = ctx.createGain();
+    const pannerNode = ctx.createStereoPanner();
+    const analyser = ctx.createAnalyser();
 
-  // Almacenar los nodos en audioNodesRef
-  audioNodesRef.current[trackId] = {
-    gainNode,
-    pannerNode,
-    context: ctx,
-    lastVolume: 1 // Valor inicial de volumen
-  };
+    gainNode.gain.value = 1;
+    pannerNode.pan.value = 0;
 
-  const newTrack = {
-    id: trackId,
-    audioBuffer,
-    duration: audioBuffer.duration,
-    volume: 100,//en web audio api es de 0 a 100
-    panning: 0,
-    muted: false,
-    name: `Track ${tracks.length + 1}`,
-    startTime: 0,
-    offset: 0,
-    filters: [],
-    backgroundColorTrack: 'gold',
-    // No almacenamos los nodos aquí, solo en audioNodesRef
-    sourceNode: null
-  };
+    audioNodesRef.current[trackId] = {
+      gainNode,
+      pannerNode,
+      analyser,
+      context: ctx,
+      lastVolume: 1,
+      sourceNode: null
+    };
 
-  setTracks((prev) => [...prev, newTrack]);
-  return trackId;
-}
+    const newTrack = {
+      id: trackId,
+      audioBuffer,
+      duration: audioBuffer?.duration || 0,
+      volume: 100,
+      panning: 0,
+      muted: false,
+      name: `Track ${tracks.length + 1}`,
+      startTime: 0,
+      offset: 0,
+      filters: [],
+      backgroundColorTrack: 'gold',
+      isLoading: !!tempTrackId // Marcar si es un track temporal
+    };
 
-export default createNewTrack;
+    setTracks(prev => [...prev, newTrack]);
+    return trackId;
+
+  } catch (error) {
+    console.error("Error al crear nuevo track:", error);
+    return null;
+  }
+};

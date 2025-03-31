@@ -9,8 +9,8 @@ import { PIXELS_PER_SECOND } from "@/functions/music/DAW2/audioUtils";
 import TimeRuler from "./timeRuler";
 import { GlobalControls } from "@/functions/music/DAW2/controls";
 import { createTrack } from "@/functions/music/DAW2/audioUtils";
-import { handleRecord } from "@/functions/music/DAW2/audioHandlers";
-import createNewTrack from "@/functions/music/DAW3/createTack";
+import { handleRecord, handleTimeSelect } from "@/functions/music/DAW2/audioHandlers";
+import { createNewTrack } from "@/functions/music/DAW3/createTack";
 import EditableTrackName from "@/functions/music/DAW3/editableTrackName";
 '../../estilos/music/audioEditor.css'
 import SingleColorPickerModalContent from "./singleColorPickerModalContent";
@@ -22,6 +22,8 @@ import ColorPickerModalContent from "./colorPicker";
 import ControlsIcon from "./controlsIcon";
 import Menu from "./menu";
 import MainLogo from "./mainLogo";
+import { useRouter } from 'next/router';
+import handleDownloadMix from "@/functions/music/handleDownloadMix";
 
 
 
@@ -71,6 +73,10 @@ const scrollToCurrentTime = (currentTime, scrollContainerRef, PIXELS_PER_SECOND)
 
 
 
+
+
+
+
 const AudioEditor = () => {
   const {
     audioContextRef,
@@ -87,6 +93,7 @@ const AudioEditor = () => {
     tracksRef,
     audioNodesRef
   } = useAudioEngine();
+  const router = useRouter();
 
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -98,6 +105,96 @@ const AudioEditor = () => {
     trackId: null,
     content: null
   });
+
+  // ==============================================
+  // === NUEVO CÓDIGO PARA BLOQUEAR GESTOS ===
+  // ==============================================
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const gestureStartX = useRef(0);
+  const isHorizontalGesture = useRef(false);
+
+  useEffect(() => {
+    // 1. Bloquear gestos del touchpad/mouse
+    const handleMouseDown = (e) => {
+      if (e.button === 0) { // Solo botón izquierdo
+        gestureStartX.current = e.clientX;
+        isHorizontalGesture.current = false;
+      }
+    };
+
+    const handleMouseMove = (e) => {
+      if (gestureStartX.current !== 0) {
+        const deltaX = e.clientX - gestureStartX.current;
+        if (Math.abs(deltaX) > 30) { // Umbral para detectar gesto
+          isHorizontalGesture.current = true;
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isHorizontalGesture.current) {
+        setShowExitWarning(true);
+      }
+      gestureStartX.current = 0;
+      isHorizontalGesture.current = false;
+    };
+
+    // 2. Bloquear navegación con botones del navegador
+    const handlePopState = (e) => {
+      if (isHorizontalGesture.current) {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.pathname);
+        setShowExitWarning(true);
+      }
+    };
+
+    // 3. Configurar event listeners
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('popstate', handlePopState);
+
+    // 4. Inicializar estado del historial
+    window.history.pushState(null, '', window.location.pathname);
+
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  const handleConfirmExit = () => {
+    setShowExitWarning(false);
+    isHorizontalGesture.current = false;
+    // Permitir navegación después de confirmar
+    window.history.back();
+  };
+
+  const handleCancelExit = () => {
+    setShowExitWarning(false);
+    isHorizontalGesture.current = false;
+    // Mantener al usuario en la página actual
+    window.history.pushState(null, '', window.location.pathname);
+  };
+
+  // 5. CSS para bloquear gestos del navegador
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      body {
+        overscroll-behavior-x: none !important;
+        touch-action: pan-y !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  // ==============================================
+  // === AQUÍ COMIENZA TU CÓDIGO ORIGINAL ===
+  // ==============================================
 
   useEffect(() => {
     if (loadingTrackId && tracks.some(track => track.id === loadingTrackId)) {
@@ -143,9 +240,30 @@ const AudioEditor = () => {
       const arrayBuffer = await file.arrayBuffer();
       const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
 
+      const wasPlaying = isPlayingRef.current;
+
+      if (wasPlaying) {
+        setIsPlaying(false);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        tracks.forEach((track) => {
+          if (track.sourceNode) {
+            track.sourceNode.stop();
+            track.sourceNode.disconnect();
+            track.sourceNode = null;
+          }
+        });
+      }
+
       createNewTrack(setTracks, audioBuffer, audioContextRef, tracks, audioNodesRef, tempTrackId);
       e.target.value = '';
-      scrollContainerRef.current?.scrollTo({ left: 0 });
+
+      if (wasPlaying) {
+        setTimeout(() => {
+          setIsPlaying(true);
+        }, 250);
+      }
+
       setGlobalLoading(false);
       setLoadingTrackId(null);
     } catch (error) {
@@ -157,75 +275,149 @@ const AudioEditor = () => {
 
   useEffect(() => {
     const ctx = audioContextRef.current;
-
-    if (!isPlayingRef.current) {
-      tracks.forEach((track) => {
-        if (track.sourceNode) {
-          try {
+  
+    if (tracks.length === 0) {
+      handleStop();
+      return;
+    }
+  
+    const hasSoloTracks = tracks.some(track => track.solo);
+  
+    const handlePlayback = async () => {
+      if (!isPlayingRef.current) {
+        // Limpieza al pausar
+        tracks.forEach((track) => {
+          if (track.sourceNode) {
+            try {
+              track.sourceNode.stop();
+              track.sourceNode.disconnect();
+            } catch (error) {
+              console.error("Error stopping track:", error);
+            }
+            track.sourceNode = null;
+            track.isPlaying = false;
+          }
+          // Limpiar el offset temporal al pausar manualmente
+          if (track.isTimeSelectOffset) {
+            track.offset = undefined;
+            track.isTimeSelectOffset = false;
+          }
+        });
+  
+        Object.values(filterNodesRef.current).forEach((nodes) => {
+          nodes.forEach((node) => node.disconnect());
+        });
+        filterNodesRef.current = {};
+      } else {
+        // Lógica de reproducción
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+  
+        const startTimeInContext = ctx.currentTime;
+        const globalCurrentTime = Number(currentTimeRef.current) || 0;
+  
+        // Primero detener todos los nodos existentes
+        tracks.forEach((track) => {
+          if (track.sourceNode) {
             track.sourceNode.stop();
             track.sourceNode.disconnect();
-          } catch (error) {
-            console.error("Error stopping track:", error);
+            track.sourceNode = null;
           }
-          track.sourceNode = null;
-          track.isPlaying = false;
+        });
+  
+        // Crear nuevos nodos para cada track
+        const updatedTracks = tracks.map((track) => {
+          const shouldPlay = !track.muted && (!hasSoloTracks || (hasSoloTracks && track.solo));
+  
+          if (track.audioBuffer) {
+            track.sourceNode = ctx.createBufferSource();
+            track.sourceNode.buffer = track.audioBuffer;
+  
+            // Cadena de conexión
+            let lastNode = track.sourceNode;
+  
+            // Conectar filtros
+            if (track.filters?.length > 0) {
+              track.filters.forEach((filter, index) => {
+                if (!filterNodesRef.current[track.id]) {
+                  filterNodesRef.current[track.id] = [];
+                }
+                filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
+                lastNode.connect(filterNodesRef.current[track.id][index]);
+                lastNode = filterNodesRef.current[track.id][index];
+              });
+            }
+  
+            // Inicializar nodos de audio si no existen
+            if (!audioNodesRef.current[track.id]) {
+              audioNodesRef.current[track.id] = {
+                gainNode: ctx.createGain(),
+                pannerNode: ctx.createStereoPanner(),
+                analyser: ctx.createAnalyser()
+              };
+            }
+  
+            // Configurar volumen
+            const targetGain = shouldPlay
+              ? Math.min(track.volume || 0.7, 0.7) * (hasSoloTracks && track.solo ? 1 : 0.8)
+              : 0;
+  
+            audioNodesRef.current[track.id].gainNode.gain.setValueAtTime(
+              targetGain,
+              ctx.currentTime
+            );
+  
+            // Conectar cadena de audio
+            lastNode.connect(audioNodesRef.current[track.id].gainNode);
+            audioNodesRef.current[track.id].gainNode.connect(audioNodesRef.current[track.id].pannerNode);
+            audioNodesRef.current[track.id].pannerNode.connect(ctx.destination);
+  
+            // Lógica de inicio modificada
+            if (track.isTimeSelectOffset && track.offset !== undefined) {
+              // Caso 1: Offset temporal de handleTimeSelect
+              track.sourceNode.start(startTimeInContext, track.offset);
+              // Limpiar el offset después de usarlo
+              track.offset = undefined;
+              track.isTimeSelectOffset = false;
+            } else {
+              // Caso 2: Reproducción normal
+              const relativeTime = globalCurrentTime - (track.startTime || 0);
+              if (relativeTime >= 0) {
+                track.sourceNode.start(
+                  startTimeInContext,
+                  Math.min(relativeTime, track.audioBuffer.duration - 0.1)
+                );
+              } else {
+                const startDelay = -relativeTime;
+                track.sourceNode.start(startTimeInContext + startDelay, 0);
+              }
+            }
+  
+            track.isPlaying = shouldPlay;
+          }
+          return track;
+        });
+  
+        // Actualizar tracks si hubo cambios (limpieza de offsets)
+        if (tracks.some(t => t.isTimeSelectOffset)) {
+          setTracks(updatedTracks);
         }
-      });
-
-      Object.values(filterNodesRef.current).forEach((nodes) => {
-        nodes.forEach((node) => node.disconnect());
-      });
-      filterNodesRef.current = {};
-    } else {
-      if (ctx.state === "suspended") {
-        ctx.resume().then(() => {
-          console.log("AudioContext resumido.");
+  
+        // Log para depuración
+        tracks.forEach(track => {
+          if (track.audioBuffer) {
+            console.log(`Track ${track.id} - StartTime: ${track.startTime || 0}, 
+              GlobalTime: ${globalCurrentTime}, 
+              Offset: ${track.offset !== undefined ? track.offset : 'auto'}, 
+              BufferDur: ${track.audioBuffer.duration.toFixed(2)}s`);
+          }
         });
       }
-
-      const startTimeInContext = ctx.currentTime;
-      const currentTimeValue = Number(currentTimeRef.current) || 0;
-
-      tracks.forEach((track) => {
-        if (!track.sourceNode && track.audioBuffer) {
-          track.sourceNode = ctx.createBufferSource();
-          track.sourceNode.buffer = track.audioBuffer;
-
-          let lastNode = track.sourceNode;
-          
-          if (track.filters?.length > 0) {
-            track.filters.forEach((filter, index) => {
-              if (!filterNodesRef.current[track.id]) {
-                filterNodesRef.current[track.id] = [];
-              }
-              if (!filterNodesRef.current[track.id][index]) {
-                filterNodesRef.current[track.id][index] = createFilterNode(ctx, filter);
-              }
-              lastNode.connect(filterNodesRef.current[track.id][index]);
-              lastNode = filterNodesRef.current[track.id][index];
-            });
-          }
-          
-          const audioNodes = audioNodesRef.current[track.id];
-          if (audioNodes) {
-            lastNode.connect(audioNodes.gainNode);
-            audioNodes.gainNode.connect(audioNodes.pannerNode);
-            audioNodes.pannerNode.connect(ctx.destination);
-          } else {
-            lastNode.connect(ctx.destination);
-          }
-
-          const trackStartTime = Number(track.startTime) || 0;
-          const startOffset = Math.max(currentTimeValue - trackStartTime, 0);
-
-          if (isNaN(startOffset) || !isFinite(startOffset)) return;
-
-          track.sourceNode.start(startTimeInContext, startOffset);
-          track.isPlaying = true;
-        }
-      });
-    }
-  }, [isPlaying]);
+    };
+  
+    handlePlayback();
+  }, [isPlaying, tracks]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -248,11 +440,10 @@ const AudioEditor = () => {
   const handleStop = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    scrollContainerRef.current?.scrollTo({ left: 0 });
   };
 
-  const handleDownload = () => {
-    console.log("Descargando mezcla...");
-  };
+  
 
   const handleToggleUI = () => {
     console.log("Alternando UI...");
@@ -299,6 +490,7 @@ const AudioEditor = () => {
           audioNodesRef={audioNodesRef}
           openModal={openModal}
           onClose={closeModal}
+          audioContextRef={audioContextRef}
         />
       );
     }
@@ -334,7 +526,7 @@ const AudioEditor = () => {
             fontSize: '1.2rem',
             animation: 'pulse-opacity 1.5s infinite'
           }}>
-            Procesando archivo de audio...
+            loading audio...
           </p>
         </div>
       )}
@@ -366,7 +558,7 @@ const AudioEditor = () => {
                   height: loadingTrackId === track.id ? '100px' : 'auto'
                 }}>
                   <div 
-                    className="sticky-track-header"
+                    className={`sticky-track-header ${track.solo ? 'trackSolo' : ''}`}
                     style={{
                       position: 'sticky',
                       left: '10px',
@@ -401,7 +593,21 @@ const AudioEditor = () => {
                     <Track
                       track={track}
                       pixelsPerSecond={PIXELS_PER_SECOND}
-                      onSelectTime={() => console.log('hi')}
+                      onSelectTime={(selectedTime) =>
+                        handleTimeSelect(
+                          selectedTime,
+                          tracks,
+                          isPlaying,
+                          audioContextRef,
+                          scrollContainerRef,
+                          setCurrentTime,
+                          PIXELS_PER_SECOND,
+                          setTracks,
+                          setIsPlaying,
+                          audioNodesRef 
+                        )
+                      }
+                      tracks={tracks}
                     />
                   </div>
                 </div>
@@ -419,6 +625,81 @@ const AudioEditor = () => {
         {renderModalContent()}
       </Modal>
 
+      {/* Modal de advertencia por gestos */}
+      {showExitWarning && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ color: '#d32f2f', marginBottom: '1.5rem' }}>¡Acción no deseada detectada!</h3>
+            <p style={{ marginBottom: '2rem', lineHeight: '1.5' }}>
+              Has intentado navegar con un gesto del mouse. ¿Estás seguro que quieres salir del editor de audio?
+            </p>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '1rem',
+              marginTop: '1.5rem'
+            }}>
+              <button
+                onClick={handleCancelExit}
+                style={{
+                  padding: '0.75rem 2rem',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => e.target.style.transform = 'scale(1.03)'}
+                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmExit}
+                style={{
+                  padding: '0.75rem 2rem',
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => e.target.style.transform = 'scale(1.03)'}
+                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <GlobalControls
           isPlaying={isPlaying}
@@ -427,7 +708,7 @@ const AudioEditor = () => {
           onPlayPause={handlePlayPause}
           onStop={handleStop}
           onRecord={() => handleRecord(isRecording, setIsRecording, mediaRecorderRef, audioContextRef, setTracks, tracks, audioNodesRef)}
-          onDownload={handleDownload}
+          onDownload={()=>handleDownloadMix(tracks)}
           onToggleUI={handleToggleUI}
           onLoadAudio={handleLoadAudio}
           toggleMenu={toggleMenu}
@@ -438,7 +719,6 @@ const AudioEditor = () => {
 };
 
 export default AudioEditor;
-
 
 
 

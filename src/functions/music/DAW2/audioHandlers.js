@@ -158,6 +158,9 @@
     filterNodesRef.current = {};
   };
 
+
+  
+
   export const handleRecord = async (
     isRecording,
     setIsRecording,
@@ -207,7 +210,7 @@
   };
 
   export const handleTimeSelect = (
-    selectedTimeGlobal, // <-- Tiempo global (línea de tiempo completa)
+    selectedTimeGlobal,
     tracks,
     isPlaying,
     audioContextRef,
@@ -215,65 +218,50 @@
     setCurrentTime,
     pixelsPerSecond,
     setTracks,
-    setIsPlaying 
+    setIsPlaying,
+    audioNodesRef
   ) => {
-    setCurrentTime(selectedTimeGlobal); // Actualizar el tiempo global
+    if (!audioContextRef?.current) {
+      console.error("AudioContext no disponible");
+      return;
+    }
   
-    tracks.forEach((track) => {
-      // Calcular el offset relativo al startTime del track
-      const startOffset = Math.max(selectedTimeGlobal - track.startTime, 0);
-      track.offset = startOffset;
+    // 1. Actualizar tiempo global
+    setCurrentTime(selectedTimeGlobal);
   
-      if (audioContextRef?.current && track.sourceNode) {
-        try {
-          setIsPlaying(false);
-          setTimeout(() => {
-            if (track.sourceNode) {
-              track.sourceNode.stop(); // Detener el nodo actual si existe
-            }
+    // 2. Calcular y guardar nuevos offsets para cada track
+    const updatedTracks = tracks.map(track => ({
+      ...track,
+      // Solo establecer offset si el selectedTimeGlobal está dentro de la duración del track
+      offset: Math.max(
+        Math.min(selectedTimeGlobal - track.startTime, track.duration - 0.1),
+        0
+      ),
+      // Marcar explícitamente que este es un offset temporal
+      isTimeSelectOffset: true
+    }));
   
-            // Crear nuevo nodo
-            track.sourceNode = audioContextRef.current.createBufferSource();
-            track.sourceNode.buffer = track.audioBuffer; // Asignar el buffer del audio
+    setTracks(updatedTracks);
   
-            // Reconectar la cadena de filtros si existen
-            if (track.filters && track.filters.length > 0) {
-              let lastNode = track.sourceNode;
+    // 3. Reiniciar reproducción con un pequeño retraso
+    if (isPlaying) {
+      setIsPlaying(false);
+      setTimeout(() => setIsPlaying(true), 50);
+    } else {
+      // Si no estaba playing, forzar un re-render para aplicar los offsets
+      setTracks([...updatedTracks]);
+    }
   
-              // Reconectar todos los filtros
-              track.filters.forEach((filter) => {
-                if (!filter.node) {
-                  // Si el nodo del filtro no existe, crearlo
-                  filter.node = createFilterNode(audioContextRef.current, filter);
-                }
-                lastNode.connect(filter.node); // Conectar el último nodo al filtro
-                lastNode = filter.node; // Actualizar el último nodo
-              });
-  
-              // Conectar el último nodo al gainNode
-              lastNode.connect(track.gainNode);
-            } else {
-              // Si no hay filtros, conectar directamente al gainNode
-              track.sourceNode.connect(track.gainNode);
-            }
-  
-            setIsPlaying(true);
-  
-            // Iniciar desde el offset relativo al track
-            track.sourceNode.start(0, startOffset);
-          }, 1000); // 1000 ms = 1 segundo
-        } catch (error) {
-          console.error("Error al sincronizar track:", error);
-        }
-      }
-    });
-  
+    // 4. Actualizar scroll
     if (scrollContainerRef?.current) {
-      const scrollPos = selectedTimeGlobal * pixelsPerSecond; // Scroll basado en tiempo global
-      scrollContainerRef.current.scrollLeft = scrollPos; // Actualiza el scroll según la referencia seleccionada
+      scrollContainerRef.current.scrollLeft = selectedTimeGlobal * pixelsPerSecond;
     }
   };
 
+
+
+
+  
   export const restartTracks = async (
     audioContextRef,
     tracksRef,

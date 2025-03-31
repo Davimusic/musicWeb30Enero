@@ -30,11 +30,10 @@ export const updateAudioNode = (nodeType, trackId, audioNodesRef, value) => {
                     currentTime + 0.05
                 );
                 
-
                 console.log('Valor del volumen:', gainNode.gain.value);
                 
-                // Guardar último volumen para función mute
-                if (volumeValue > 0.0001) {
+                // Guardar último volumen para función mute (solo si no está en mute forzado por solo)
+                if (volumeValue > 0.0001 && !nodeData.forcedMute) {
                     nodeData.lastVolume = volumeValue;
                 }
             } catch (error) {
@@ -61,39 +60,58 @@ export const updateAudioNode = (nodeType, trackId, audioNodesRef, value) => {
             }
             break;
 
-        case 'mute':
-            if (!gainNode) {
-                console.error('GainNode no encontrado');
-                return;
-            }
-
-            try {
-                gainNode.gain.cancelScheduledValues(currentTime);
+            case 'mute':
+                if (!gainNode) return;
                 
-                if (value) { // Mute activado
-                    // Guardar volumen actual antes de mutear
+                try {
+                  gainNode.gain.cancelScheduledValues(currentTime);
+                  
+                  // Nuevo: Verificar si el mute es forzado por solo
+                  const isForcedMute = typeof value === 'boolean' ? value : nodeData.forcedMute;
+                  
+                  if (isForcedMute) {
                     if (gainNode.gain.value > 0.0001) {
-                        nodeData.lastVolume = gainNode.gain.value;
+                      nodeData.lastVolume = gainNode.gain.value;
                     }
-                    
-                    gainNode.gain.setTargetAtTime(
-                        0.0001,
-                        currentTime,
-                        0.03 // Suavizado rápido
-                    );
-                } else { // Mute desactivado
-                    // Use the exact lastVolume without any fallback or max operations
-                    const targetVolume = nodeData.lastVolume !== undefined ? nodeData.lastVolume : 0.7;
-                    gainNode.gain.setTargetAtTime(
-                        targetVolume,
-                        currentTime,
-                        0.03
-                    );
+                    gainNode.gain.setTargetAtTime(0.0001, currentTime, 0.03);
+                  } else {
+                    const targetVolume = nodeData.lastVolume ?? track.volume / 100; // Usar volumen del track
+                    gainNode.gain.setTargetAtTime(targetVolume, currentTime, 0.03);
+                  }
+                } catch (error) {
+                  console.error('Error en mute:', error);
                 }
-            } catch (error) {
-                console.error('Error al actualizar mute:', error);
-            }
-            break;
+                break;
+
+                case 'mute':
+                  if (!gainNode) return;
+                  
+                  try {
+                    gainNode.gain.cancelScheduledValues(currentTime);
+                    
+                    // Nuevo: Manejar parámetro compuesto
+                    const isForcedMute = value?.forcedMute ?? value;
+                    const userMute = value?.userMute ?? false;
+                
+                    if (isForcedMute || userMute) {
+                      // Guardar volumen solo si no está ya muteado
+                      if (gainNode.gain.value > 0.0001) {
+                        nodeData.lastVolume = gainNode.gain.value;
+                      }
+                      gainNode.gain.setTargetAtTime(0.0001, currentTime, 0.03);
+                    } else {
+                      // Restaurar volumen considerando último volumen o valor del track
+                      const targetVolume = nodeData.lastVolume ?? (nodeData.trackVolume / 100);
+                      gainNode.gain.setTargetAtTime(
+                        Math.max(0.0001, targetVolume), 
+                        currentTime, 
+                        0.03
+                      );
+                    }
+                  } catch (error) {
+                    console.error('Error en mute:', error);
+                  }
+                  break;
         default:
             console.warn(`Tipo de nodo no reconocido: ${nodeType}`);
     }

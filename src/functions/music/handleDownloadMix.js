@@ -1,5 +1,7 @@
 import { createFilterNode } from "./DAW2/audioHandlers";
 
+
+
 const handleDownloadMix = async (tracks) => {
   console.log('descarga');
   console.log(tracks);
@@ -11,7 +13,7 @@ const handleDownloadMix = async (tracks) => {
 
   try {
     const sampleRate = 44100;
-    // Calcular la duración total incluyendo startTime
+    // Calcular la duración total incluyendo startTime (ORIGINAL - CORRECTO)
     const totalDuration = Math.max(...tracks.map((t) => t.startTime + t.duration)); 
     const totalSamples = Math.ceil(totalDuration * sampleRate);
 
@@ -21,6 +23,7 @@ const handleDownloadMix = async (tracks) => {
       sampleRate: sampleRate,
     });
 
+    // MODIFICACIÓN PRINCIPAL: Conexión correcta de nodos con filtros
     tracks.forEach((track) => {
       if (!track.audioBuffer) {
         console.warn("Track sin audioBuffer:", track.id);
@@ -30,34 +33,42 @@ const handleDownloadMix = async (tracks) => {
       const source = offlineContext.createBufferSource();
       source.buffer = track.audioBuffer;
 
+      // 1. Nodo de volumen (CORRECCIÓN: normalizar a 0-1)
       const gainNode = offlineContext.createGain();
-      gainNode.gain.value = track.muted ? 0 : track.volume;
+      gainNode.gain.value = track.muted ? 0 : track.volume / 100;
 
+      // 2. Nodo de pan (ORIGINAL - CORRECTO)
       const pannerNode = offlineContext.createStereoPanner();
       pannerNode.pan.value = track.panning / 50;
 
-      // Aplicar los filtros en el mismo orden que en la reproducción
-      let lastNode = source;
-      lastNode.connect(gainNode).connect(pannerNode);
+      // Cadena base (source -> gain -> pan)
+      source.connect(gainNode);
+      gainNode.connect(pannerNode);
+
+      // 3. Conexión de filtros (MODIFICACIÓN CLAVE)
+      let lastNode = pannerNode;
 
       if (track.filters && track.filters.length > 0) {
         track.filters.forEach((filter) => {
-          const filterNode = createFilterNode(offlineContext, filter); // Crear el nodo de filtro
-          lastNode.connect(filterNode); // Conectar el último nodo al filtro
-          lastNode = filterNode; // Actualizar el último nodo
+          const filterNode = createFilterNode(offlineContext, filter);
+          lastNode.disconnect(offlineContext.destination); // Desconectar anterior
+          lastNode.connect(filterNode);
+          lastNode = filterNode;
         });
       }
 
-      // Conectar el último nodo al destino del contexto offline
+      // Conexión final al destino (CON TODOS LOS EFECTOS APLICADOS)
       lastNode.connect(offlineContext.destination);
 
-      // Iniciar en el startTime global y desde el offset del track
-      source.start(track.startTime, track.offset); // <-- Línea corregida
+      // Iniciar reproducción (ORIGINAL - CORRECTO)
+      source.start(track.startTime, track.offset);
     });
 
+    // Renderizado y creación de WAV (ORIGINAL - CORRECTO)
     const renderedBuffer = await offlineContext.startRendering();
     const wavBlob = bufferToWav(renderedBuffer);
 
+    // Descarga del archivo (ORIGINAL - CORRECTO)
     const url = URL.createObjectURL(wavBlob);
     const a = document.createElement("a");
     a.href = url;
@@ -74,60 +85,61 @@ const handleDownloadMix = async (tracks) => {
   }
 };
 
-// Función para convertir un AudioBuffer a un Blob WAV
+// Función bufferToWav (ORIGINAL - SIN MODIFICACIONES NECESARIAS)
 const bufferToWav = (buffer) => {
-  const numOfChan = buffer.numberOfChannels; // Número de canales (1 = mono, 2 = estéreo)
-  const sampleRate = buffer.sampleRate; // Tasa de muestreo
-  const length = buffer.length * numOfChan * 2 + 44; // Tamaño del archivo WAV
-  const bufferArray = new ArrayBuffer(length); // Buffer para almacenar los datos
-  const view = new DataView(bufferArray); // Vista para escribir los datos
+  const numOfChan = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArray = new ArrayBuffer(length);
+  const view = new DataView(bufferArray);
   let pos = 0;
 
-  // Escribir el encabezado WAV
   const writeString = (str) => {
     for (let i = 0; i < str.length; i++) view.setUint8(pos + i, str.charCodeAt(i));
     pos += str.length;
   };
 
-  writeString("RIFF"); // ChunkID
-  view.setUint32(pos, length - 8, true); // ChunkSize
+  writeString("RIFF");
+  view.setUint32(pos, length - 8, true);
   pos += 4;
-  writeString("WAVE"); // Format
-  writeString("fmt "); // Subchunk1ID
-  view.setUint32(pos, 16, true); // Subchunk1Size
+  writeString("WAVE");
+  writeString("fmt ");
+  view.setUint32(pos, 16, true);
   pos += 4;
-  view.setUint16(pos, 1, true); // AudioFormat (PCM)
+  view.setUint16(pos, 1, true);
   pos += 2;
-  view.setUint16(pos, numOfChan, true); // NumChannels
+  view.setUint16(pos, numOfChan, true);
   pos += 2;
-  view.setUint32(pos, sampleRate, true); // SampleRate
+  view.setUint32(pos, sampleRate, true);
   pos += 4;
-  view.setUint32(pos, sampleRate * numOfChan * 2, true); // ByteRate
+  view.setUint32(pos, sampleRate * numOfChan * 2, true);
   pos += 4;
-  view.setUint16(pos, numOfChan * 2, true); // BlockAlign
+  view.setUint16(pos, numOfChan * 2, true);
   pos += 2;
-  view.setUint16(pos, 16, true); // BitsPerSample
+  view.setUint16(pos, 16, true);
   pos += 2;
-  writeString("data"); // Subchunk2ID
-  view.setUint32(pos, buffer.length * numOfChan * 2, true); // Subchunk2Size
+  writeString("data");
+  view.setUint32(pos, buffer.length * numOfChan * 2, true);
   pos += 4;
 
-  // Escribir los datos de audio
   const channels = [];
   for (let i = 0; i < numOfChan; i++) {
-    channels.push(buffer.getChannelData(i)); // Obtener los datos de cada canal
+    channels.push(buffer.getChannelData(i));
   }
 
   for (let i = 0; i < buffer.length; i++) {
     for (let chan = 0; chan < numOfChan; chan++) {
-      const sample = Math.max(-1, Math.min(1, channels[chan][i])); // Limitar el valor entre -1 y 1
-      view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true); // Convertir a 16 bits
+      const sample = Math.max(-1, Math.min(1, channels[chan][i]));
+      view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
       pos += 2;
     }
   }
 
-  // Devolver el archivo WAV como un Blob
   return new Blob([bufferArray], { type: "audio/wav" });
 };
+
+
+
+
 
 export default handleDownloadMix;

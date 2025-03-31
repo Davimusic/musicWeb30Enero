@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, memo } from "react";
 import drawWaveform from "@/functions/music/drawWaveform";
 
-
-const Track = memo(({ track, pixelsPerSecond, onSelectTime }) => {
+const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -35,19 +34,24 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime }) => {
     onSelectTime(selectedTimeGlobal);
   };
 
-  return (
+  // Determinar si algún track tiene solo activado
+  const isSoloActive = tracks.some(t => t.solo);
 
-      <div 
-        onClick={handleCanvasClick}
-        style={{ opacity: track.muted ? 0.5 : 1 }}
-      >
-        <canvas ref={canvasRef} height="100" />
-      </div>
-    
+  return (
+    <div
+  onClick={handleCanvasClick}
+  style={{
+    opacity: track.muted ? 0.5 : (isSoloActive && !track.solo ? 0.3 : 1),
+  }}
+>
+  <canvas ref={canvasRef} height="100" />
+</div>
+
   );
 });
 
 export default Track;
+
 
 
 

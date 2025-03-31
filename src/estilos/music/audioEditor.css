@@ -118,18 +118,48 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
-  background: #2d2d2d;
-  border-top: 1px solid #404040;
+  padding-right: 20px;
+  padding-left: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin: 10px;
+  border-radius: 0.7em;
   flex-shrink: 0;
-  position: fixed; /* Hace que sea flotante */
-  bottom: 0; /* Lo posiciona en la parte baja */
-  width: 100%; /* Asegura que ocupe todo el ancho */
-  z-index: 1000; /* Asegura que esté por encima de otros elementos */
+  position: fixed;
+  bottom: 0;
+  width: calc(100% - 20px); /* Resta los márgenes para evitar desbordamiento */
+  z-index: 1000;
+  box-sizing: border-box; /* Incluye padding en el ancho total */
+  gap: 10px; /* Espacio uniforme entre elementos hijos */
+}
+
+/* Estilos para pantallas pequeñas */
+@media (max-width: 600px) {
+  .global-controls {
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan */
+    justify-content: center; /* Centra los elementos cuando se envuelven */
+    padding: 8px;
+    margin: 5px;
+    width: calc(100% - 10px);
+  }
+  
+  .global-controls > div {
+    flex: 1 1 auto; /* Permite que los divs internos crezcan y se ajusten */
+    min-width: fit-content; /* Asegura que el contenido no se corte */
+    display: flex;
+    justify-content: center;
+  }
+  
+  .time-display {
+    order: 3; /* Mueve el tiempo al final en móviles */
+    width: 100%;
+    text-align: center;
+    margin-left: 25px;
+  }
 }
 
 
-.global-controls button {
+/*.global-controls button {
   background-color: #444;
   border: none;
   color: #fff;
@@ -159,7 +189,7 @@
 
 .global-controls label:hover {
   background-color: #555;
-}
+}*/
 
 .current-time-display {
   font-size: 14px;
@@ -247,6 +277,30 @@
 
 
 
+.trackSolo {
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 10px red;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px red;
+  }
+  50% {
+    box-shadow: 0 0 20px red;
+  }
+  100% {
+    box-shadow: 0 0 10px red;
+  }
+}
 
 
 

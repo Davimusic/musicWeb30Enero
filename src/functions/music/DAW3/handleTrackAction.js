@@ -120,12 +120,24 @@ const handleTrackAction = (actionType, trackId, setTracks, audioNodesRef, tracks
           ...track,
           solo: track.id === trackId ? !track.solo : false
         }));
+    
+        const anySolo = newTracks.some(t => t.solo);
         
-        // Actualizar mute en todos los tracks basado en solo
         newTracks.forEach(track => {
-          if (audioNodesRef.current[track.id]) {
-            const shouldMute = !track.solo && newTracks.some(t => t.solo);
-            updateAudioNode('mute', track.id, audioNodesRef, shouldMute);
+          const nodeData = audioNodesRef.current[track.id];
+          if (nodeData?.gainNode) {
+            const shouldMute = anySolo && !track.solo;
+            
+            // Nueva lógica para preservar mute manual
+            const muteParams = {
+              forcedMute: shouldMute,
+              userMute: track.muted
+            };
+            
+            updateAudioNode('mute', track.id, audioNodesRef, muteParams);
+            
+            // Actualizar referencia de mute forzado
+            nodeData.forcedMute = shouldMute;
           }
         });
         

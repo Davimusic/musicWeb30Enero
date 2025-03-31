@@ -4,10 +4,10 @@ const ToggleSolo = ({ size = 24, isSolo = false, onToggle, buttonColor = "#fffff
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
-    event.stopPropagation(); // Evitar propagación del evento
+    event.stopPropagation();
     setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 300); // Duración de la animación
-    onToggle(); // Ejecuta la función de alternar solo
+    setTimeout(() => setIsAnimating(false), 300);
+    onToggle();
   };
 
   return (
@@ -21,19 +21,17 @@ const ToggleSolo = ({ size = 24, isSolo = false, onToggle, buttonColor = "#fffff
       style={{
         cursor: 'pointer',
         transition: 'transform 0.3s ease',
-        fill: isSolo ? '#00ff00' : buttonColor, // Cambia el color según el estado
       }}
     >
-      {/* Ícono del botón Solo */}
       {isSolo ? (
         <>
-          {/* Ícono activo de solo */}
-          <circle cx="12" cy="12" r="10" stroke={buttonColor} strokeWidth="2" fill="none" />
+          {/* Ícono activo - círculo rojo con borde blanco y texto blanco */}
+          <circle cx="12" cy="12" r="10" stroke={buttonColor} strokeWidth="2" fill="#ff0000" />
           <text x="12" y="16" fontSize="12" textAnchor="middle" fill={buttonColor}>S</text>
         </>
       ) : (
         <>
-          {/* Ícono inactivo */}
+          {/* Ícono inactivo - solo borde blanco */}
           <circle cx="12" cy="12" r="10" stroke={buttonColor} strokeWidth="1" fill="none" />
           <text x="12" y="16" fontSize="12" textAnchor="middle" fill={buttonColor}>S</text>
         </>

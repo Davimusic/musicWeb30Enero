@@ -69,7 +69,8 @@ export const TrackControls = React.memo(({
   setTracks,
   audioNodesRef,
   onClose,
-  openModal
+  openModal,
+  audioContextRef
 }) => {
   if (!track) return null; // Al inicio del componente
 
@@ -198,7 +199,7 @@ export const TrackControls = React.memo(({
           <button onClick={() => setShowStartTimeModal(true)}>Set Start Time</button>
           <button onClick={() => setShowFilterModal(true)}>Add Filter</button>
 
-          <ToggleSolo onToggle={handleToggleSolo} />
+          <ToggleSolo isSolo={track.solo} onToggle={handleToggleSolo} />
           <TrashIcon onClick={handleDeleteTrack} />
         </div>
         <div style={{display: 'flex'}}>
@@ -370,41 +371,65 @@ export const GlobalControls = ({
   toggleMenu
 }) => {
   return (
-    <div className="global-controls">
-      <div className="transport-controls">
+    <div className="global-controls backgroundColor2 color2">
+      <div style={{display: 'flex'}}>
         <TogglePlayPause isPlaying={isPlaying} onToggle={onPlayPause} />
         <StopIcon onClick={onStop} />
         <RecordIcon isRecording={isRecording} onClick={onRecord} />
       </div>
 
-      <div className="utility-controls">
+      <div style={{display: 'flex'}}>
         <DownloadIcon onToggle={onDownload} />
-        {/* Input oculto para cargar audio */}
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={onLoadAudio}
-          style={{ display: "none" }}
-          id="audio-upload"
-        />
-        <label htmlFor="audio-upload" className="upload-button">
-          Cargar Audio
-        </label>
+        <div className="backgroundColor2" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+  {/* Hidden audio file input */}
+  <input
+    type="file"
+    accept="audio/*"  // Only accepts audio files
+    onChange={onLoadAudio}
+    style={{ display: "none" }}
+    id="audio-upload"
+
+  />
+  
+  {/* Audio upload label */}
+  <label 
+    htmlFor="audio-upload" 
+    style={{ 
+      cursor: "pointer",
+      padding: "8px 16px",
+      
+      color: "white",
+      borderRadius: "4px",
+      fontWeight: "500",
+      fontSize: "0.875rem",
+      textTransform: "uppercase",
+      '&:hover': {
+        backgroundColor: "red"
+      }
+    }}
+  >
+    Select Audio File
+  </label>
+        </div>
       </div>
 
+
+      <button 
+        onClick={toggleMenu}
+        className="backgroundColor2"
+        style={{
+          border: '1px solid white',
+          borderRadius: '0.7em',
+          color: "white"
+        }}
+      >
+        ☰
+      </button>
       <div className="time-display">
         {formatTime(currentTime)}
       </div>
       {/* Botón del menú */}
-      <button 
-        onClick={toggleMenu}
-        style={{
-          
-          color: "white"
-        }}
-      >
-        ☰ Menu
-      </button>
+      
     </div>
   );
 };

@@ -23,10 +23,18 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
     }, 300); // 300ms debe coincidir con la duración de la animación
   };
 
+  const handleOverlayClick = (e) => {
+    // Solo cerrar si se hace clic directamente en el overlay (no en sus hijos)
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
   if (!isOpen && !isVisible) return null;
 
   return (
     <div
+      onClick={handleOverlayClick}
       style={{
         ...styles.overlay,
         opacity: isVisible ? 1 : 0,
@@ -44,11 +52,12 @@ const Modal = ({ isOpen, onClose, children, style, className }) => {
           opacity: isVisible ? 1 : 0,
           transition: 'transform 0.3s ease, opacity 0.3s ease',
         }}
+        onClick={(e) => e.stopPropagation()} // Prevenir que el clic se propague al overlay
       >
         <div style={{padding: '20px'}}>
-        <button className='color2' onClick={handleClose} style={styles.closeButton}>
-          ×
-        </button>
+          <button className='color2' onClick={handleClose} style={styles.closeButton}>
+            ×
+          </button>
         </div>
         {children}
       </div>
@@ -66,15 +75,15 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    //backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 10001,
+    cursor: 'pointer', // Cambia el cursor para indicar que es clickeable
   },
   modal: {
     padding: '20px',
     borderRadius: '8px',
     position: 'relative',
-    //backgroundColor: 'white',
     zIndex: 1001,
+    cursor: 'default', // Restaura el cursor normal para el modal
   },
   closeButton: {
     position: 'absolute',
