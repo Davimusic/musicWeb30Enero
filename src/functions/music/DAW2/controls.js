@@ -387,55 +387,73 @@ export const GlobalControls = ({
   toggleMenu,
   openModal
 }) => {
+  const fileInputRef = useRef(null);
+
+  const handleIconClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
-    <div className="global-controls backgroundColor2 color2">
-      <div style={{display: 'flex'}}>
+    <div className="global-controls backgroundColor2 color2" style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '10px',
+      gap: '1.5rem'
+    }}>
+      {/* Grupo de controles de reproducción */}
+      <div style={{
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center'
+      }}>
         <TogglePlayPause isPlaying={isPlaying} onToggle={onPlayPause} />
         <StopIcon onClick={onStop} />
         <RecordIcon isRecording={isRecording} onClick={onRecord} />
       </div>
 
-      <div style={{display: 'flex'}}>
-        <DownloadIcon onToggle={onDownload} />
-        <div className="backgroundColor2" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* Hidden audio file input */}
-          <input
-            type="file"
-            accept="audio/*"  // Only accepts audio files
-            onChange={onLoadAudio}
-            style={{ display: "none" }}
-            id="audio-upload"
-
-          />
-          
-          {/* Audio upload label */}
-          <label 
-            htmlFor="audio-upload" 
-            style={{ 
-              cursor: "pointer",
-              padding: "8px 16px",
-              
-              color: "white",
-              borderRadius: "4px",
-              fontWeight: "500",
-              fontSize: "0.875rem",
-              textTransform: "uppercase",
-              '&:hover': {
-                backgroundColor: "red"
-              }
-            }}
-          >
-            Select Audio File
-          </label>
-          <ControlsIcon size={30} onToggle={openModal}/>
-        </div>
-      </div>
-      <MenuIcon className="backgroundColor2" size={30} onClick={toggleMenu} style={{color: "white"}}/>
-      <div className="time-display">
+      {/* Visualización del tiempo */}
+      <div className="time-display" style={{
+        flex: 1,
+        textAlign: 'center',
+        minWidth: '80px'
+      }}>
         {formatTime(currentTime)}
       </div>
-      {/* Botón del menú */}
-      
+
+      {/* Grupo de controles de archivo y configuración */}
+      <div style={{
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center'
+      }}>
+        <DownloadIcon onToggle={onDownload} />
+        
+        {/* Contenedor para carga de audio */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={onLoadAudio}
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            id="audio-upload"
+          />
+          <div style={{transform: 'rotate(180deg)'}}>
+            <DownloadIcon onToggle={handleIconClick} />
+          </div>
+        </div>
+        
+        <ControlsIcon colorIcon="white" size={30} onToggle={openModal}/>
+        <MenuIcon 
+          className="backgroundColor2" 
+          size={30} 
+          onClick={toggleMenu} 
+          style={{color: "white"}}
+        />
+      </div>
     </div>
   );
 };

@@ -25,14 +25,21 @@
   flex-grow: 1;
   position: relative;
   scroll-behavior: smooth;
+  -ms-overflow-style: none;  /* Oculta la barra en Internet Explorer y Edge */
+  scrollbar-width: none;  /* Oculta la barra en Firefox */
 }
+
+.timeline-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
 
 /* Contenido de timeline (sin cambios) */
 .timeline-content {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px 0;
+  
 }
 
 /* Track Container (modificado mínimamente) */

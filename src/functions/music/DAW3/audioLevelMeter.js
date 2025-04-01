@@ -1,157 +1,202 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
-const AudioLevelMeter = ({ analyser, volume, muted }) => {
-  const canvasRef = useRef(null);
-  const [showClip, setShowClip] = useState(false);
-  const animationRef = useRef(null);
-  const clipTimer = useRef(null);
+const AudioLevelMeter = ({ analyser, muted, clipTimes, globalTime, isPlaying, tracks, trackId }) => {
+    const canvasRef = useRef(null);
+    const animationRef = useRef(null);
+    const clipTimeout = useRef(null);
+    const [clipDetected, setClipDetected] = useState(false);
+    const [smoothLevel, setSmoothLevel] = useState(0);
+    const [isActive, setIsActive] = useState(true);
 
-  useEffect(() => {
-    if (!analyser) return;
-
-    // Configuración del analyser
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.8;
-    
-    const ctx = canvasRef.current.getContext('2d');
-    const WIDTH = canvasRef.current.width;
-    const HEIGHT = canvasRef.current.height;
-    const dataArray = new Float32Array(analyser.frequencyBinCount);
-
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-      
-      // Obtener datos de audio
-      analyser.getFloatTimeDomainData(dataArray);
-      
-      // Calcular niveles
-      let sum = 0;
-      let peak = 0;
-      let clipCount = 0;
-      
-      for (let i = 0; i < dataArray.length; i++) {
-        const value = dataArray[i] || 0;
-        const absValue = Math.abs(value);
-        sum += value * value;
-        peak = Math.max(peak, absValue);
-        if (absValue >= 0.99) clipCount++;
-      }
-
-      const rms = Math.sqrt(sum / dataArray.length) || 0;
-      const scaledLevel = Math.min(1, rms * 2);
-
-      // Manejo del clipping
-      if (clipCount > 10) {
-        // Reiniciar el temporizador si ya existe
-        if (clipTimer.current) {
-          clearTimeout(clipTimer.current);
-        }
+    useEffect(() => {
+        // Verificar si hay algún track en solo
+        const hasSoloTrack = tracks?.some(t => t.solo);
         
-        // Mostrar mensaje y programar ocultación
-        setShowClip(true);
-        clipTimer.current = setTimeout(() => {
-          setShowClip(false);
-        }, 2000);
-      }
+        // Determinar si este medidor debe estar activo:
+        // - Activo si no hay tracks en solo O si este track está en solo
+        const shouldBeActive = !hasSoloTrack || tracks?.find(t => t.id === trackId)?.solo;
+        setIsActive(shouldBeActive);
+    }, [tracks, trackId]);
 
-      // Dibujar medidor
-      drawMeter(ctx, WIDTH, HEIGHT, scaledLevel, peak);
-    };
+    useEffect(() => {
+        if (!analyser || !isActive) {
+            // Si no está activo, resetear los estados
+            setSmoothLevel(0);
+            setClipDetected(false);
+            return;
+        }
 
-    draw();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.8;
 
-    return () => {
-      cancelAnimationFrame(animationRef.current);
-      if (clipTimer.current) {
-        clearTimeout(clipTimer.current);
-      }
-    };
-  }, [analyser]);
+        const ctx = canvasRef.current.getContext("2d");
+        const WIDTH = canvasRef.current.width;
+        const HEIGHT = canvasRef.current.height;
+        const dataArray = new Float32Array(analyser.frequencyBinCount);
 
-  const drawMeter = (ctx, width, height, level, peak) => {
-    ctx.clearRect(0, 0, width, height);
-    
-    // Fondo
-    ctx.fillStyle = muted ? '#444' : '#222';
-    ctx.fillRect(0, 0, width, height);
-    
-    // Barra de nivel
-    const barWidth = width * level;
-    ctx.fillStyle = level > 0.8 ? '#ff8c00' : 
-                   level > 0.5 ? '#ffd700' : '#0f0';
-    ctx.fillRect(0, 0, barWidth, height);
-    
-    // Indicador de peak
-    const peakPos = width * peak;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillRect(peakPos - 1, 0, 2, height);
-    
-    // Texto de mute
-    if (muted) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, width, height);
-    }
-  };
+        const draw = () => {
+            animationRef.current = requestAnimationFrame(draw);
 
-  return (
-    <div style={{ 
-      display: 'inline-block',
-      margin: '0 4px',
-      verticalAlign: 'middle',
-      position: 'relative'
-    }}>
-      {/* Mensaje de clip que aparece por encima */}
-      {showClip && (
+            analyser.getFloatTimeDomainData(dataArray);
+
+            let peak = 0;
+            let truePeakValue = 0;
+            
+            for (let i = 0; i < dataArray.length; i++) {
+                const absVal = Math.abs(dataArray[i]);
+                if (absVal > peak) peak = absVal;
+                if (absVal > truePeakValue) truePeakValue = absVal;
+            }
+
+            // Visualización amplificada
+            const displayLevel = Math.min(peak * 1.8, 1);
+            
+            setSmoothLevel(prev => {
+                if (!isPlaying) return 0; // Reset inmediato al pausar
+                const attack = displayLevel > prev ? 0.4 : 0.85;
+                return prev * attack + displayLevel * (1 - attack);
+            });
+
+            // Detección de clipping solo si está activo
+            const isClipping = truePeakValue >= 0.99 || 
+                             (clipTimes?.some(t => Math.abs(globalTime - t) < 0.1));
+
+            if (isClipping) {
+                if (!clipDetected) {
+                    setClipDetected(true);
+                    clearTimeout(clipTimeout.current);
+                    clipTimeout.current = setTimeout(() => {
+                        setClipDetected(false);
+                    }, 2000);
+                }
+            } else if (clipDetected) {
+                clearTimeout(clipTimeout.current);
+                setClipDetected(false);
+            }
+        };
+
+        if (isPlaying && !muted) {
+            draw();
+        } else {
+            setSmoothLevel(0);
+            setClipDetected(false);
+        }
+
+        return () => {
+            cancelAnimationFrame(animationRef.current);
+            clearTimeout(clipTimeout.current);
+        };
+    }, [analyser, clipTimes, globalTime, isPlaying, clipDetected, muted, isActive]);
+
+    useEffect(() => {
+        if (!canvasRef.current) return;
+        
+        const ctx = canvasRef.current.getContext("2d");
+        const WIDTH = canvasRef.current.width;
+        const HEIGHT = canvasRef.current.height;
+
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        
+        if (isActive && !muted && smoothLevel > 0) {
+            const gradient = ctx.createLinearGradient(0, 0, WIDTH, 0);
+            gradient.addColorStop(0, "#0f0");
+            gradient.addColorStop(0.7, "#FFD700");
+            gradient.addColorStop(0.95, "#FF4500");
+            gradient.addColorStop(1, "#FF0000");
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, WIDTH * Math.pow(smoothLevel, 0.8), HEIGHT);
+        } else {
+            // Fondo diferente para activo/inactivo
+            ctx.fillStyle = isActive ? "#333" : "#222";
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        }
+    }, [smoothLevel, muted, isActive]);
+
+    return (
         <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(255, 0, 0, 0.7)',
-          color: 'white',
-          padding: '2px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          zIndex: 10,
-          animation: 'fadeIn 0.2s ease-out'
+            position: "relative",
+            display: "inline-block",
+            margin: "0 5px",
+            width: "75px",
+            height: "25px",
+            opacity: isActive ? 1 : 0.5,
+            transition: "all 0.3s ease",
+            filter: isActive ? "none" : "grayscale(80%)"
         }}>
-          CLIP
+            <canvas
+                ref={canvasRef}
+                width={75}
+                height={5}
+                style={{
+                    display: "block",
+                    borderRadius: "3px",
+                    background: isActive ? "#222" : "#111",
+                    position: "absolute",
+                    bottom: "0",
+                    left: "0",
+                    opacity: muted ? 0.7 : 1,
+                    transition: "all 0.3s ease"
+                }}
+            />
+            
+            {/* Mensajes solo se muestran si está activo */}
+            {isActive && clipDetected && !muted && (
+                <div style={{
+                    position: "absolute",
+                    top: "0px",
+                    left: "0",
+                    width: "100%",
+                    textAlign: "center",
+                    color: "red",
+                    fontWeight: "bold",
+                    fontSize: "18px",
+                    textShadow: "0 0 3px white",
+                    zIndex: 10,
+                    animation: "flicker 1s infinite"
+                }}>
+                    CLIP
+                </div>
+            )}
+            
+            {isActive && muted && (
+                <div style={{
+                    position: "absolute",
+                    top: "0px",
+                    left: "0",
+                    width: "100%",
+                    textAlign: "center",
+                    color: "red",
+                    fontWeight: "bold",
+                    fontSize: "18px",
+                    textShadow: "0 0 3px black",
+                    zIndex: 10
+                }}>
+                    MUTED
+                </div>
+            )}
         </div>
-      )}
-      
-      <canvas
-        ref={canvasRef}
-        width={100}
-        height={16}
-        style={{
-          display: 'block',
-          borderRadius: '3px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-          position: 'relative'
-        }}
-      />
-      
-      {/* Texto de mute (ahora en React en lugar de canvas) */}
-      {muted && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          color: 'white',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
-        }}>
-          MUTE
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default AudioLevelMeter;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

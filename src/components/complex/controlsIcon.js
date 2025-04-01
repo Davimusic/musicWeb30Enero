@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../../estilos/music/icon.css';
 
-const ControlsIcon = ({ size = 30,  onToggle = () => {} }) => {
+const ControlsIcon = ({ size = 30,  onToggle = () => {}, colorIcon='black'}) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (event) => {
@@ -23,7 +23,7 @@ const ControlsIcon = ({ size = 30,  onToggle = () => {} }) => {
         cursor: 'pointer',
         transition: 'transform 0.3s ease',
       }}
-      stroke={'black'}
+      stroke={colorIcon}
       strokeWidth="2.5"
       fill="none"
       strokeLinecap="round"

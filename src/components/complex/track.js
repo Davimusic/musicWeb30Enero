@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, memo } from "react";
-import drawWaveform from "@/functions/music/drawWaveform";
+import { drawWaveform } from "@/functions/music/drawWaveform";
 
-const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight }) => {
+const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !track.audioBuffer) return;
-
     // Redibujar la forma de onda cuando cambien los filtros o se fuerce la actualización
-    drawWaveform(canvas, track.audioBuffer, pixelsPerSecond, track, track.backgroundColorTrack);
+    drawWaveform(canvas, track.audioBuffer, pixelsPerSecond, track, setTracks, track.backgroundColorTrack);
   }, [track.audioBuffer, pixelsPerSecond, track.startTime, track.filters, track.redraw, track.backgroundColorTrack, pixelsHeight]); // <-- Agrega track.filters y track.redraw como dependencias
 
   const handleCanvasClick = (e) => {

@@ -70,6 +70,33 @@ const AudioEditor = () => {
   const [PIXELS_PER_SECOND, set_PIXELS_PER_SECOND] = useState(40);
   const [pixelsHeight, setPixelsHeight] = useState(100);
 
+  //para mirar consumo de memoria 
+  useEffect(() => {
+    let intervalId;
+
+    if (isPlaying) {
+      async function getMemoryUsage() {
+        try {
+          const response = await fetch("/api/memory"); // Asegúrate de que la ruta sea correcta
+          const data = await response.json();
+          console.log(`Memoria usada: RSS: ${data.rss}, Heap: ${data.heapUsed}`);
+        } catch (error) {
+          console.error("Error al obtener datos de memoria:", error);
+        }
+      }
+
+      intervalId = setInterval(getMemoryUsage, 5000); // Ejecuta cada 5 segundos
+    }
+
+    return () => {
+      clearInterval(intervalId); // Detiene el intervalo cuando isPlaying cambia a false
+    };
+  }, [isPlaying]);
+  
+  
+
+
+
 
   const scrollContainerRef = useRef(null);
   const [modalState, setModalState] = useState({
@@ -511,23 +538,29 @@ const AudioEditor = () => {
 
     if (modalState.content === 'zoomSliders') {
       return (
-        <div>
-            <RangeInput
-              min={40}
-              max={200}
-              value={PIXELS_PER_SECOND}
-              onChange={set_PIXELS_PER_SECOND}
-            />
-
-            <RangeInput
-              min={40}
-              max={200}
-              value={pixelsHeight}
-              onChange={setPixelsHeight}
-            />
+        <div style={{width: '300px'}}>
+          <h2 className="title-md" style={{textAlign: 'center', marginBottom: '20px', fontWeight: 300}}>
+            Wave Render Zoom
+          </h2>
+          
+          <h3 className="title-sm" style={{textAlign: 'center'}}>Width</h3>
+          <RangeInput
+            min={40}
+            max={200}
+            value={PIXELS_PER_SECOND}
+            onChange={set_PIXELS_PER_SECOND}
+          />
+        
+          <h3 className="title-sm" style={{textAlign: 'center'}}>Height</h3>
+          <RangeInput
+            min={40}
+            max={200}
+            value={pixelsHeight}
+            onChange={setPixelsHeight}
+          />
         </div>
       );
-    } 
+    }
   };
 
   return (
@@ -617,8 +650,12 @@ const AudioEditor = () => {
                     <ControlsIcon size={30} onToggle={() => openModal(track.id, 'trackControl')} />
                     <AudioLevelMeter 
                       analyser={audioNodesRef.current[track.id]?.analyser}
-                      volume={track.volume}
                       muted={track.muted}
+                      clipTimes={track.clipTimes}       // Array con los tiempos en segundos de los clips
+                      globalTime={currentTime} 
+                      isPlaying={isPlaying} 
+                      tracks={tracks} 
+                      trackId={track.id}          // Tiempo global actual (en segundos)
                     />
                   </div>
                   <div className="track-waveform">
@@ -641,6 +678,7 @@ const AudioEditor = () => {
                         )
                       }
                       tracks={tracks}
+                      setTracks={setTracks}
                     />
                   </div>
                 </div>
