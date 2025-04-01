@@ -119,13 +119,4 @@ export const updateAudioNode = (nodeType, trackId, audioNodesRef, value) => {
   
   
   
-  /*export const cleanupAudioNodes = (trackId, audioNodesRef) => {
-    const nodes = audioNodesRef.current[trackId];
-    if (nodes) {
-      nodes.sourceNode?.stop();
-      nodes.sourceNode?.disconnect();
-      nodes.gainNode?.disconnect();
-      nodes.pannerNode?.disconnect();
-      delete audioNodesRef.current[trackId];
-    }
-  };*/
+ 

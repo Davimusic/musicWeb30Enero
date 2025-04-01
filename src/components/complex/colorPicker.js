@@ -93,7 +93,8 @@ const ColorPickerModalContent = ({ onClose }) => {
             <div style={{
                 ...sizes[size],
                 position: 'relative',
-                borderRadius: '4px',
+                border: '1px solid white',
+                borderRadius: '0.2em',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 overflow: 'hidden'
             }}>
@@ -160,6 +161,8 @@ const ColorPickerModalContent = ({ onClose }) => {
                                     key={key}
                                     onClick={() => setSelectedColorClass(key)}
                                     style={{
+                                        border: '1px solid white',
+                                        borderRadius: '0.2em',
                                         cursor: 'pointer',
                                         position: 'relative',
                                         ...(selectedColorClass === key && {

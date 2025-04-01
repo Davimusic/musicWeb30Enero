@@ -212,7 +212,7 @@ export const TrackControls = React.memo(({
         <div style={{textAlign: 'center', display: 'flex', justifyContent: 'space-between'}}>
           <Knob
             title={'Volume'}
-            size={90}
+            size={110}
             value={track.volume}
             min={0}
             max={100}
@@ -222,7 +222,7 @@ export const TrackControls = React.memo(({
 
           <Knob
             title={'Pannigg'}
-            size={90}
+            size={110}
             value={track.panning}
             min={-50}
             max={50}

@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const AudioLevelMeter = ({ analyser, volume, muted }) => {
   const canvasRef = useRef(null);
-  const [clipping, setClipping] = useState(false);
+  const [showClip, setShowClip] = useState(false);
   const animationRef = useRef(null);
-  const lastUpdate = useRef(0);
+  const clipTimer = useRef(null);
 
   useEffect(() => {
-    
+    if (!analyser) return;
 
-    // Configuración óptima del analyser
+    // Configuración del analyser
     analyser.fftSize = 1024;
     analyser.smoothingTimeConstant = 0.8;
     
@@ -21,11 +21,6 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
     const draw = () => {
       animationRef.current = requestAnimationFrame(draw);
       
-      // Limitar actualizaciones a 60fps máximo
-      const now = Date.now();
-      if (now - lastUpdate.current < 16) return; // ~60fps
-      lastUpdate.current = now;
-
       // Obtener datos de audio
       analyser.getFloatTimeDomainData(dataArray);
       
@@ -35,7 +30,7 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
       let clipCount = 0;
       
       for (let i = 0; i < dataArray.length; i++) {
-        const value = dataArray[i] || 0; // Protección contra NaN
+        const value = dataArray[i] || 0;
         const absValue = Math.abs(value);
         sum += value * value;
         peak = Math.max(peak, absValue);
@@ -43,23 +38,37 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
       }
 
       const rms = Math.sqrt(sum / dataArray.length) || 0;
-      const scaledLevel = Math.min(1, rms * 2); // Ajuste visual
+      const scaledLevel = Math.min(1, rms * 2);
 
-      // Actualizar estado de clipping
-      setClipping(clipCount > 10);
+      // Manejo del clipping
+      if (clipCount > 10) {
+        // Reiniciar el temporizador si ya existe
+        if (clipTimer.current) {
+          clearTimeout(clipTimer.current);
+        }
+        
+        // Mostrar mensaje y programar ocultación
+        setShowClip(true);
+        clipTimer.current = setTimeout(() => {
+          setShowClip(false);
+        }, 2000);
+      }
 
       // Dibujar medidor
-      drawMeter(ctx, WIDTH, HEIGHT, scaledLevel, peak, clipping);
+      drawMeter(ctx, WIDTH, HEIGHT, scaledLevel, peak);
     };
 
     draw();
 
     return () => {
       cancelAnimationFrame(animationRef.current);
+      if (clipTimer.current) {
+        clearTimeout(clipTimer.current);
+      }
     };
-  }, [analyser, clipping]);
+  }, [analyser]);
 
-  const drawMeter = (ctx, width, height, level, peak, isClipping) => {
+  const drawMeter = (ctx, width, height, level, peak) => {
     ctx.clearRect(0, 0, width, height);
     
     // Fondo
@@ -68,8 +77,7 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
     
     // Barra de nivel
     const barWidth = width * level;
-    ctx.fillStyle = isClipping ? '#f00' : 
-                   level > 0.8 ? '#ff8c00' : 
+    ctx.fillStyle = level > 0.8 ? '#ff8c00' : 
                    level > 0.5 ? '#ffd700' : '#0f0';
     ctx.fillRect(0, 0, barWidth, height);
     
@@ -78,22 +86,10 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillRect(peakPos - 1, 0, 2, height);
     
-    // Texto de clipping
-    if (isClipping) {
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('CLIP', width / 2, height - 4);
-    }
-    
     // Texto de mute
     if (muted) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, width, height);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('MUTE', width / 2, height / 2 + 4);
     }
   };
 
@@ -101,8 +97,29 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
     <div style={{ 
       display: 'inline-block',
       margin: '0 4px',
-      verticalAlign: 'middle'
+      verticalAlign: 'middle',
+      position: 'relative'
     }}>
+      {/* Mensaje de clip que aparece por encima */}
+      {showClip && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: 'rgba(255, 0, 0, 0.7)',
+          color: 'white',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          zIndex: 10,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          CLIP
+        </div>
+      )}
+      
       <canvas
         ref={canvasRef}
         width={100}
@@ -110,16 +127,31 @@ const AudioLevelMeter = ({ analyser, volume, muted }) => {
         style={{
           display: 'block',
           borderRadius: '3px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+          position: 'relative'
         }}
       />
+      
+      {/* Texto de mute (ahora en React en lugar de canvas) */}
+      {muted && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: 'white',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+        }}>
+          MUTE
+        </div>
+      )}
     </div>
   );
 };
 
 export default AudioLevelMeter;
-
-
 
 
 

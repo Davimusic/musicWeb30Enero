@@ -44,42 +44,6 @@ const scrollToCurrentTime = (currentTime, scrollContainerRef, PIXELS_PER_SECOND)
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const AudioEditor = () => {
   const {
     audioContextRef,
@@ -292,6 +256,16 @@ const AudioEditor = () => {
 
   
 
+
+
+
+  
+
+
+
+
+
+
  
 
   
@@ -347,6 +321,7 @@ const AudioEditor = () => {
         const checkAllTracksFinished = () => {
           finishedTracks++;
           if (finishedTracks === totalTracks) {
+            //handleStop()
             console.log("Todos los tracks han terminado de reproducirse");
             // IMPORTANTE: NO reiniciamos currentTimeRef aquí para no afectar tu lógica
           }
@@ -641,10 +616,10 @@ const AudioEditor = () => {
                     />
                     <ControlsIcon size={30} onToggle={() => openModal(track.id, 'trackControl')} />
                     <AudioLevelMeter 
-      analyser={audioNodesRef.current[track.id]?.analyser}
-      volume={track.volume}
-      muted={track.muted}
-    />
+                      analyser={audioNodesRef.current[track.id]?.analyser}
+                      volume={track.volume}
+                      muted={track.muted}
+                    />
                   </div>
                   <div className="track-waveform">
                     <Track
