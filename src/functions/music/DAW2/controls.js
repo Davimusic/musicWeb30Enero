@@ -17,6 +17,9 @@ import SingleColorPickerModalContent from "@/components/complex/singleColorPicke
 import Knob from "@/components/complex/knob";
 import MenuIcon from "@/components/complex/menuIcon";
 import ControlsIcon from "@/components/complex/controlsIcon";
+import ZoomIcon from "@/components/complex/zoomIcon";
+import SubdivisionsIcon from "@/components/complex/subdivisionsIcon";
+import AddTrackIcon from "@/components/complex/addTrackIcon";
 '../../../estilos/general/general.css'
 
 
@@ -385,7 +388,9 @@ export const GlobalControls = ({
   onLoadAudio,
   onShowColorPicker,
   toggleMenu,
-  openModal
+  openModal,
+  openSubdivision,
+  handleAddDrumMachine
 }) => {
   const fileInputRef = useRef(null);
 
@@ -412,6 +417,7 @@ export const GlobalControls = ({
         <TogglePlayPause isPlaying={isPlaying} onToggle={onPlayPause} />
         <StopIcon onClick={onStop} />
         <RecordIcon isRecording={isRecording} onClick={onRecord} />
+        <AddTrackIcon size={30} onClick={handleAddDrumMachine}/>
       </div>
 
       {/* Visualización del tiempo */}
@@ -446,7 +452,8 @@ export const GlobalControls = ({
           </div>
         </div>
         
-        <ControlsIcon colorIcon="white" size={30} onToggle={openModal}/>
+        <ZoomIcon size={30} onClick={openModal}/>
+        <SubdivisionsIcon size={30} onClick={openSubdivision}/>
         <MenuIcon 
           className="backgroundColor2" 
           size={30} 

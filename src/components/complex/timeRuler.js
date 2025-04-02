@@ -4,13 +4,6 @@ import "../../estilos/general/general.css";
 import "../../estilos/music/audioEditor.css";
 import { formatTime } from "@/functions/music/mediaUtils";
 
-
-
-
-
-
-
-
 const TimeRuler = ({ pixelsPerSecond, tracks }) => {
   const [windowWidth, setWindowWidth] = useState(0);
   const rulerRef = useRef(null);
@@ -35,9 +28,18 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
 
   if (!tracks || tracks.length === 0) return null;
 
-  // 2. Calcular ancho base basado en los tracks
+  // 2. Filtrar tracks que no son drumMachine y calcular ancho base
+  const nonDrumMachineTracks = tracks.filter(track => track.type !== "drumMachine");
+  
+  // Si no hay tracks relevantes, mostrar un ruler mínimo
+  if (nonDrumMachineTracks.length === 0) {
+    return (
+      <div className="time-ruler" style={{ width: "100%", height: "30px", backgroundColor: "white" }} />
+    );
+  }
+
   const maxDuration = Math.max(
-    ...tracks.map(track => track.startTime + track.duration)
+    ...nonDrumMachineTracks.map(track => track.startTime + (track.duration || 0))
   );
   const tracksWidth = maxDuration * pixelsPerSecond;
 
@@ -82,7 +84,7 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
           }}
         >
           <div style={{ display: "flex" }}>
-            <div className="time-label title-md color1">I</div>
+            <div style={{padding: '0', border: 'solid 1px black'}} className="color1"></div>
             <div style={{marginTop: '10px'}} className="time-label title-xxs color1">{formatTime(i)}</div>
           </div>
         </div>
@@ -96,8 +98,9 @@ TimeRuler.propTypes = {
   tracks: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-      duration: PropTypes.number.isRequired,
-      startTime: PropTypes.number.isRequired,
+      duration: PropTypes.number,
+      startTime: PropTypes.number,
+      type: PropTypes.string
     })
   ).isRequired,
   sidebarWidth: PropTypes.number.isRequired,

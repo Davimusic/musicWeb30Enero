@@ -8,15 +8,13 @@ const AudioLevelMeter = ({ analyser, muted, clipTimes, globalTime, isPlaying, tr
     const [smoothLevel, setSmoothLevel] = useState(0);
     const [isActive, setIsActive] = useState(true);
 
+
     useEffect(() => {
-        // Verificar si hay algún track en solo
         const hasSoloTrack = tracks?.some(t => t.solo);
-        
-        // Determinar si este medidor debe estar activo:
-        // - Activo si no hay tracks en solo O si este track está en solo
         const shouldBeActive = !hasSoloTrack || tracks?.find(t => t.id === trackId)?.solo;
         setIsActive(shouldBeActive);
     }, [tracks, trackId]);
+
 
     useEffect(() => {
         if (!analyser || !isActive) {
@@ -115,14 +113,12 @@ const AudioLevelMeter = ({ analyser, muted, clipTimes, globalTime, isPlaying, tr
 
     return (
         <div style={{
-            position: "relative",
-            display: "inline-block",
-            margin: "0 5px",
-            width: "75px",
             height: "25px",
+            width: "75px", // Ancho fijo para evitar cambios de layout
+            position: "relative", // Contenedor relativo para los elementos absolutos
             opacity: isActive ? 1 : 0.5,
-            transition: "all 0.3s ease",
-            filter: isActive ? "none" : "grayscale(80%)"
+            transition: "opacity 0.3s ease, filter 0.3s ease", // Solo transicionar estas propiedades
+            filter: isActive ? "none" : "grayscale(80%)",
         }}>
             <canvas
                 ref={canvasRef}
@@ -135,25 +131,27 @@ const AudioLevelMeter = ({ analyser, muted, clipTimes, globalTime, isPlaying, tr
                     position: "absolute",
                     bottom: "0",
                     left: "0",
+                    right: "0", // Ocupa todo el ancho del contenedor
                     opacity: muted ? 0.7 : 1,
-                    transition: "all 0.3s ease"
+                    transition: "opacity 0.3s ease, background 0.3s ease" // Solo propiedades que no afectan layout
                 }}
             />
             
-            {/* Mensajes solo se muestran si está activo */}
             {isActive && clipDetected && !muted && (
                 <div style={{
                     position: "absolute",
-                    top: "0px",
+                    top: "-15px",
                     left: "0",
-                    width: "100%",
+                    right: "0", // Ocupa todo el ancho del contenedor
                     textAlign: "center",
                     color: "red",
                     fontWeight: "bold",
                     fontSize: "18px",
                     textShadow: "0 0 3px white",
                     zIndex: 10,
-                    animation: "flicker 1s infinite"
+                    animation: "flicker 1s infinite",
+                    backgroundColor: 'white',
+                    borderRadius: '3px'
                 }}>
                     CLIP
                 </div>
@@ -162,15 +160,17 @@ const AudioLevelMeter = ({ analyser, muted, clipTimes, globalTime, isPlaying, tr
             {isActive && muted && (
                 <div style={{
                     position: "absolute",
-                    top: "0px",
+                    top: "-15px",
                     left: "0",
-                    width: "100%",
+                    right: "0", // Ocupa todo el ancho del contenedor
                     textAlign: "center",
                     color: "red",
                     fontWeight: "bold",
                     fontSize: "18px",
                     textShadow: "0 0 3px black",
-                    zIndex: 10
+                    zIndex: 10,
+                    backgroundColor: 'white',
+                    borderRadius: '3px'
                 }}>
                     MUTED
                 </div>

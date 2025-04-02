@@ -39,14 +39,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  
+  position: relative;/*en prueba*/
 }
 
 /* Track Container (modificado mínimamente) */
 .track-container {
   display: block; /* Cambiado de flex a block para sticky correcto */
   position: relative;
-  min-height: 100px;
+  /*min-height: 100px;*/
   /*background-color: aqua;*/
   width: max-content;
   margin-bottom: 10px;
@@ -365,7 +365,3 @@
   font-weight: 500;
 }
 
-.track-container {
-  position: relative;
-  min-height: 100px;
-}
