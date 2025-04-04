@@ -113,10 +113,10 @@ export const TrackControls = React.memo(({
     [onAction, track.id, setTracks, audioNodesRef, tracks]
   );
 
-  const handleToggleSolo = useCallback(
+  /*const handleToggleSolo = useCallback(
     () => onAction("solo", track.id, setTracks, audioNodesRef, tracks),
     [onAction, track.id, setTracks, audioNodesRef, tracks]
-  );
+  );*/
 
   const handleDeleteTrack = useCallback(
     () => {
@@ -197,7 +197,7 @@ export const TrackControls = React.memo(({
           <button onClick={() => setShowFilterModal(true)}>Add Filter</button>
         </div>
         <div style={{textAlign: 'center', display: 'flex', justifyContent: 'space-around', padding: '10px'}}>
-          <ToggleSolo size={30} isSolo={track.solo} onToggle={handleToggleSolo} />
+          {/*<ToggleSolo size={30} isSolo={track.solo} onToggle={handleToggleSolo} />*/}
           <button 
             onClick={() => openModal( track.id, 'SingleColorPickerModalContent')}
             style={{

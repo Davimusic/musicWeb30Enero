@@ -2,8 +2,10 @@ import React from 'react';
 import EditableTrackName from '../DAW3/editableTrackName';
 import ControlsIcon from '@/components/complex/controlsIcon';
 import AudioLevelMeter from '../DAW3/audioLevelMeter';
+import ToggleSolo from '@/components/complex/toggleSolo';
+import ToggleMute from '@/components/complex/ToggleMute';
 
-const TrackControlsModal = ({ track, openModal, audioNodesRef, currentTime, isPlaying, tracks, setTracks }) => {
+const TrackControlsModal = ({ track, openModal, audioNodesRef, currentTime, isPlaying, tracks, setTracks, handleToggleSolo, handleToggleMute }) => {
   // Determinar si mostrar el medidor de audio (solo para tracks de audio)
   const showAudioMeter = track.type !== "drumMachine";
 
@@ -56,6 +58,11 @@ const TrackControlsModal = ({ track, openModal, audioNodesRef, currentTime, isPl
         }}
       />
       
+      <ToggleSolo size={30} isSolo={track.solo} onToggle={handleToggleSolo} />
+      <ToggleMute isMuted={track.muted} size={30} onToggle={handleToggleMute} />
+
+
+
       <ControlsIcon 
         size={30} 
         onToggle={() => openModal(track.id, 'trackControl')} 

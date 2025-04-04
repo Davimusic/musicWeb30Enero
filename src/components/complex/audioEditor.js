@@ -29,6 +29,7 @@ import RangeInput from "./rangeInput";
 import AudioLevelMeter from "@/functions/music/DAW3/audioLevelMeter";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
+import { createDrumMachineTrack } from "@/functions/music/DAW3/createTack";
 
 
 
@@ -66,7 +67,13 @@ const AudioEditor = () => {
     currentTimeRef,
     mediaRecorderRef,
     tracksRef,
-    audioNodesRef
+    audioNodesRef,
+    sequencerBuffers,
+    scheduledEvents,
+    schedulerRef,
+    preloadSequencerSamples,
+    scheduleDrumMachine,
+    startTransport
   } = useAudioEngine();
   const router = useRouter();
 
@@ -85,27 +92,19 @@ const AudioEditor = () => {
   });
 
 
-  /*useEffect(() => {
-    let intervalId;
+  
 
-    if (isPlaying) {
-      async function getMemoryUsage() {
-        try {
-          const response = await fetch("/api/memory");
-          const data = await response.json();
-          console.log(`Memoria usada: RSS: ${data.rss}, Heap: ${data.heapUsed}`);
-        } catch (error) {
-          console.error("Error al obtener datos de memoria:", error);
-        }
-      }
 
-      intervalId = setInterval(getMemoryUsage, 5000);
-    }
+ 
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isPlaying]);*/
+
+
+
+
+
+
+
+
 
   const scrollContainerRef = useRef(null);
   const [modalState, setModalState] = useState({
@@ -274,6 +273,8 @@ const AudioEditor = () => {
     }
   };
 
+
+
   useEffect(() => {
     const ctx = audioContextRef.current;
   
@@ -285,9 +286,11 @@ const AudioEditor = () => {
     const hasSoloTracks = tracks.some(track => track.solo);
   
     const handlePlayback = async () => {
+      
       if (!isPlayingRef.current) {
+        // Detener todos los tracks normales
         tracks.forEach((track) => {
-          if (track.sourceNode) {
+          if (track.type !== 'drumMachine' && track.sourceNode) {
             try {
               track.sourceNode.stop();
               track.sourceNode.disconnect();
@@ -303,10 +306,15 @@ const AudioEditor = () => {
           }
         });
   
+        // Limpiar filtros
         Object.values(filterNodesRef.current).forEach((nodes) => {
           nodes.forEach((node) => node.disconnect());
         });
         filterNodesRef.current = {};
+        
+        // Limpiar eventos programados del drum machine
+        scheduledEvents.current.clear();
+        clearTimeout(schedulerRef.current);
       } else {
         if (ctx.state === "suspended") {
           await ctx.resume();
@@ -316,7 +324,7 @@ const AudioEditor = () => {
         const globalCurrentTime = Number(currentTimeRef.current) || 0;
 
         let finishedTracks = 0;
-        const totalTracks = tracks.filter(t => t.audioBuffer).length;
+        const totalTracks = tracks.filter(t => t.audioBuffer || t.type === 'drumMachine').length;
 
         const checkAllTracksFinished = () => {
           finishedTracks++;
@@ -325,8 +333,9 @@ const AudioEditor = () => {
           }
         };
   
+        // Manejar tracks normales
         tracks.forEach((track) => {
-          if (track.sourceNode) {
+          if (track.type !== 'drumMachine' && track.sourceNode) {
             track.sourceNode.stop();
             track.sourceNode.disconnect();
             track.sourceNode = null;
@@ -335,8 +344,9 @@ const AudioEditor = () => {
   
         const updatedTracks = tracks.map((track) => {
           const shouldPlay = !track.muted && (!hasSoloTracks || (hasSoloTracks && track.solo));
-  
-          if (track.audioBuffer) {
+          
+          // Manejar tracks de audio normales
+          if (track.type !== 'drumMachine' && track.audioBuffer) {
             track.sourceNode = ctx.createBufferSource();
             track.sourceNode.buffer = track.audioBuffer;
             
@@ -395,6 +405,26 @@ const AudioEditor = () => {
   
             track.isPlaying = shouldPlay;
           }
+          // Manejar tracks de drum machine
+          else if (track.type === 'drumMachine' && shouldPlay) {
+            if (!audioNodesRef.current[track.id]) {
+              audioNodesRef.current[track.id] = {
+                gainNode: ctx.createGain(),
+                pannerNode: ctx.createStereoPanner(),
+                analyser: ctx.createAnalyser()
+              };
+              
+              // Configurar ganancia inicial para drum machine
+              audioNodesRef.current[track.id].gainNode.gain.setValueAtTime(
+                Math.min(track.volume || 0.7, 0.7) * (hasSoloTracks && track.solo ? 1 : 0.8),
+                ctx.currentTime
+              );
+            }
+            
+            track.isPlaying = true;
+            scheduleDrumMachine(track, globalCurrentTime);
+          }
+          
           return track;
         });
   
@@ -411,10 +441,93 @@ const AudioEditor = () => {
           }
         });
       }
+      
     };
   
+    // Función optimizada para programar eventos de drum machine
+    const scheduleDrumMachine = (track, globalCurrentTime) => {
+      if (!isPlayingRef.current || !audioContextRef.current) return;
+
+      const currentAudioTime = audioContextRef.current.currentTime;
+      const lookAhead = 0.1; // Programar 100ms adelante
+      const scheduleEnd = currentAudioTime + lookAhead;
+
+      const pattern = track.drumPattern.patterns[track.drumPattern.currentPattern];
+      const stepDuration = 60 / track.drumPattern.BPM / track.drumPattern.subdivisionsPerPulse;
+
+      // Calcular rango de pasos a programar
+      const startStep = Math.floor((globalCurrentTime) / stepDuration);
+      const endStep = Math.floor((globalCurrentTime + lookAhead) / stepDuration);
+
+      for (let step = startStep; step <= endStep; step++) {
+        const stepIndex = step % pattern.steps.length; // Para loop
+        const stepTime = currentAudioTime + (step * stepDuration) - globalCurrentTime;
+        
+        if (stepTime >= currentAudioTime && stepTime < scheduleEnd) {
+          pattern.steps[stepIndex].activeSounds.forEach(sound => {
+            const eventId = `${track.id}-${stepIndex}-${sound}`;
+            
+            if (!scheduledEvents.current.has(eventId)) {
+              const buffer = sequencerBuffers.current.get(sound);
+              if (buffer) {
+                const source = audioContextRef.current.createBufferSource();
+                source.buffer = buffer;
+                
+                // Conectar a la cadena de efectos del track
+                if (audioNodesRef.current[track.id]) {
+                  source.connect(audioNodesRef.current[track.id].gainNode);
+                } else {
+                  source.connect(audioContextRef.current.destination);
+                }
+                
+                source.start(stepTime);
+                scheduledEvents.current.add(eventId);
+                source.onended = () => {
+                  scheduledEvents.current.delete(eventId);
+                  checkAllTracksFinished();
+                };
+              }
+            }
+          });
+        }
+      }
+
+      schedulerRef.current = setTimeout(() => scheduleDrumMachine(track, globalCurrentTime), lookAhead * 500);
+    };
+
+    // Función para limpiar eventos de drum machine
+    const cleanupDrumMachineEvents = () => {
+      const now = audioContextRef.current?.currentTime || 0;
+      const toDelete = [];
+      
+      scheduledEvents.current.forEach(id => {
+        const [trackId, stepIndex] = id.split('-');
+        const track = tracks.find(t => t.id === trackId);
+        if (track) {
+          const stepDuration = 60 / track.drumPattern.BPM / track.drumPattern.subdivisionsPerPulse;
+          
+          // Asumimos que cada evento dura menos de 1 segundo
+          if (now > (currentTimeRef.current + (parseInt(stepIndex) * stepDuration) + 1)) {
+            toDelete.push(id);
+          }
+        }
+      });
+
+      toDelete.forEach(id => scheduledEvents.current.delete(id));
+    };
+
+    // Configurar limpieza periódica
+    const cleanupInterval = setInterval(cleanupDrumMachineEvents, 1000);
+    
     handlePlayback();
+    
+    return () => {
+      clearInterval(cleanupInterval);
+      clearTimeout(schedulerRef.current);
+    };
   }, [isPlaying, tracks]);
+
+
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -471,53 +584,7 @@ const AudioEditor = () => {
   
 
 
-  const createDrumMachineTrack = (setTracks, tracks, audioContextRef, subdivisionsPerPulse = 4) => {
-    // Configuración básica del track de batería
-    const drumMachineTrack = {
-      id: `drum-machine-${Date.now()}`,
-      name: "Drum Machine",
-      type: "drumMachine",
-      backgroundColorTrack: "#4a4a4a",
-      volume: 0.7,
-      muted: false,
-      solo: false,
-      startTime: 0,
-      // Configuración de patrones rítmicos
-      drumPattern: {
-        subdivisionsPerPulse,
-        pulsesPerMeasure: 4,
-        measures: 10,
-        // 88 sonidos posibles (como los DAWs profesionales)
-        soundBank: Array(88).fill(null).map((_, i) => ({
-          id: i,
-          name: `Sound ${i + 1}`,
-          active: false,
-          // Esto se reemplazaría con samples reales en una implementación real
-          audioBuffer: null
-        })),
-        // Patrones por defecto (matriz de pasos)
-        patterns: Array(16).fill(null).map((_, patternIndex) => ({
-          id: patternIndex,
-          name: `Pattern ${patternIndex + 1}`,
-          steps: Array(subdivisionsPerPulse * 4 * 4).fill(null).map((_, stepIndex) => ({
-            id: stepIndex,
-            activeSounds: []
-          }))
-        })),
-        currentPattern: 0
-      },
-      // Esto es necesario para la compatibilidad con el sistema de tracks existente
-      audioBuffer: null,
-      sourceNode: null,
-      isPlaying: false
-    };
-  
-    // Agregar el track a la lista
-    setTracks([...tracks, drumMachineTrack]);
-  
-    // En una implementación real, aquí cargaríamos los samples de batería
-    // loadDrumSamples(audioContextRef, drumMachineTrack.id);
-  };
+
   
   // Función para usar en tu componente:
   const handleAddDrumMachine = () => {
@@ -529,6 +596,8 @@ const AudioEditor = () => {
     );
   };
 
+
+ 
 
 
 
@@ -794,7 +863,9 @@ const AudioEditor = () => {
                     currentTime={currentTime}
                     isPlaying={isPlaying}
                     tracks={tracks}
-                    setTracks={setTracks}/>
+                    setTracks={setTracks}
+                    handleToggleSolo={()=> handleTrackAction("solo", track.id, setTracks, audioNodesRef, tracks)}
+                    handleToggleMute={()=> handleTrackAction("mute", track.id, setTracks, audioNodesRef, tracks, !track.muted)}/>
                   <div className="track-waveform">
                     <Track
                       track={track}
@@ -821,6 +892,10 @@ const AudioEditor = () => {
                       audioNodesRef={audioNodesRef}
                       currentTime={currentTime}
                       isPlaying={isPlaying}
+                      audioContextRef={audioContextRef}
+                      preloadSequencerSamples={preloadSequencerSamples}
+                      scheduleDrumMachine={scheduleDrumMachine}
+                      startTransport={startTransport}
                     />
                   </div>
                 </div>
