@@ -2,6 +2,7 @@ import React, { useEffect, useRef, memo, useCallback } from "react";
 import { drawWaveform } from "@/functions/music/drawWaveform";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
+import PianoGenerator from "@/functions/music/components/audioScaleGenerator";
 
 const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks, totalElements, openModal, audioNodesRef, currentTime, isPlaying, audioContextRef, preloadSequencerSamples, scheduleDrumMachine, startTransport }) => {
   const canvasRef = useRef(null);
@@ -94,7 +95,7 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight
       >
         
   
-        
+        {/*<PianoGenerator/>*/}
         <SubdivisionGrid/>
   {/*PIXELS_PER_SECOND={pixelsPerSecond}
   pulsesPerMeasure={4}

@@ -9,8 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2",
+    "@ffmpeg/util": "^0.12.1",
     "@paypal/paypal-js": "^8.2.0",
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
@@ -42,6 +43,7 @@
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",
     "socket.io": "^4.7.2",
+    "tone": "^15.0.4",
     "vosk-browser": "^0.0.8",
     "wavesurfer.js": "^7.9.1"
   }

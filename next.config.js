@@ -2,9 +2,19 @@
 require('dotenv').config(); // Cargar variables de entorno desde .env
 
 module.exports = {
+    webpack: (config) => {
+        config.resolve.fallback = {
+          fs: false,
+          path: false,
+          crypto: false,
+          stream: false
+        };
+        return config;
+      },
   reactStrictMode: true,
   experimental: {
       appDir: true,
+      esmExternals: 'loose'
   },
   images: {
       domains: ['res.cloudinary.com', 'lh3.googleusercontent.com'],
