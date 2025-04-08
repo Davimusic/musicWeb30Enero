@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, memo, useCallback } from "react";
 import { drawWaveform } from "@/functions/music/drawWaveform";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
+
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
 import PianoGenerator from "@/functions/music/components/audioScaleGenerator";
 
