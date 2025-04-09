@@ -1,6 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import SingleColorPickerModalContent from '@/components/complex/singleColorPickerModalContent';
 import Modal from '@/components/complex/modal';
+import RangeInput from '@/components/complex/rangeInput';
+import TogglePlayPause from '@/components/complex/TogglePlayPause';
+import CustomNumberInput from '@/components/complex/customNumberInput';
+import CheckBox from '@/components/complex/checkBox';
+'../../../estilos/general/general.css'
 import PropTypes from 'prop-types';
 
 const BPM = 120;
@@ -396,6 +401,41 @@ const useRecording = ({  }) => {
   const [showNameInput, setShowNameInput] = useState(false);
   const [newSampleName, setNewSampleName] = useState('');
   const [customSamples, setCustomSamples] = useState([]);
+  const tempSampleNameRef = useRef(''); 
+
+  const playCountdownBeep = useCallback((count, onFinish) => {
+    if (!globalAudioContextRef.current) {
+      globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    const beepDuration = 0.1;
+    const interval = 0.5; // medio segundo entre beeps
+    const startTime = globalAudioContextRef.current.currentTime;
+
+    for (let i = 0; i < count; i++) {
+      const time = startTime + i * interval;
+      
+      const osc = globalAudioContextRef.current.createOscillator();
+      const gain = globalAudioContextRef.current.createGain();
+      
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(i === count - 1 ? 880 : 440, time); // último beep más agudo
+      
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.5, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + beepDuration);
+      
+      osc.connect(gain);
+      gain.connect(globalAudioContextRef.current.destination);
+      
+      osc.start(time);
+      osc.stop(time + beepDuration);
+    }
+
+    if (onFinish) {
+      setTimeout(onFinish, count * interval * 1000);
+    }
+  }, []);
 
   const startRecording = (rowIndex) => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -443,10 +483,11 @@ const useRecording = ({  }) => {
           const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
           const arrayBuffer = await blob.arrayBuffer();
           globalAudioContextRef.current.decodeAudioData(arrayBuffer, (audioBuffer) => {
-            setShowNameInput(true);
             const tempName = `custom-${Date.now()}`;
+            tempSampleNameRef.current = tempName; // Guardamos el nombre temporal
             globalBuffersRef.current.set(tempName, audioBuffer);
             setNewSampleName(tempName);
+            setShowNameInput(true);
             setIsGlobalRecording(false);
           }, (err) => {
             console.error("Error decoding recorded audio", err);
@@ -462,23 +503,36 @@ const useRecording = ({  }) => {
       });
   };
 
+
   const stopGlobalRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
   };
 
-  const saveCustomSample = (rowSamples, setRowSamples) => {
+  const saveCustomSample = () => {
     if (newSampleName.trim()) {
-      const tempName = `custom-${Date.now()}`;
+      const tempName = tempSampleNameRef.current; // Usamos el nombre temporal guardado
       const buffer = globalBuffersRef.current.get(tempName);
+      
       if (buffer) {
+        // Eliminar el nombre temporal
         globalBuffersRef.current.delete(tempName);
+        
+        // Guardar con el nuevo nombre
         globalBuffersRef.current.set(newSampleName.trim(), buffer);
+        
+        // Actualizar la lista de custom samples
+        setCustomSamples(prev => [...prev, { 
+          name: newSampleName.trim(), 
+          buffer 
+        }]);
+        
+        // Resetear el estado
+        setShowNameInput(false);
+        setNewSampleName('');
+        tempSampleNameRef.current = ''; // Limpiar el nombre temporal
       }
-      setCustomSamples(prev => [...prev, { name: newSampleName.trim(), buffer }]);
-      setShowNameInput(false);
-      setNewSampleName('');
     }
   };
 
@@ -494,7 +548,8 @@ const useRecording = ({  }) => {
     stopRecording,
     startGlobalRecording,
     stopGlobalRecording,
-    saveCustomSample
+    saveCustomSample,
+    playCountdownBeep
   };
 };
 
@@ -558,6 +613,9 @@ const useSamples = ({ isPianoMode }) => { // Ya no necesitamos recibir audioCont
 
 
 
+
+
+
 const Controls = ({
   isPianoMode,
   togglePianoMode,
@@ -591,19 +649,45 @@ const Controls = ({
   selectedPianoSample,
   setSelectedPianoSample,
   pianoSamples,
-  //PREDEFINED_PIANO_SAMPLES,
-  //globalSelectedPianoSampleRef,
-  //globalAudioContextRef,
-  //globalBuffersRef,
+  playCountdownBeep,
   BPM
 }) => {
+  const [countdown, setCountdown] = useState(null);
   const [currentSampleData, setCurrentSampleData] = useState({
     duration: 1,
     durationToUse: 1,
     isLoading: false
   });
 
-  // Load and update sample when selected or context changes
+  const handleStartRecording = async () => {
+    try {
+      if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+        globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      setCountdown(4);
+      
+      playCountdownBeep(4, () => {
+        setCountdown(null);
+        startGlobalRecording();
+      });
+      
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setCountdown(null);
+    }
+  };
+
   useEffect(() => {
     const loadAndUpdateSample = async () => {
       const sample = PREDEFINED_PIANO_SAMPLES.find(s => s.id === selectedPianoSample);
@@ -619,21 +703,18 @@ const Controls = ({
         const audioBuffer = await globalAudioContextRef.current.decodeAudioData(arrayBuffer);
         
         const calculatedDuration = Math.max(0.1, audioBuffer.duration);
-        const safeDuration = Math.min(calculatedDuration, 10); // Cap at 10 seconds max
+        const safeDuration = Math.min(calculatedDuration, 10);
         
-        // Update global reference
         globalSelectedPianoSampleRef.current = selectedPianoSample;
         globalSelectedPianoSampleRef.duration = safeDuration;
         globalSelectedPianoSampleRef.durationToUse = safeDuration;
         
-        // Update local state
         setCurrentSampleData({
           duration: safeDuration,
           durationToUse: safeDuration,
           isLoading: false
         });
 
-        // Store buffer
         globalBuffersRef.current.set('pianoSample', {
           buffer: audioBuffer,
           baseFreq: sample.baseFreq,
@@ -653,8 +734,8 @@ const Controls = ({
     loadAndUpdateSample();
   }, [selectedPianoSample]);
 
-  const handleDurationChange = (e) => {
-    const newValue = parseFloat(e.target.value);
+  const handleDurationChange = (value) => {
+    const newValue = parseFloat(value);
     const clampedValue = Math.max(0.1, Math.min(currentSampleData.duration, newValue));
     
     setCurrentSampleData(prev => ({
@@ -662,151 +743,58 @@ const Controls = ({
       durationToUse: clampedValue
     }));
     
-    console.log(clampedValue);
-    
     globalSelectedPianoSampleRef.durationToUse = clampedValue;
   };
 
-  return (
-    <div style={{ 
-      padding: '20px',
-      backgroundColor: 'red',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-      {/* Mode Selection */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <label style={{ display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={isPianoMode}
-            onChange={togglePianoMode}
-            style={{ marginRight: '8px' }}
-          />
-          Modo Piano (88 teclas)
-        </label>
+  const handleSamplePreview = () => {
+    if (!currentSampleData.isLoading && globalAudioContextRef.current) {
+      const source = globalAudioContextRef.current.createBufferSource();
+      const pianoSample = globalBuffersRef.current.get('pianoSample');
+      if (pianoSample) {
+        source.buffer = pianoSample.buffer;
+        const playbackRate = pianoSample.baseFreq / pianoSample.baseFreq;
+        source.playbackRate.value = playbackRate;
+
+        const gainNode = globalAudioContextRef.current.createGain();
+        gainNode.gain.value = 0.8;
+
+        const durationToUse = Math.min(
+          currentSampleData.durationToUse,
+          pianoSample.buffer.duration
+        );
+
+        const fadeOutDuration = Math.min(0.1, durationToUse * 0.1);
+        const fadeOutStartTime = globalAudioContextRef.current.currentTime + durationToUse - fadeOutDuration;
         
-        {!isPianoMode && (
-          <label style={{ display: 'flex', alignItems: 'center' }}>
-            Número de filas:
-            <input
-              type="number"
-              min="1"
-              max="88"
-              value={rows}
-              onChange={(e) => handleRowsChange(Number(e.target.value))}
-              disabled={isPianoMode}
-              style={{ marginLeft: '8px', width: '60px', padding: '4px' }}
-            />
-          </label>
-        )}
-      </div>
+        gainNode.gain.exponentialRampToValueAtTime(0.001, fadeOutStartTime + fadeOutDuration);
+        
+        source.connect(gainNode);
+        gainNode.connect(globalAudioContextRef.current.destination);
+        
+        source.start(0);
+        source.stop(globalAudioContextRef.current.currentTime + durationToUse + fadeOutDuration);
+      }
+    }
+  };
 
-      {/* Piano Sample Controls */}
-      {isPianoMode && (
-  <div style={{ marginBottom: '20px' }}>
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      marginBottom: '10px',
-      gap: '10px'
+  return (
+    <div className='backgroundColor2' style={{ 
+      padding: '20px',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      width: '70vw'
     }}>
-      <label style={{ marginRight: '10px' }}>Sample de Piano:</label>
-      <select
-        value={selectedPianoSample}
-        onChange={(e) => setSelectedPianoSample(e.target.value)}
-        disabled={currentSampleData.isLoading}
-        style={{ padding: '6px', minWidth: '150px' }}
-      >
-        {pianoSamples.map(sample => (
-          <option key={sample.id} value={sample.id}>
-            {sample.name} {currentSampleData.isLoading && sample.id === selectedPianoSample ? '...' : ''}
-          </option>
-        ))}
-      </select>
-      
-      <button
-        onClick={() => {
-          if (!currentSampleData.isLoading && globalAudioContextRef.current) {
-            const source = globalAudioContextRef.current.createBufferSource();
-            const pianoSample = globalBuffersRef.current.get('pianoSample');
-            if (pianoSample) {
-              source.buffer = pianoSample.buffer;
-              
-              // Usar la nota base del sample (normalmente A4)
-              const playbackRate = pianoSample.baseFreq / pianoSample.baseFreq; // 1:1 para el sonido original
-              source.playbackRate.value = playbackRate;
-
-              const gainNode = globalAudioContextRef.current.createGain();
-              gainNode.gain.value = 0.8;
-
-              // Configurar la duración según el control deslizante
-              const durationToUse = Math.min(
-                globalSelectedPianoSampleRef.durationToUse,
-                pianoSample.buffer.duration
-              );
-
-              // Configurar fade-out
-              const fadeOutDuration = Math.min(0.1, durationToUse * 0.1);
-              const fadeOutStartTime = globalAudioContextRef.current.currentTime + durationToUse - fadeOutDuration;
-              
-              gainNode.gain.exponentialRampToValueAtTime(0.001, fadeOutStartTime + fadeOutDuration);
-              
-              source.connect(gainNode);
-              gainNode.connect(globalAudioContextRef.current.destination);
-              
-              source.start(0);
-              source.stop(globalAudioContextRef.current.currentTime + durationToUse + fadeOutDuration);
-            }
-          }
-        }}
-        disabled={currentSampleData.isLoading}
-        style={{
-          padding: '6px 12px',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: currentSampleData.isLoading ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '5px'
-        }}
-      >
-        <span>▶</span>
-      </button>
-    </div>
-    
-    {!currentSampleData.isLoading && (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <input
-          type="range"
-          min="0.10"
-          max={currentSampleData.duration.toFixed(2)}
-          step="0.01"
-          value={currentSampleData.durationToUse}
-          onChange={handleDurationChange}
-          style={{ flex: 1, maxWidth: '300px' }}
-        />
-        <div style={{ minWidth: '150px' }}>
-          Duración: {currentSampleData.durationToUse.toFixed(2)}s / {currentSampleData.duration.toFixed(2)}s
-        </div>
-      </div>
-    )}
-  </div>
-)}
-
       {/* Recording Controls */}
-      <div style={{ 
+      <div className='backgroundColor4'
+      style={{ 
         marginBottom: '20px', 
         padding: '15px', 
-        backgroundColor: '#f0f0f0', 
         borderRadius: '8px'
       }}>
-        <h3 style={{ margin: '0 0 10px 0' }}>Grabar nuevo sample:</h3>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <h3 style={{ margin: '0 0 10px 0' }}>Record new sample:</h3>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           <button
-            onClick={isGlobalRecording ? stopGlobalRecording : startGlobalRecording}
+            onClick={isGlobalRecording ? stopGlobalRecording : handleStartRecording}
             style={{ 
               padding: '8px 16px',
               backgroundColor: isGlobalRecording ? '#ff4444' : '#4CAF50', 
@@ -816,16 +804,16 @@ const Controls = ({
               cursor: 'pointer'
             }}
           >
-            {isGlobalRecording ? '⏹ Detener grabación' : '🎤 Grabar nuevo sample'}
+            {isGlobalRecording ? '⏹ Stop recording' : '🎤 Record new sample'}
           </button>
 
           {showNameInput && (
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1 }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
               <input
                 type="text"
                 value={newSampleName}
                 onChange={(e) => setNewSampleName(e.target.value)}
-                placeholder="Nombre del sample"
+                placeholder="Sample name"
                 style={{ 
                   padding: '8px', 
                   borderRadius: '4px', 
@@ -844,12 +832,143 @@ const Controls = ({
                   cursor: 'pointer'
                 }}
               >
-                Guardar
+                Save
               </button>
             </div>
           )}
         </div>
       </div>
+      {/* Mode Selection */}
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center' }}>
+          <CheckBox
+            checked={isPianoMode}
+            onChange={togglePianoMode}
+          />
+          Piano Roll
+        </label>
+        
+        {!isPianoMode && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px', flexWrap: 'wrap' }}>
+            <label style={{ marginRight: '10px' }}>Number of rows:</label>
+            <div style={{display: 'flex'}}>
+            <RangeInput
+              min={1}
+              max={30}
+              value={rows}
+              onChange={handleRowsChange}
+              colorClass="color3"
+              backgroundColorClass="backgroundColor1"
+              showLabel={false}
+            />
+            
+            <CustomNumberInput 
+              min={1}
+              max={30}
+              step={1}
+              value={rows}
+              onChange={(e) => handleRowsChange(Number(e.target.value))} />
+            </div>
+
+          </div>
+        )}
+      </div>
+
+      {/* Piano Sample Controls */}
+      {isPianoMode && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            marginBottom: '10px',
+            gap: '10px'
+          }}>
+            <label style={{ marginRight: '10px' }}>Piano Sample:</label>
+            <select
+              value={selectedPianoSample}
+              onChange={(e) => setSelectedPianoSample(e.target.value)}
+              disabled={currentSampleData.isLoading}
+              style={{ padding: '6px', minWidth: '150px' }}
+            >
+              {pianoSamples.map(sample => (
+                <option key={sample.id} value={sample.id}>
+                  {sample.name} {currentSampleData.isLoading && sample.id === selectedPianoSample ? '...' : ''}
+                </option>
+              ))}
+            </select>
+            
+            <div 
+              onClick={handleSamplePreview}
+              style={{
+                padding: '6px',
+                cursor: currentSampleData.isLoading ? 'not-allowed' : 'pointer',
+                opacity: currentSampleData.isLoading ? 0.5 : 1
+              }}
+            >
+              <TogglePlayPause 
+                size={24}
+                isPlaying={false}
+                onToggle={handleSamplePreview}
+              />
+            </div>
+          </div>
+          
+          {!currentSampleData.isLoading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px', flexWrap: 'wrap' }}>
+              <div style={{ minWidth: '150px' }}>
+                  Duration: {currentSampleData.durationToUse.toFixed(2)}s / {currentSampleData.duration.toFixed(2)}s
+              </div>
+              <div style={{display: 'flex'}}>
+                <RangeInput
+                  min={0.10}
+                  max={currentSampleData.duration.toFixed(2)}
+                  step={0.01}
+                  value={currentSampleData.durationToUse}
+                  onChange={handleDurationChange}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                >
+                </RangeInput>
+                <CustomNumberInput
+                  min={0.10}
+                  max={Number(currentSampleData.duration.toFixed(2))} // Convertir a número
+                  step={0.01}
+                  value={Number(currentSampleData.durationToUse.toFixed(2))} // Convertir a número
+                  onChange={(e) => handleDurationChange(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {countdown !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            fontSize: '120px',
+            fontWeight: 'bold',
+            color: '#fff',
+            textShadow: '0 0 20px rgba(255,255,255,0.5)'
+          }}>
+            {countdown}
+          </div>
+        </div>
+      )}
+
+      
 
       {/* Time Signature Controls */}
       <div style={{ 
@@ -858,20 +977,29 @@ const Controls = ({
         gap: '15px',
         marginBottom: '20px'
       }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Numerador:</label>
-          <input
-            type="number"
-            min="1"
-            max="10"
-            value={numerator}
-            onChange={e => setNumerator(Number(e.target.value))}
-            style={{ padding: '6px', width: '100%' }}
-          />
+        <div style={{marginRight: '10px'}}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Numerator:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <RangeInput
+              min={1}
+              max={12}
+              value={numerator}
+              onChange={setNumerator}
+              colorClass="color3"
+              backgroundColorClass="backgroundColor1"
+              showLabel={false}
+            />
+            <CustomNumberInput
+              min={1}
+              max={12}
+              value={numerator}
+              onChange={(e) => setNumerator(Number(e.target.value))}
+            />
+          </div>
         </div>
         
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Denominador:</label>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Denominator:</label>
           <select 
             value={denominator} 
             onChange={e => setDenominator(Number(e.target.value))}
@@ -883,107 +1011,140 @@ const Controls = ({
           </select>
         </div>
         
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Subdivisiones:</label>
-          <input
-            type="number"
-            min="1"
-            max="16"
-            value={subdivisionsPerPulse}
-            onChange={e => setSubdivisionsPerPulse(Number(e.target.value))}
-            style={{ padding: '6px', width: '100%' }}
-          />
+        <div >
+          <label style={{ display: 'block', marginBottom: '5px' }}>Subdivisions:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+            <RangeInput
+              min={1}
+              max={12}
+              value={subdivisionsPerPulse}
+              onChange={setSubdivisionsPerPulse}
+              colorClass="color3"
+              backgroundColorClass="backgroundColor1"
+              showLabel={false}
+            />
+            <CustomNumberInput
+              min={1}
+              max={12}
+              value={subdivisionsPerPulse}
+              onChange={(e) => setSubdivisionsPerPulse(Number(e.target.value))}
+            />
+          </div>
         </div>
         
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Compases:</label>
-          <input
-            type="number"
-            min="1"
-            max="10"
-            value={measures}
-            onChange={e => setMeasures(Number(e.target.value))}
-            style={{ padding: '6px', width: '100%' }}
-          />
+          <label style={{ display: 'block', marginBottom: '5px' }}>Measures:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+            <RangeInput
+              min={1}
+              max={12}
+              value={measures}
+              onChange={setMeasures}
+              colorClass="color3"
+              backgroundColorClass="backgroundColor1"
+              showLabel={false}
+            />
+            <CustomNumberInput
+              min={1}
+              max={12}
+              value={measures}
+              onChange={(e) => setMeasures(Number(e.target.value))}
+            />
+          </div>
         </div>
       </div>
 
       {/* Display Controls */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
-          <input
-            type="checkbox"
+          <CheckBox
             checked={autoScroll}
             onChange={(e) => setAutoScroll(e.target.checked)}
-            style={{ marginRight: '8px' }}
           />
-          Scroll dinámico durante la reproducción
+          Auto-scroll during playback
         </label>
         
         <div style={{ display: 'grid', gap: '15px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>
-              Ancho del compás: {measureWidth}px
-            </label>
-            <input
-              type="range"
-              min="300"
-              max="1200"
-              value={measureWidth}
-              onChange={e => setMeasureWidth(Number(e.target.value))}
-              style={{ width: '100%' }}
-            />
+            <label style={{ display: 'block', marginBottom: '5px' }}>Measure width:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+              <RangeInput
+                min={300}
+                max={1200}
+                value={measureWidth}
+                onChange={setMeasureWidth}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={300}
+                max={1200}
+                value={measureWidth}
+                onChange={(e) => setMeasureWidth(Number(e.target.value))}
+              />
+            </div>
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>
-              Alto de la grilla: {componentHeight}px
-            </label>
-            <input
-              type="range"
-              min="230"
-              max="600"
-              value={componentHeight}
-              onChange={e => setComponentHeight(Number(e.target.value))}
-              style={{ width: '100%' }}
-            />
+            <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+              <RangeInput
+                min={230}
+                max={600}
+                value={componentHeight}
+                onChange={setComponentHeight}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={230}
+                max={600}
+                value={componentHeight}
+                onChange={(e) => setComponentHeight(Number(e.target.value))}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Playback Controls */}
-      <div style={{ 
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: '20px'
-      }}>
-        <button
-          onClick={togglePlayback}
-          disabled={!samplesLoaded}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: isPlaying ? '#ff4444' : samplesLoaded ? '#4CAF50' : '#cccccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: samplesLoaded ? 'pointer' : 'not-allowed',
-            minWidth: '120px',
-            fontWeight: 'bold'
-          }}
-        >
-          {!samplesLoaded ? 'Cargando...' : isPlaying ? '⏹ Detener' : '▶ Reproducir'}
-        </button>
-        
-        <div style={{ display: 'flex', gap: '20px', color: '#666' }}>
-          <div>BPM: {BPM}</div>
-          <div>Estado Audio: {audioContextState}</div>
-        </div>
-      </div>
+      
     </div>
   );
-};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -999,11 +1160,10 @@ const Grid = ({
   totalSteps,
   totalStepsPerMeasure,
   subdivisionsPerPulse,
-  measureWidth,
-  measures,
+  measureWidth,      // ancho total del secuenciador
   componentHeight,
   rowHeight,
-  totalGridWidth,
+  totalGridWidth,    // (no se usa en esta versión)
   cellWidth,
   selectedCells,
   rowSamples,
@@ -1011,28 +1171,31 @@ const Grid = ({
   isBlackKey,
   getSampleColor,
   handleCellClick,
-  setRowSamples,
-  handleSelectorColor,
-  customSamples,
-  recordingRow,
-  startRecording,
-  stopRecording,
+  openModal,
   showLeftPanel = true,
-  autoScroll = false,
   currentStep = 0
 }) => {
-  const [modalRowIndex, setModalRowIndex] = useState(null);
+  // Panel izquierdo de ancho fijo
+  const leftPanelWidth = showLeftPanel ? 60 : 0;
+  // Área visible del timeline (excluyendo el panel izquierdo)
+  const timelineVisibleWidth = measureWidth - leftPanelWidth;
+  // Ancho interno extendido para permitir scroll completo
+  const timelineTotalWidth = totalSteps * cellWidth + timelineVisibleWidth;
+
+  // Referencia para el contenedor scrollable
+  const timelineContainerRef = useRef(null);
+
+  // Actualizamos el scroll inmediatamente al cambiar currentStep
+  useLayoutEffect(() => {
+    if (timelineContainerRef.current) {
+      timelineContainerRef.current.scrollLeft = currentStep * cellWidth;
+    }
+  }, [currentStep, cellWidth]);
+
+  // Modo piano 88 teclas: agrupar octavas sin espacios adicionales
   const is88KeyMode = isPianoMode && rows === 88;
-  const mainContainerRef = useRef(null);
-
-  const handleCloseModal = () => {
-    setModalRowIndex(null);
-  };
-
-  // Calculate octave groups for piano mode
   const octaveGroups = useMemo(() => {
     if (!is88KeyMode) return [];
-    
     const groups = [];
     let groupStart = 0;
     for (let i = 0; i < rows; i++) {
@@ -1054,364 +1217,296 @@ const Grid = ({
     return groups;
   }, [is88KeyMode, rows, pianoNotes]);
 
-  // Auto-scroll effect
-  useEffect(() => {
-    if (autoScroll && mainContainerRef.current) {
-      const container = mainContainerRef.current;
-      const stepPosition = currentStep * cellWidth;
-      const containerWidth = container.clientWidth;
-      const scrollLeft = stepPosition - (containerWidth / 2) + (cellWidth / 2);
-      
-      // Limit scroll values
-      const maxScroll = container.scrollWidth - containerWidth;
-      const finalPosition = Math.max(0, Math.min(scrollLeft, maxScroll));
-      
-      container.scrollTo({
-        left: finalPosition,
-        behavior: 'smooth'
-      });
-    }
-  }, [currentStep, autoScroll, cellWidth]);
-
   return (
     <div
-      ref={mainContainerRef}
       style={{
-        position: 'relative',
+        display: 'flex',
         width: `${measureWidth}px`,
-        height: isPianoMode ? `${rows * rowHeight + 30}px` : `${componentHeight + 30}px`,
-        overflow: 'auto',
+        border: '1px solid #ddd',
         backgroundColor: '#f5f5f5',
         borderRadius: '4px',
-        border: '1px solid #ddd'
+        boxSizing: 'border-box'
       }}
     >
-      {/* Header row with measure numbers */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 3,
-          background: '#f5f5f5',
-          paddingBottom: '2px'
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `${showLeftPanel ? '60px ' : ''}repeat(${totalSteps}, ${cellWidth}px)`,
-            gap: '2px',
-            width: `${showLeftPanel ? 60 + totalGridWidth : totalGridWidth}px`
-          }}
-        >
-          {showLeftPanel && <div style={{ height: '30px' }} />}
-          
-          {/* Measure markers */}
-          {Array.from({ length: totalSteps }).map((_, stepIndex) => {
-            const isMeasureStart = stepIndex % totalStepsPerMeasure === 0;
-            const isPulseStart = stepIndex % subdivisionsPerPulse === 0;
-            const measureNumber = Math.floor(stepIndex / totalStepsPerMeasure) + 1;
-            
-            return (
+      {/* PANEL IZQUIERDO */}
+      {showLeftPanel && (
+        <div style={{ width: `${leftPanelWidth}px`, flexShrink: 0, boxSizing: 'border-box' }}>
+          {/* Se reserva el espacio del header para alinear verticalmente */}
+          <div style={{ height: '45px', boxSizing: 'border-box' }}></div>
+          {is88KeyMode ? (
+            octaveGroups.map((group, idx) => (
               <div
-                key={`header-${stepIndex}`}
+                key={`octave-${idx}`}
                 style={{
-                  height: '30px',
-                  position: 'relative',
-                  borderLeft: isMeasureStart 
-                    ? '3px solid #333' 
-                    : isPulseStart 
-                    ? '2px solid #666' 
-                    : '1px solid #999',
-                  backgroundColor: isMeasureStart ? '#e0e0e0' : '#eee'
+                  height: `${group.span * rowHeight}px`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  color: '#000',
+                  border: '1px solid #ddd',
+                  boxSizing: 'border-box'
                 }}
               >
-                {isMeasureStart && (
-                  <div style={{
-                    position: 'absolute',
-                    left: '2px',
-                    top: '2px',
-                    fontWeight: 'bold',
-                    fontSize: '12px',
-                    color: '#333'
-                  }}>
-                    {measureNumber}
+                {group.label}
+              </div>
+            ))
+          ) : (
+            Array.from({ length: rows }).map((_, rowIndex) => (
+              <div
+                key={`row-${rowIndex}`}
+                onClick={() =>
+                  !isPianoMode &&
+                  openModal('rowControls', {
+                    getSampleColor: getSampleColor(rowSamples[rowIndex]),
+                    rowIndex,
+                    rowSamples: rowSamples[rowIndex]
+                  })
+                }
+                style={{
+                  height: `${rowHeight}px`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  color: '#000',
+                  border: '1px solid #ddd',
+                  cursor: !isPianoMode ? 'pointer' : 'default',
+                  userSelect: 'none',
+                  boxSizing: 'border-box',
+                  flexWrap: 'wrap',
+                  overflowX: 'auto'
+                }}
+              >
+                {isPianoMode ? (
+                  pianoNotes[rowIndex]
+                ) : (
+                  <span style={{ fontSize: '15px' }}>Row {rowIndex + 1}</span>
+                )}
+                {!isPianoMode && (
+                  <div
+                    style={{
+                      marginTop: '2px',
+                      display: 'block',
+                      alignItems: 'center',
+                      gap: '4px',
+                      
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        backgroundColor: getSampleColor(rowSamples[rowIndex]),
+                        borderRadius: '2px'
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: '20px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '70px'
+                      }}
+                    >
+                      {rowSamples[rowIndex]}
+                    </span>
                   </div>
                 )}
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Main grid content */}
+      {/* SECCIÓN DEL TIMELINE */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: `${showLeftPanel ? '60px ' : ''}repeat(${totalSteps}, ${cellWidth}px)`,
-          gridTemplateRows: `repeat(${rows}, ${rowHeight}px)`,
-          gap: '2px',
-          width: `${showLeftPanel ? 60 + totalGridWidth : totalGridWidth}px`,
-          position: 'relative'
+          width: `${timelineVisibleWidth}px`,
+          overflowX: 'auto',
+          position: 'relative',
+          scrollBehavior: 'auto',
+          boxSizing: 'border-box'
         }}
+        ref={timelineContainerRef}
       >
-        {/* Left panel */}
-        {showLeftPanel && (
-          <>
-            {is88KeyMode ? (
-              octaveGroups.map((group, idx) => (
+        <div style={{ width: `${timelineTotalWidth}px`, boxSizing: 'border-box' }}>
+          {/* HEADER: Regla con tres niveles sin padding extra */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${totalSteps}, ${cellWidth}px)`,
+              gridTemplateRows: '15px 15px 15px',
+              height: '45px',
+              boxSizing: 'border-box'
+            }}
+          >
+            {Array.from({ length: totalSteps }).map((_, stepIndex) => {
+              // Índice local dentro de cada compás
+              const localStep = stepIndex % totalStepsPerMeasure;
+              const measureLabel = localStep === 0
+                ? Math.floor(stepIndex / totalStepsPerMeasure) + 1
+                : "";
+              // Mostrar el número de pulso SOLO al inicio del pulso
+              const pulseLabel = localStep % subdivisionsPerPulse === 0
+                ? Math.floor(localStep / subdivisionsPerPulse) + 1
+                : "";
+              // La subdivisión se muestra siempre (sumandole 1 para que inicie en 1)
+              const subdivisionLabel = (localStep % subdivisionsPerPulse) + 1;
+
+              let borderLeft = '1px solid #999';
+              if (localStep === 0) {
+                borderLeft = '3px solid #333';
+              } else if (localStep % subdivisionsPerPulse === 0) {
+                borderLeft = '2px solid #666';
+              }
+              const bgColor = localStep === 0 ? '#e0e0e0' : '#eee';
+
+              return (
                 <div
-                  key={`octave-${idx}`}
+                  key={`header-${stepIndex}`}
                   style={{
-                    gridColumn: '1 / 2',
-                    gridRow: `${group.start + 1} / span ${group.span}`,
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 2,
-                    backgroundColor: '#fff',
-                    border: '1px solid #ddd',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    color: '#333'
+                    boxSizing: 'border-box',
+                    width: `${cellWidth}px`,
+                    height: '45px',
+                    borderLeft,
+                    backgroundColor: bgColor
                   }}
                 >
-                  {group.label}
+                  <div style={{ fontSize: '14px', height: '15px', lineHeight: '15px', color: '#000' }}>
+                    {measureLabel}
+                  </div>
+                  <div style={{ fontSize: '12px', height: '15px', lineHeight: '15px', color: '#000' }}>
+                    {pulseLabel}
+                  </div>
+                  <div style={{ fontSize: '10px', height: '15px', lineHeight: '15px', color: '#000' }}>
+                    {subdivisionLabel}
+                  </div>
                 </div>
-              ))
-            ) : (
-              Array.from({ length: rows }).map((_, rowIndex) => (
-                <React.Fragment key={`row-${rowIndex}`}>
+              );
+            })}
+          </div>
+
+          {/* CONTENEDOR DE CELDAS Y LÍNEAS DE OCTAVA (solo en modo 88) */}
+          <div
+            style={{
+              position: 'relative',
+              height: `${rows * rowHeight}px`,
+              boxSizing: 'border-box'
+            }}
+          >
+            {/* Líneas horizontales para separar octavas */}
+            {is88KeyMode &&
+              octaveGroups.map((group, idx) => {
+                const startY = group.start * rowHeight;
+                const endY = (group.start + group.span) * rowHeight;
+                return (
+                  <React.Fragment key={`oct-boundaries-${idx}`}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: `${startY}px`,
+                        left: 0,
+                        width: '100%',
+                        height: '2px',
+                        backgroundColor: '#333',
+                        zIndex: 2
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: `${endY - 2}px`,
+                        left: 0,
+                        width: '100%',
+                        height: '2px',
+                        backgroundColor: '#333',
+                        zIndex: 2
+                      }}
+                    />
+                  </React.Fragment>
+                );
+              })
+            }
+
+            {/* CUADRÍCULA DE CELDAS */}
+            {Array.from({ length: rows }).map((_, rowIndex) =>
+              Array.from({ length: totalSteps }).map((_, stepIndex) => {
+                const cellId = `${rowIndex}-${stepIndex}`;
+                const isActive = selectedCells.has(cellId);
+                
+                // Calcular el color de fondo:
+                // Si está activa, en modo 88 se usa un color fijo para la selección.
+                // Si no, en modo 88 para teclas negras se aplica transparencia.
+                const cellBgColor = isActive
+                  ? (isPianoMode && is88KeyMode
+                      ? 'rgba(76, 175, 80, 0.8)'  // color de selección en 88-key mode
+                      : getSampleColor(rowSamples[rowIndex]))
+                  : (isPianoMode && is88KeyMode && isBlackKey(pianoNotes[rowIndex])
+                      ? 'rgba(34, 34, 34, 0.7)'
+                      : '#f9f9f9');
+                
+                // Si la celda está activa, se aplican bordes más redondeados.
+                const borderRadiusValue = isActive ? '8px' : '2px';
+
+                let cellBorderLeft = '1px solid #eee';
+                if (stepIndex % totalStepsPerMeasure === 0) {
+                  cellBorderLeft = '3px solid black';
+                } else if (stepIndex % subdivisionsPerPulse === 0) {
+                  cellBorderLeft = '2px solid gray';
+                }
+                return (
                   <div
-                    onClick={() => !isPianoMode && setModalRowIndex(rowIndex)}
+                    key={`cell-${rowIndex}-${stepIndex}`}
+                    onClick={() => handleCellClick(rowIndex, stepIndex)}
                     style={{
-                      gridColumn: '1 / 2',
-                      gridRow: rowIndex + 1,
-                      position: 'sticky',
-                      left: 0,
-                      zIndex: 2,
-                      backgroundColor: isPianoMode && isBlackKey(pianoNotes[rowIndex]) 
-                        ? '#333' 
-                        : '#fff',
-                      border: '1px solid #ddd',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '10px',
-                      fontWeight: isPianoMode && isBlackKey(pianoNotes[rowIndex]) 
-                        ? 'bold' 
-                        : 'normal',
-                      color: isPianoMode && isBlackKey(pianoNotes[rowIndex]) 
-                        ? '#fff' 
-                        : '#333',
-                      cursor: !isPianoMode ? 'pointer' : 'default',
-                      userSelect: 'none'
+                      position: 'absolute',
+                      left: `${stepIndex * cellWidth}px`,
+                      top: `${rowIndex * rowHeight}px`,
+                      width: `${cellWidth}px`,
+                      height: `${rowHeight}px`,
+                      backgroundColor: cellBgColor,
+                      border: 'none',
+                      borderLeft: cellBorderLeft,
+                      borderTop: '1px solid #eee',
+                      borderBottom: '1px solid #eee',
+                      borderRight: '1px solid #eee',
+                      borderRadius: borderRadiusValue,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s',
+                      boxSizing: 'border-box'
                     }}
                   >
-                    {isPianoMode ? pianoNotes[rowIndex] : <span style={{fontSize: '15px'}}>Fila {rowIndex + 1}</span>}
-                    
-                    {!isPianoMode && (
-                      <div style={{
-                        display: 'block',
-                        alignItems: 'center',
-                        gap: '4px',
-                        marginTop: '2px'
-                      }}>
-                        <div style={{
-                          width: '12px',
-                          height: '12px',
-                          backgroundColor: getSampleColor(rowSamples[rowIndex]),
-                          borderRadius: '2px'
-                        }}/>
-                        <span style={{
-                          fontSize: '20px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '70px'
-                        }}>
-                          {rowSamples[rowIndex]}
-                        </span>
+                    {/* En modo piano, si la celda está activa se muestra el nombre de la nota (con octava) */}
+                    {isActive && isPianoMode && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          fontSize: '10px',
+                          color: '#fff',
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        {pianoNotes[rowIndex]}
                       </div>
                     )}
                   </div>
-                </React.Fragment>
-              ))
+                );
+              })
             )}
-          </>
-        )}
-
-        {/* Grid cells */}
-        {Array.from({ length: rows }).map((_, rowIndex) =>
-          Array.from({ length: totalSteps }).map((_, stepIndex) => {
-            const cellId = `${rowIndex}-${stepIndex}`;
-            const isActive = selectedCells.has(cellId);
-            let cellBorderLeft = '1px solid #eee';
-
-            if (stepIndex % totalStepsPerMeasure === 0) {
-              cellBorderLeft = '3px solid black';
-            } else if (stepIndex % subdivisionsPerPulse === 0) {
-              cellBorderLeft = '2px solid gray';
-            }
-
-            return (
-              <div
-                key={`cell-${rowIndex}-${stepIndex}`}
-                onClick={() => handleCellClick(rowIndex, stepIndex)}
-                style={{
-                  gridColumn: `${showLeftPanel ? stepIndex + 2 : stepIndex + 1}`,
-                  gridRow: rowIndex + 1,
-                  backgroundColor: isActive
-                    ? getSampleColor(rowSamples[rowIndex])
-                    : isPianoMode && isBlackKey(pianoNotes[rowIndex])
-                    ? '#222'
-                    : '#f9f9f9',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                  borderTop: '1px solid #eee',
-                  borderBottom: '1px solid #eee',
-                  borderRight: '1px solid #eee',
-                  borderLeft: cellBorderLeft,
-                  width: `${cellWidth}px`,
-                  height: `${rowHeight}px`
-                }}
-              />
-            );
-          })
-        )}
+          </div>
+        </div>
       </div>
-
-      {/* Playback indicator */}
-      <div
-        style={{
-          position: 'absolute',
-          left: `${showLeftPanel ? '60px' : '0'}`,
-          top: '30px',
-          height: `calc(100% - 30px)`,
-          width: '2px',
-          backgroundColor: 'red',
-          zIndex: 10,
-          transform: `translateX(${currentStep * cellWidth}px)`,
-          transition: autoScroll ? 'transform 0.1s linear' : 'none',
-          willChange: 'transform'
-        }}
-      />
-
-      {/* Row controls modal */}
-      {!isPianoMode && (
-        <Modal
-          isOpen={modalRowIndex !== null}
-          onClose={handleCloseModal}
-          style={{
-            width: 'auto',
-            minWidth: '320px',
-            maxWidth: '90vw'
-          }}
-        >
-          {modalRowIndex !== null && (
-            <div style={{ padding: '20px' }}>
-              <h3 style={{ 
-                marginTop: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: getSampleColor(rowSamples[modalRowIndex]),
-                  borderRadius: '4px'
-                }}/>
-                Controles de Fila {modalRowIndex + 1}
-              </h3>
-              
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '15px',
-                width: '100%'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  backgroundColor: '#f5f5f5',
-                  borderRadius: '8px',
-                  width: '100%'
-                }}>
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      backgroundColor: getSampleColor(rowSamples[modalRowIndex]),
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      flexShrink: 0
-                    }}
-                    onClick={() => handleSelectorColor(
-                      getSampleColor(rowSamples[modalRowIndex]), 
-                      rowSamples[modalRowIndex]
-                    )}
-                  />
-                  
-                  <select
-                    value={rowSamples[modalRowIndex]}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setRowSamples(prev => {
-                        const newArr = [...prev];
-                        newArr[modalRowIndex] = value;
-                        return newArr;
-                      });
-                    }}
-                    style={{ 
-                      padding: '8px 12px', 
-                      borderRadius: '6px', 
-                      width: '100%',
-                      border: '1px solid #ddd',
-                      fontSize: '14px'
-                    }}
-                  >
-                    <option value="kick">Kick</option>
-                    <option value="snare">Snare</option>
-                    <option value="hihat">Hihat</option>
-                    <option value="clap">Clap</option>
-                    {customSamples.map((sample, idx) => (
-                      <option key={idx} value={sample.name}>
-                        {sample.name}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <button
-                    onClick={recordingRow === modalRowIndex ? stopRecording : () => startRecording(modalRowIndex)}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: recordingRow === modalRowIndex ? '#ff4444' : '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {recordingRow === modalRowIndex ? '⏹ Detener' : '🎤 Grabar'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </Modal>
-      )}
     </div>
   );
 };
@@ -1419,138 +1514,123 @@ const Grid = ({
 Grid.defaultProps = {
   selectedCells: new Set(),
   showLeftPanel: true,
-  autoScroll: false,
-  currentStep: 0
+  currentStep: 0,
 };
 
 
-// Componente de toggle externo
-const SequencerToggle = ({ showLeftPanel, onToggle }) => {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const SequencerToggle = ({ 
+  showLeftPanel, 
+  onToggle, 
+  isPlaying, 
+  togglePlayback,
+  openModal,
+  isGlobalRecording,
+  handleStartRecording,
+  stopGlobalRecording,
+  showNameInput,
+  newSampleName,
+  setNewSampleName,
+  saveCustomSample
+}) => {
   return (
-    <button
-      onClick={onToggle}
-      style={{
-        padding: '8px 16px',
-        backgroundColor: showLeftPanel ? '#ff4444' : '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        marginBottom: '10px',
-        fontSize: '14px',
-        transition: 'all 0.3s ease'
-      }}
-    >
-      {showLeftPanel ? '◄ Ocultar Panel Izquierdo' : '► Mostrar Panel Izquierdo'}
-    </button>
+    <div style={{ 
+      display: 'flex', 
+      gap: '10px', 
+      alignItems: 'center',
+      marginBottom: '10px'
+    }}>
+      <button
+        onClick={onToggle}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: showLeftPanel ? '#ff4444' : '#4CAF50',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {showLeftPanel ? '◄ Ocultar Panel Izquierdo' : '► Mostrar Panel Izquierdo'}
+      </button>
+
+      <TogglePlayPause 
+        size={20}
+        isPlaying={isPlaying}
+        onToggle={togglePlayback}
+      />
+
+      <button
+        onClick={() => openModal('recordingControls')}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: '#2196F3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Controls
+      </button>
+    </div>
   );
 };
 
-const RowControls = ({
-  rows,
-  rowSamples,
-  setRowSamples,
-  getSampleColor,
-  handleSelectorColor,
-  customSamples,
-  recordingRow,
-  startRecording,
-  stopRecording
-}) => (
-  <div style={{ 
-    display: 'flex', 
-    flexDirection: 'column',
-    gap: '15px',
-    width: '100%'
-  }}>
-    {Array.from({ length: rows }).map((_, rowIndex) => (
-      <div
-        key={`legend-${rowIndex}`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '10px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '8px',
-          width: '100%',
-          boxSizing: 'border-box'
-        }}
-      >
-        <div
-          style={{
-            width: '24px',
-            height: '24px',
-            backgroundColor: getSampleColor(rowSamples[rowIndex]),
-            borderRadius: '4px',
-            cursor: 'pointer',
-            flexShrink: 0
-          }}
-          onClick={() => handleSelectorColor(
-            getSampleColor(rowSamples[rowIndex]), 
-            rowSamples[rowIndex]
-          )}
-        />
-        <select
-          value={rowSamples[rowIndex]}
-          onChange={(e) => {
-            const value = e.target.value;
-            setRowSamples(prev => {
-              const newArr = [...prev];
-              newArr[rowIndex] = value;
-              return newArr;
-            });
-          }}
-          style={{ 
-            padding: '8px', 
-            borderRadius: '6px', 
-            width: '100%',
-            border: '1px solid #ddd',
-            fontSize: '14px'
-          }}
-        >
-          <option value="kick">Kick</option>
-          <option value="snare">Snare</option>
-          <option value="hihat">Hihat</option>
-          <option value="clap">Clap</option>
-          {customSamples.map((sample, idx) => (
-            <option key={idx} value={sample.name}>
-              {sample.name}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={recordingRow === rowIndex ? stopRecording : () => startRecording(rowIndex)}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: recordingRow === rowIndex ? '#ff4444' : '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px'
-          }}
-        >
-          {recordingRow === rowIndex ? (
-            <>
-              <span>⏹</span>
-              <span>Detener</span>
-            </>
-          ) : (
-            <>
-              <span>🎤</span>
-              <span>Grabar</span>
-            </>
-          )}
-        </button>
-      </div>
-    ))}
-  </div>
-);
+
+
 
 
 const SubdivisionGrid = () => {
@@ -1576,29 +1656,187 @@ const SubdivisionGrid = () => {
 
 
 
-  const [activeModal, setActiveModal] = useState(null); // 'colorPicker' | 'rowControls' | null
-  // Reemplaza tus estados individuales por este
-  const [modalData, setModalData] = useState({
-    color: '',
-    selectedKey: '',
-    rowIndex: null
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null,       // 'colorPicker' | 'rowControls' | 'samplePicker' | etc.
+    data: {           // Datos específicos para cada tipo de modal
+      color: '',
+      selectedKey: '',
+      rowIndex: null,
+      sample: null
+    }
   });
 
-  // Funciones para manejar modales
-const openColorPicker = (color, key) => {
-  setActiveModal('colorPicker');
-  setModalData({ color, selectedKey: key, rowIndex: null });
-};
+  const openModal = (type, data = {}) => {
+    setModalState({
+      isOpen: true,
+      type,
+      data: {
+        ...data,
+        // Valores por defecto
+        color: data.color || '',
+        selectedKey: data.selectedKey || '',
+        rowIndex: data.rowIndex !== undefined ? data.rowIndex : null,
+        sample: data.sample || null
+      }
+    });
+  };
+  
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
-const openRowControls = (rowIndex) => {
-  setActiveModal('rowControls');
-  setModalData({ color: '', selectedKey: '', rowIndex });
-};
+  const renderModalContent = () => {
+    const { type, data } = modalState;
+  
+    switch (type) {
+      case 'colorPicker':
+        return (
+          <SingleColorPickerModalContent 
+            initialColor={data.color}
+            onColorUpdate={(newColor) => {
+              changeObjectColor(data.selectedKey, newColor);
+              closeModal();
+            }}
+            onClose={closeModal}
+          />
+        );
+  
+      case 'rowControls':
+          const { rowIndex, rowSamples: currentSample, getSampleColor: sampleColor } = modalState.data;
+          return (
+            <div style={{ padding: '20px' }}>
+              <h3 style={{ 
+                marginTop: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                
+                Row {rowIndex + 1}
+              </h3>
+              
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                width: '100%'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '8px',
+                  width: '100%'
+                }}>
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      backgroundColor: getSampleColor(currentSample),//sampleColor,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
+                    onClick={() => openModal('colorPicker', { 
+                      color: sampleColor, 
+                      selectedKey: currentSample,
+                      rowIndex 
+                    })}
+                  />
+                  
+                  <select
+                    value={currentSample}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRowSamples(prev => {
+                        const newArr = [...prev];
+                        newArr[rowIndex] = value;
+                        modalState.data['rowSamples'] = value
+                        return newArr;
+                      });
+                    }}
+                    style={{ 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      width: '100%',
+                      border: '1px solid #ddd',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <option value="kick">Kick</option>
+                    <option value="snare">Snare</option>
+                    <option value="hihat">Hihat</option>
+                    <option value="clap">Clap</option>
+                    {recording.customSamples.map((sample, idx) => (
+                      <option key={idx} value={sample.name}>
+                        {sample.name}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  
+                </div>
+              </div>
+            </div>
+          );
+  
+      case 'samplePicker':
+        return (
+          <div style={{ padding: '20px' }}>
+            <h3>Seleccionar Sample</h3>
+            {/* Implementación del selector de samples */}
+          </div>
+        );
+  
+      case 'recordingControls':
+        return (
+          <Controls 
+            isPianoMode={isPianoMode}
+            togglePianoMode={togglePianoMode}
+            rows={rows}
+            handleRowsChange={handleRowsChange}
+            numerator={numerator}
+            setNumerator={setNumerator}
+            denominator={denominator}
+            setDenominator={setDenominator}
+            subdivisionsPerPulse={subdivisionsPerPulse}
+            setSubdivisionsPerPulse={setSubdivisionsPerPulse}
+            measures={measures}
+            setMeasures={setMeasures}
+            autoScroll={autoScroll}
+            setAutoScroll={setAutoScroll}
+            measureWidth={measureWidth}
+            setMeasureWidth={setMeasureWidth}
+            componentHeight={componentHeight}
+            setComponentHeight={setComponentHeight}
+            isPlaying={isPlaying}
+            samplesLoaded={samplesLoaded}
+            audioContextState={audioContextState}
+            togglePlayback={() => playback.togglePlayback(isPlaying, setIsPlaying, autoScroll, samplesLoaded)}
+            isGlobalRecording={recording.isGlobalRecording}
+            startGlobalRecording={recording.startGlobalRecording}
+            stopGlobalRecording={recording.stopGlobalRecording}
+            showNameInput={recording.showNameInput}
+            newSampleName={recording.newSampleName}
+            setNewSampleName={recording.setNewSampleName}
+            saveCustomSample={() => recording.saveCustomSample(rowSamples, setRowSamples)}
+            selectedPianoSample={selectedPianoSample}
+            setSelectedPianoSample={setSelectedPianoSample}
+            pianoSamples={PREDEFINED_PIANO_SAMPLES}
+            playCountdownBeep={playCountdownBeep}
+            BPM={BPM}
+          />
+        );
 
-const closeModal = () => {
-  setActiveModal(null);
-  setModalData({ color: '', selectedKey: '', rowIndex: null });
-};
+      default:
+        return null;
+    }
+  };
+
+
 
 
   const [showLeftPanel, setShowLeftPanel] = useState(true);
@@ -1630,9 +1868,11 @@ const closeModal = () => {
     isPianoModeRef,
     //buffersRef,
     pianoNotes: PIANO_NOTES,
-    setCurrentStep
+    setCurrentStep,
   });
   const recording = useRecording({ });
+  const { playCountdownBeep } = recording;
+  
 
   
 
@@ -1748,63 +1988,40 @@ const closeModal = () => {
   return (
     <div style={{ 
       fontFamily: 'Arial, sans-serif', 
-      padding: '20px',
+      paddingLeft: '5px',
       maxWidth: '1200px',
       margin: '0 auto'
     }}>
-      {openColorSelector && (
-        <Modal isOpen={openColorSelector} onClose={() => setOpenColorSelector(false)}>
-          <SingleColorPickerModalContent 
-            initialColor={color}
-            onColorUpdate={(newColor) => {
-              changeObjectColor(selectedKey, newColor);
-              setOpenColorSelector(false);
-            }}
-            onClose={() => setOpenColorSelector(false)}
-          />
-        </Modal>
-      )}
+      <Modal 
+        isOpen={modalState.isOpen} 
+        onClose={closeModal}
+        style={{
+          width: 'auto',
+          minWidth: '320px',
+          maxWidth: '90vw'
+        }}
+      >
+        {renderModalContent()}
+      </Modal>
 
-      <Controls 
-        isPianoMode={isPianoMode}
-        togglePianoMode={togglePianoMode}
-        rows={rows}
-        handleRowsChange={handleRowsChange}
-        numerator={numerator}
-        setNumerator={setNumerator}
-        denominator={denominator}
-        setDenominator={setDenominator}
-        subdivisionsPerPulse={subdivisionsPerPulse}
-        setSubdivisionsPerPulse={setSubdivisionsPerPulse}
-        measures={measures}
-        setMeasures={setMeasures}
-        autoScroll={autoScroll}
-        setAutoScroll={setAutoScroll}
-        measureWidth={measureWidth}
-        setMeasureWidth={setMeasureWidth}
-        componentHeight={componentHeight}
-        setComponentHeight={setComponentHeight}
+      
+
+
+      <SequencerToggle 
+        showLeftPanel={showLeftPanel} 
+        onToggle={() => setShowLeftPanel(!showLeftPanel)}
         isPlaying={isPlaying}
-        samplesLoaded={samplesLoaded}
-        audioContextState={audioContextState}
         togglePlayback={() => playback.togglePlayback(isPlaying, setIsPlaying, autoScroll, samplesLoaded)}
+        openModal={openModal}
         isGlobalRecording={recording.isGlobalRecording}
-        startGlobalRecording={recording.startGlobalRecording}
+        handleStartRecording={recording.handleStartRecording}
         stopGlobalRecording={recording.stopGlobalRecording}
         showNameInput={recording.showNameInput}
         newSampleName={recording.newSampleName}
         setNewSampleName={recording.setNewSampleName}
-        saveCustomSample={() => recording.saveCustomSample(rowSamples, setRowSamples)}
-        selectedPianoSample={selectedPianoSample}
-        setSelectedPianoSample={setSelectedPianoSample}
-        pianoSamples={PREDEFINED_PIANO_SAMPLES}
+        saveCustomSample={recording.saveCustomSample}
       />
-
-
-<SequencerToggle 
-        showLeftPanel={showLeftPanel} 
-        onToggle={() => setShowLeftPanel(!showLeftPanel)}
-      />
+      
       <Grid
         isPianoMode={isPianoMode}
         rows={rows}
@@ -1838,6 +2055,7 @@ const closeModal = () => {
           setShowLeftPanel={setShowLeftPanel}
           autoScroll={autoScroll}
           currentStep={currentStep}
+          openModal={openModal}
       />
 
       

@@ -7,50 +7,75 @@ const RangeInput = ({
   step = 1,
   value: propValue = 0,
   onChange,
-  colorClass = 'color3',
-  backgroundColorClass = 'backgroundColor1',
+  progressColor = 'backgroundColor4', // Color para la parte avanzada
+  trackColor = 'backgroundColor1',    // Color para la parte fija
+  showLabel = true,
   children
 }) => {
   const [localValue, setLocalValue] = useState(propValue);
+  const [isDragging, setIsDragging] = useState(false);
 
-  useEffect(() => {
-    //console.log(localValue);
-    
-  }, [localValue]);
+  // Calcular el porcentaje de progreso
+  const progressPercentage = ((localValue - min) / (max - min)) * 100;
 
   // Sincronizar con el valor prop cuando cambie
   useEffect(() => {
-    setLocalValue(propValue);
-  }, [propValue]);
+    if (!isDragging) {
+      setLocalValue(propValue);
+    }
+  }, [propValue, isDragging]);
 
   const handleChange = (e) => {
     const newValue = Number(e.target.value);
     setLocalValue(newValue);
-    if (onChange) {
+    
+    if (!isDragging && onChange) {
       onChange(newValue);
     }
   };
 
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      if (onChange && localValue !== propValue) {
+        onChange(localValue);
+      }
+    }
+  };
+
   return (
-    <div  style={{textAlign: 'center', display: 'flex', justifyContent: 'center'}}>
+    <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       {children}
       <div className={'rangeContainer'}>
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={localValue}
-          onChange={handleChange}
-          className={'rangeInput'}
-          style={{
-            '--thumb-color': colorClass,
-            '--track-color': backgroundColorClass,
-          }}
-        />
-        <div className={'rangeValue'}>
-          {Number.isInteger(localValue) ? localValue : parseFloat(localValue.toFixed(1))}
+        <div className="rangeInputWrapper">
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={isDragging ? localValue : propValue}
+            onChange={handleChange}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onTouchStart={handleMouseDown}
+            onTouchEnd={handleMouseUp}
+            className={'rangeInputProgress'}
+            style={{
+              '--progress': `${progressPercentage}%`,
+              '--progress-color': `var(--${progressColor})`,
+              '--track-color': `var(--${trackColor})`,
+            }}
+          />
         </div>
+        {showLabel && (
+          <div className={'rangeValueMinimal'}>
+            {Number.isInteger(localValue) ? localValue : parseFloat(localValue.toFixed(1))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -113,68 +113,70 @@ const AudioEditor = () => {
     content: null
   });
 
-  const [showExitWarning, setShowExitWarning] = useState(false);
-  const gestureStartX = useRef(0);
-  const isHorizontalGesture = useRef(false);
+  
+  
 
   useEffect(() => {
+    const gestureStart = { x: 0, y: 0 };
+    const isGestureDetected = { horizontal: false, vertical: false };
+
     const handleMouseDown = (e) => {
-      if (e.button === 0) {
-        gestureStartX.current = e.clientX;
-        isHorizontalGesture.current = false;
-      }
+        if (e.button === 0) {
+            gestureStart.x = e.clientX;
+            gestureStart.y = e.clientY;
+            isGestureDetected.horizontal = false;
+            isGestureDetected.vertical = false;
+        }
     };
 
     const handleMouseMove = (e) => {
-      if (gestureStartX.current !== 0) {
-        const deltaX = e.clientX - gestureStartX.current;
-        if (Math.abs(deltaX) > 30) {
-          isHorizontalGesture.current = true;
+        if (gestureStart.x !== 0 || gestureStart.y !== 0) {
+            const deltaX = e.clientX - gestureStart.x;
+            const deltaY = e.clientY - gestureStart.y;
+
+            if (Math.abs(deltaX) > 30) {
+                isGestureDetected.horizontal = true;
+                console.log("Movimiento horizontal detectado");
+            }
+
+            if (Math.abs(deltaY) > 30) {
+                isGestureDetected.vertical = true;
+                console.log("Movimiento vertical detectado");
+            }
         }
-      }
     };
 
     const handleMouseUp = () => {
-      if (isHorizontalGesture.current) {
-        setShowExitWarning(true);
-      }
-      gestureStartX.current = 0;
-      isHorizontalGesture.current = false;
+        gestureStart.x = 0;
+        gestureStart.y = 0;
+        isGestureDetected.horizontal = false;
+        isGestureDetected.vertical = false;
     };
 
     const handlePopState = (e) => {
-      if (isHorizontalGesture.current) {
-        e.preventDefault();
-        window.history.pushState(null, '', window.location.pathname);
-        setShowExitWarning(true);
-      }
+        if (isGestureDetected.horizontal || isGestureDetected.vertical) {
+            e.preventDefault();
+            window.history.pushState(null, '', window.location.pathname);
+            console.log("Intento de cambiar de ruta bloqueado");
+        }
     };
 
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("popstate", handlePopState);
     window.history.pushState(null, '', window.location.pathname);
 
     return () => {
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener("mousedown", handleMouseDown);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+}, []);
 
-  const handleConfirmExit = () => {
-    setShowExitWarning(false);
-    isHorizontalGesture.current = false;
-    window.history.back();
-  };
 
-  const handleCancelExit = () => {
-    setShowExitWarning(false);
-    isHorizontalGesture.current = false;
-    window.history.pushState(null, '', window.location.pathname);
-  };
+  
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -913,79 +915,7 @@ const AudioEditor = () => {
         {renderModalContent()}
       </Modal>
 
-      {showExitWarning && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          zIndex: 9999,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '2rem',
-            borderRadius: '8px',
-            maxWidth: '500px',
-            textAlign: 'center',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-          }}>
-            <h3 style={{ color: '#d32f2f', marginBottom: '1.5rem' }}>¡Acción no deseada detectada!</h3>
-            <p style={{ marginBottom: '2rem', lineHeight: '1.5' }}>
-              Has intentado navegar con un gesto del mouse. ¿Estás seguro que quieres salir del editor de audio?
-            </p>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              gap: '1rem',
-              marginTop: '1.5rem'
-            }}>
-              <button
-                onClick={handleCancelExit}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s',
-                  minWidth: '140px'
-                }}
-                onMouseOver={(e) => e.target.style.transform = 'scale(1.03)'}
-                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmExit}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s',
-                  minWidth: '140px'
-                }}
-                onMouseOver={(e) => e.target.style.transform = 'scale(1.03)'}
-                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-              >
-                Salir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       <div>
         <GlobalControls
