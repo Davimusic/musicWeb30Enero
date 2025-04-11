@@ -30,7 +30,7 @@ import AudioLevelMeter from "@/functions/music/DAW3/audioLevelMeter";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
 import { createDrumMachineTrack } from "@/functions/music/DAW3/createTack";
-
+import UploadAudiosFromDAW from "@/functions/music/components/uploadAudiosFromUsers";
 
 
 
@@ -76,6 +76,8 @@ const AudioEditor = () => {
     startTransport
   } = useAudioEngine();
   const router = useRouter();
+
+  return UploadAudiosFromDAW()
 
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);

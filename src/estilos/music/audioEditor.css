@@ -19,7 +19,6 @@
   scroll-behavior: smooth;
 }
 
-/* Contenedor de scroll (modificado para sticky) */
 .timeline-scroll-wrapper {
   overflow: auto;
   flex-grow: 1;
@@ -27,7 +26,15 @@
   scroll-behavior: smooth;
   -ms-overflow-style: none;  /* Oculta la barra en Internet Explorer y Edge */
   scrollbar-width: none;  /* Oculta la barra en Firefox */
+  height: 75vh; /* Altura por defecto */
 }
+
+@media (min-width: 740px) {
+  .timeline-scroll-wrapper {
+    height: 88vh !important; /* Forzamos la altura para evitar estilos en conflicto */
+  }
+}
+
 
 .timeline-scroll-wrapper::-webkit-scrollbar {
   display: none;
