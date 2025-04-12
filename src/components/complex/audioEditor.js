@@ -77,7 +77,7 @@ const AudioEditor = () => {
   } = useAudioEngine();
   const router = useRouter();
 
-  return UploadAudiosFromDAW()
+  
 
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -52,6 +52,7 @@ const Login = () => {
   useEffect(() => {
     if (user) {
       //router.push('/music/globalCollections=test1?type=audio&quality=low');
+      //router.push('/uploadSamples');
     }
   }, [user]);
 
@@ -77,20 +78,25 @@ const Login = () => {
 
       const data = await response.json();
       if (data.success) {
-        console.log(data);
+        //console.log(data);
+        //console.log(data.user.email);
         
         
         setModalMessage(data.message);
         setIsModalOpen(true);
 
         const user = auth.currentUser;
+        console.log(user);
+        
         if (user) {
           sessionStorage.setItem('userName', user.displayName || 'User');
           sessionStorage.setItem('userImage', user.photoURL || '');
           sessionStorage.setItem('userMyLikes', data.myLikes || 'nada');
+          sessionStorage.setItem('userEmail', data.user.email || 'nada');
         }
 
         //router.push('/music/globalCollections=test1?type=audio&quality=low');
+        router.push('/uploadSamples');
       } else {
         setError(data.message);
       }
@@ -111,12 +117,14 @@ const Login = () => {
         setModalMessage('Account created successfully!');
         setIsModalOpen(true);
         await handleUserAfterAuth(user.uid, user.email, 'signIn');
+        //console.log(email);
         console.log('bien form');
         
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         await handleUserAfterAuth(user.uid, user.email, 'login');
+        //console.log(email);
         console.log('bien form');
       }
     } catch (error) {

@@ -64,6 +64,7 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
             await signOut(auth);
             sessionStorage.removeItem('userName');
             sessionStorage.removeItem('userImage');
+            sessionStorage.removeItem('userEmail');
             router.push('/');
             onClose();
         } catch (error) {
