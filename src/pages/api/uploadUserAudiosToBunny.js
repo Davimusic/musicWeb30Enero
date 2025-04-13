@@ -113,7 +113,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({
-      error: 'Error interno del servidor',
+      error: 'Error interno del servidor to bunny',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }

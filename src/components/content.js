@@ -33,7 +33,7 @@ const Login = () => {
   provider.addScope('email');
   provider.addScope('profile');
 
-  useEffect(() => {
+  /*useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
@@ -47,16 +47,34 @@ const Login = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []);*/
 
   useEffect(() => {
-    if (user) {
-      //router.push('/music/globalCollections=test1?type=audio&quality=low');
-      //router.push('/uploadSamples');
-    }
-  }, [user]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        // Obtener email desde providerData si user.email es null
+        const userEmail = user.providerData[0]?.email || user.email || '';
+        localStorage.setItem('userName', user.displayName || 'User');
+        localStorage.setItem('userImage', user.photoURL || '');
+        localStorage.setItem('userEmail', userEmail); // <--- Cambio clave aquí
+        console.log("Usuario autenticado:", userEmail); // Para depuración
+        router.push('/uploadSamples');
+      } else {
+        setUser(null);
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userImage');
+        localStorage.removeItem('userEmail');
+        console.log("Usuario cerró sesión");
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 
-  const handleUserAfterAuth = async (uid, email, authType) => {
+  
+
+  /*const handleUserAfterAuth = async (uid, email, authType) => {
     try {
       // Verificar que el email no sea null o undefined
       if (!email) {
@@ -104,7 +122,51 @@ const Login = () => {
       console.error('Error calling handleUserAfterAuth:', error);
       setError(`An error occurred while handling user data: ${error.message}`);
     }
+  };*/
+
+
+  const handleUserAfterAuth = async (uid, email, authType) => {
+    try {
+      if (!email) {
+        throw new Error('Email is required.');
+      }
+  
+      const response = await fetch('/api/handleUserAfterAuth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uid, email, authType }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.details || 'Unknown error'}`);
+      }
+  
+      const data = await response.json();
+      if (data.success) {
+        // Guarda datos en localStorage (incluyendo el email de Firebase)
+        const user = auth.currentUser;
+        if (user) {
+          localStorage.setItem('userName', user.displayName || 'User');
+          localStorage.setItem('userImage', user.photoURL || '');
+          localStorage.setItem('userMyLikes', data.myLikes || 'nada');
+          localStorage.setItem('userEmail', email || 'nada'); // Usa el email de Firebase
+        }
+  
+        setModalMessage(data.message);
+        setIsModalOpen(true);
+        
+      } else {
+        setError(data.message);
+      }
+    } catch (error) {
+      console.error('Error calling handleUserAfterAuth:', error);
+      setError(`An error occurred while handling user data: ${error.message}`);
+    }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -151,7 +213,7 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  /*const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -174,7 +236,27 @@ const Login = () => {
       console.error('Error logging in with Google:', error);
       setError(`Error al iniciar sesión con Google: ${error.message}`);
     }
+  };*/
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+  
+      // Obtener email desde providerData si user.email falla
+      const email = user.providerData[0]?.email || user.email; // <--- Cambio clave aquí
+      if (!email) {
+        throw new Error('No se pudo obtener el correo electrónico de Google.');
+      }
+  
+      await handleUserAfterAuth(user.uid, email, 'google');
+    } catch (error) {
+      console.error('Error al iniciar sesión con Google:', error);
+      setError(`Error: ${error.message}`);
+    }
   };
+
+
 
   const handleLogout = async () => {
     try {
@@ -182,6 +264,7 @@ const Login = () => {
       setUser(null);
       localStorage.removeItem('userName');
       localStorage.removeItem('userImage');
+      localStorage.removeItem('userEmail');
     } catch (error) {
       console.error('Error logging out:', error);
     }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import determineResourceType from '@/functions/cms/determineResourceType';
 import Select from '@/components/complex/select';
+import InternetStatus from '@/components/complex/internetStatus';
+import Modal from '@/components/complex/modal';
 
 import '../../../estilos/general/general.css';
 import '../../../estilos/music/UploadSamplesFromUsers.css'
@@ -23,6 +25,9 @@ export default function UploadSamplesFromUsers() {
   const [windowWidth, setWindowWidth] = useState(0);
   const [category, setCategory] = useState('percussion'); // Valor por defecto
   const [title, setTitle] = useState("Upload Samples"); // Default title
+  const [modalContent, setModalContent] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   const path = 'exclusiveMusicForExclusivePeopleDAWSamples';
 
@@ -33,7 +38,7 @@ export default function UploadSamplesFromUsers() {
 
   useEffect(() => {
     // This code runs only on the client side
-    if (typeof window !== "undefined" && sessionStorage.getItem("userEmail") === "davipianof@gmail.com") {
+    if (typeof window !== "undefined" && localStorage.getItem("userEmail") === "davipianof@gmail.com") {
       setTitle("HI DAVIS, Upload Samples to public samples");
     }
   }, []);
@@ -118,9 +123,7 @@ export default function UploadSamplesFromUsers() {
     setUploadSuccess('');
 
     try {
-        const userEmail = localStorage.getItem('userEmail') || 
-                         
-                         'davipsssianof@gmail.com';
+        const userEmail = localStorage.getItem('userEmail') || 'davipsssianof@gmail.com';
         const isSpecialUser = userEmail.toLowerCase() === 'davipianof@gmail.com';
         const emailKey = userEmail.replace(/[@.]/g, '_');
         
@@ -193,6 +196,11 @@ export default function UploadSamplesFromUsers() {
         };
 
         // Guardar en MongoDB
+        console.log({ 
+          sample: sampleData,
+          user: { email: userEmail }
+      });
+        
         const saveResponse = await fetch('/api/saveSamplesUserToMongoDb', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -241,7 +249,7 @@ export default function UploadSamplesFromUsers() {
   top: 0,
   left: 0,
   width: '100%', // Asegura que cubra todo el ancho
-  height: '100%', // Asegura que cubra toda la altura
+  //height: '100%', // Asegura que cubra toda la altura
   //padding: window.innerWidth <= 768 ? '0px' : '40px 20px', // Ajuste según tamaño
   boxSizing: 'border-box',
   fontFamily: 'Arial, sans-serif',
@@ -250,6 +258,8 @@ export default function UploadSamplesFromUsers() {
   alignItems: 'center', // Centrado horizontal
   justifyContent: 'center', // Centrado vertical
   //backgroundColor: 'red'
+  height: '100vh',
+      overflow: 'auto'
     },
     contentWrapper: {
       width: '100%', // Ocupa el 100% del contenedor padre
@@ -261,7 +271,7 @@ export default function UploadSamplesFromUsers() {
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      height: 'auto'
+      height: '100vh'
       
     },
     title: {
@@ -277,7 +287,7 @@ export default function UploadSamplesFromUsers() {
       flex: 1,
       width: '100%', // Ocupa el 100% del espacio disponible
       maxHeight: isMobile ? 'none' : 'calc(100vh - 200px)', // Ajusta según necesidades
-      overflow: 'hidden'
+      //overflow: 'hidden'
     },
     formContainer: {
       flex: 1,
@@ -517,12 +527,36 @@ export default function UploadSamplesFromUsers() {
     '@keyframes fadeIn': {
       '0%': { opacity: 0, transform: 'translateY(10px)' },
       '100%': { opacity: 1, transform: 'translateY(0)' }
+    },
+    removeButton: {
+      background: 'none',
+      border: 'none',
+      color: '#ff4444',
+      fontSize: '20px',
+      cursor: 'pointer',
+      padding: '5px',
+      borderRadius: '50%',
+      width: '30px',
+      height: '30px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all 0.3s',
+      '&:hover': {
+        backgroundColor: '#ffebee',
+        transform: 'scale(1.1)'
+      }
+    },
+    textArea: {
+      resize: 'none', // Desactiva la redimensión manual
     }
   };
 
-
+  
   return (
     <div className={'color1'} style={styles.container}>
+      <Modal isOpen={isModalOpen} onClose={()=>setIsModalOpen(false)} children={modalContent}/>
+      <InternetStatus setModalContent={setModalContent} setIsModalOpen ={setIsModalOpen }/>
       <div className="backgroundColor3" style={styles.contentWrapper}>
         <h2 className="color2" style={styles.title}>
           {title}
@@ -543,7 +577,7 @@ export default function UploadSamplesFromUsers() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your samples (optional)"
-                  style={styles.textareaField}
+                  style={{ ...styles.textareaField, ...styles.textArea }}
                 />
               </label>
             </div>
@@ -558,7 +592,7 @@ export default function UploadSamplesFromUsers() {
                 }}
               >
                 Category:
-                <Select
+                <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   style={styles.inputField}
@@ -583,7 +617,7 @@ export default function UploadSamplesFromUsers() {
                   <option value="textures">Textures</option>
                   <option value="vocals">Vocals</option>
                   <option value="woodwind">Woodwind</option>
-                </Select>
+                </select>
               </label>
             </div>
   
@@ -608,198 +642,190 @@ export default function UploadSamplesFromUsers() {
             </div>
   
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-  {/* Contenedor principal flexible */}
-  <div style={{ 
-    display: 'flex', 
-    flexWrap: 'wrap', 
-    justifyContent: 'center', 
-    gap: '20px', 
-    width: '100%',
-    maxWidth: '1200px',
-    padding: '20px'
-  }}>
-    {/* Sección de carga de archivos */}
-    <div style={{ 
-      flex: '1 1 400px', 
-      maxWidth: '600px',
-      minWidth: '300px' 
-    }}>
-      <div style={{ textAlign: 'center', display: 'block' }}>
-        <label
-          style={styles.fileInputLabel}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor =
-              styles.fileInputLabelHover.backgroundColor)
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor =
-              styles.fileInputLabel.backgroundColor)
-          }
-        >
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-            accept=".mp3,.wav,.aiff,.flac"
-          />
-          <span>➕ Select Sample Files</span>
-        </label>
-        <p style={styles.fileInfoText}>
-          Allowed formats: MP3, WAV, AIFF, FLAC
-        </p>
-        <button
-          onClick={uploadFiles}
-          disabled={loading || selectedFiles.length === 0}
-          style={{
-            ...styles.button,
-            ...(loading ? styles.buttonLoading : {}),
-            ...((loading || selectedFiles.length === 0)
-              ? styles.buttonDisabled
-              : {}),
-            width: '100%',
-            animation: uploadSuccess ? '$pulse 1.5s infinite' : 
-                      errorMessage ? '$shake 0.5s' : 'none'
-          }}
-          onMouseOver={(e) =>
-            !loading &&
-            selectedFiles.length > 0 &&
-            Object.assign(e.currentTarget.style, styles.buttonHover)
-          }
-          onMouseOut={(e) =>
-            !loading &&
-            selectedFiles.length > 0 &&
-            (e.currentTarget.style.backgroundColor =
-              styles.button.backgroundColor)
-          }
-        >
-          {loading && <span style={styles.buttonLoadingBar}></span>}
-          <span
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px'
-            }}
-          >
-            {loading ? (
-              <>
-                <span
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '3px solid rgba(255,255,255,0.3)',
-                    borderTop: '3px solid white',
-                    borderRadius: '50%',
-                    animation: '$spin 1s linear infinite'
-                  }}
-                ></span>
-                Uploading {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}...
-              </>
-            ) : uploadSuccess ? (
-              '✅ Upload Complete!'
-            ) : errorMessage ? (
-              '❌ Try Again'
-            ) : (
-              'Upload Samples'
-            )}
-          </span>
-        </button>
-      </div>
-    </div>
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                justifyContent: 'center', 
+                gap: '20px', 
+                width: '100%',
+                maxWidth: '1200px',
+                padding: '20px'
+              }}>
+                {/* Sección de carga de archivos */}
+                <div style={{ 
+                  flex: '1 1 400px', 
+                  maxWidth: '600px',
+                  minWidth: '300px' 
+                }}>
+                  <div style={{ textAlign: 'center', display: 'block' }}>
+                    <label
+                      style={styles.fileInputLabel}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          styles.fileInputLabelHover.backgroundColor)
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          styles.fileInputLabel.backgroundColor)
+                      }
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                        accept=".mp3,.wav,.aiff,.flac"
+                      />
+                      <span>➕ Select Sample Files</span>
+                    </label>
+                    <p style={styles.fileInfoText}>
+                      Allowed formats: MP3, WAV, AIFF, FLAC
+                    </p>
+                    <button
+                      onClick={uploadFiles}
+                      disabled={loading || selectedFiles.length === 0}
+                      style={{
+                        ...styles.button,
+                        ...(loading ? styles.buttonLoading : {}),
+                        ...((loading || selectedFiles.length === 0)
+                          ? styles.buttonDisabled
+                          : {}),
+                        width: '100%',
+                        animation: uploadSuccess ? '$pulse 1.5s infinite' : 
+                                  errorMessage ? '$shake 0.5s' : 'none'
+                      }}
+                      onMouseOver={(e) =>
+                        !loading &&
+                        selectedFiles.length > 0 &&
+                        Object.assign(e.currentTarget.style, styles.buttonHover)
+                      }
+                      onMouseOut={(e) =>
+                        !loading &&
+                        selectedFiles.length > 0 &&
+                        (e.currentTarget.style.backgroundColor =
+                          styles.button.backgroundColor)
+                      }
+                    >
+                      {loading && <span style={styles.buttonLoadingBar}></span>}
+                      <span
+                        style={{
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px'
+                        }}
+                      >
+                        {loading ? (
+                          <>
+                            <span
+                              style={{
+                                width: '20px',
+                                height: '20px',
+                                border: '3px solid rgba(255,255,255,0.3)',
+                                borderTop: '3px solid white',
+                                borderRadius: '50%',
+                                animation: '$spin 1s linear infinite'
+                              }}
+                            ></span>
+                            Uploading {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}...
+                          </>
+                        ) : uploadSuccess ? (
+                          '✅ Upload Complete!'
+                        ) : errorMessage ? (
+                          '❌ Try Again'
+                        ) : (
+                          'Upload Samples'
+                        )}
+                      </span>
+                    </button>
+                  </div>
+                </div>
 
-    {/* Sección de configuración de visibilidad */}
-    <div style={{ 
-      flex: '1 1 400px', 
-      maxWidth: '600px',
-      minWidth: '300px' 
-    }}>
-      <div style={{ 
-        padding: '10px', 
-        width: '100%', 
-        
-        textAlign: 'center' 
-      }}>
-        <label style={{ fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '10px' }}>
-          Visibility:
-        </label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
-          <button
-            onClick={() => {
-              setIsPublic(false);
-              setForSale(false);
-            }}
-            style={{
-              ...styles.toggleButton,
-              ...(!isPublic ? styles.toggleButtonActive : styles.toggleButtonInactive)
-            }}
-          >
-            Private
-          </button>
-          <button
-            onClick={() => setIsPublic(true)}
-            style={{
-              ...styles.toggleButton,
-              ...(isPublic ? styles.toggleButtonActive : styles.toggleButtonInactive)
-            }}
-          >
-            Public
-          </button>
-        </div>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '5px', textAlign: 'center' }}>
-          {!isPublic
-            ? 'Only you can see these samples'
-            : 'All users can see these samples'}
-        </p>
+                {/* Sección de configuración de visibilidad */}
+                <div style={{ 
+                  flex: '1 1 400px', 
+                  maxWidth: '600px',
+                  minWidth: '300px' 
+                }}>
+                  <div style={{ 
+                    padding: '10px', 
+                    width: '100%', 
+                    textAlign: 'center' 
+                  }}>
+                    <label style={{ fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '10px' }}>
+                      Visibility:
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
+                      <button
+                        onClick={() => {
+                          setIsPublic(false);
+                          setForSale(false);
+                        }}
+                        style={{
+                          ...styles.toggleButton,
+                          ...(!isPublic ? styles.toggleButtonActive : styles.toggleButtonInactive)
+                        }}
+                      >
+                        Private
+                      </button>
+                      <button
+                        onClick={() => setIsPublic(true)}
+                        style={{
+                          ...styles.toggleButton,
+                          ...(isPublic ? styles.toggleButtonActive : styles.toggleButtonInactive)
+                        }}
+                      >
+                        Public
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#666', marginTop: '5px', textAlign: 'center' }}>
+                      {!isPublic
+                        ? 'Only you can see these samples'
+                        : 'All users can see these samples'}
+                    </p>
 
-        {isPublic && (
-          <div style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={styles.checkboxContainer}>
-              <input
-                type="checkbox"
-                id="forSale"
-                checked={forSale}
-                onChange={(e) => setForSale(e.target.checked)}
-                style={{ width: '18px', height: '18px' }}
-              />
-              <label htmlFor="forSale" style={{ fontWeight: 'bold', color: '#333' }}>
-                Sell these samples
-              </label>
-            </div>
+                    {isPublic && (
+                      <div style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={styles.checkboxContainer}>
+                          <input
+                            type="checkbox"
+                            id="forSale"
+                            checked={forSale}
+                            onChange={(e) => setForSale(e.target.checked)}
+                            style={{ width: '18px', height: '18px' }}
+                          />
+                          <label htmlFor="forSale" style={{ fontWeight: 'bold', color: '#333' }}>
+                            Sell these samples
+                          </label>
+                        </div>
 
-            {forSale && (
-              <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                <label style={{ fontWeight: 'bold', color: '#333' }}>
-                  Price per download (USD):
-                </label>
-                <div style={styles.priceInputContainer}>
-                  <span style={{ color: 'black' }}>$</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(Math.max(0.01, e.target.value))}
-                    placeholder="0.00"
-                    style={styles.priceInput}
-                  />
+                        {forSale && (
+                          <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                            <label style={{ fontWeight: 'bold', color: '#333' }}>
+                              Price per download (USD):
+                            </label>
+                            <div style={styles.priceInputContainer}>
+                              <span style={{ color: 'black' }}>$</span>
+                              <input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value={price}
+                                onChange={(e) => setPrice(Math.max(0.01, e.target.value))}
+                                placeholder="0.00"
+                                style={styles.priceInput}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-</div> 
+            </div> 
 
-
-  
-            
-  
-            
-  
             {errorMessage && (
               <div style={styles.errorAlert}>
                 <span style={styles.alertIcon}>❌</span>
@@ -809,7 +835,7 @@ export default function UploadSamplesFromUsers() {
                 </div>
               </div>
             )}
-  
+
             {uploadSuccess && (
               <div style={styles.successAlert}>
                 <span style={styles.alertIcon}>✅</span>
@@ -840,12 +866,31 @@ export default function UploadSamplesFromUsers() {
                     <div
                       style={{
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         gap: '10px',
                       }}
                     >
-                      <span style={{ fontSize: '24px' }}>🎵</span>
-                      <span style={styles.fileName}>{fileObj.file.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                        <span style={{ fontSize: '24px' }}>🎵</span>
+                        <span style={styles.fileName}>{fileObj.file.name}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const updatedFiles = [...selectedFiles];
+                          updatedFiles.splice(index, 1);
+                          setSelectedFiles(updatedFiles);
+                          
+                          const updatedPreviews = [...previews];
+                          URL.revokeObjectURL(updatedPreviews[index]);
+                          updatedPreviews.splice(index, 1);
+                          setPreviews(updatedPreviews);
+                        }}
+                        style={styles.removeButton}
+                        title="Remove this file"
+                      >
+                        ×
+                      </button>
                     </div>
                     {previews[index] && (
                       <audio controls style={styles.audioPlayer}>
@@ -872,7 +917,7 @@ export default function UploadSamplesFromUsers() {
                             handleExplanationChange(index, e.target.value)
                           }
                           placeholder="Example: 808 kick, processed with saturation, etc."
-                          style={styles.textareaField}
+                          style={{...styles.textareaField, ...styles.textArea}}
                         />
                       </label>
                     </div>
