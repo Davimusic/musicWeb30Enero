@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import determineResourceType from '@/functions/cms/determineResourceType';
+import Select from '@/components/complex/select';
 
 import '../../../estilos/general/general.css';
 import '../../../estilos/music/UploadSamplesFromUsers.css'
@@ -27,7 +28,7 @@ export default function UploadSamplesFromUsers() {
 
 
   useEffect(() => {
-    console.log(sessionStorage.getItem('userEmail'))
+    console.log(localStorage.getItem('userEmail'))
   }, []);
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export default function UploadSamplesFromUsers() {
 
     try {
         const userEmail = localStorage.getItem('userEmail') || 
-                         sessionStorage.getItem('userEmail') || 
+                         
                          'davipsssianof@gmail.com';
         const isSpecialUser = userEmail.toLowerCase() === 'davipianof@gmail.com';
         const emailKey = userEmail.replace(/[@.]/g, '_');
@@ -236,11 +237,11 @@ export default function UploadSamplesFromUsers() {
 
   const styles = {
     container: {
-      position: 'absolute', // Lo hace flotante sobre otros elementos
+      position: 'fixed', // Lo hace flotante sobre otros elementos
   top: 0,
   left: 0,
-  width: '100vw', // Asegura que cubra todo el ancho
-  height: '100vh', // Asegura que cubra toda la altura
+  width: '100%', // Asegura que cubra todo el ancho
+  height: '100%', // Asegura que cubra toda la altura
   //padding: window.innerWidth <= 768 ? '0px' : '40px 20px', // Ajuste según tamaño
   boxSizing: 'border-box',
   fontFamily: 'Arial, sans-serif',
@@ -248,17 +249,20 @@ export default function UploadSamplesFromUsers() {
   flexDirection: 'column',
   alignItems: 'center', // Centrado horizontal
   justifyContent: 'center', // Centrado vertical
+  //backgroundColor: 'red'
     },
     contentWrapper: {
       width: '100%', // Ocupa el 100% del contenedor padre
       maxWidth: '1200px', // Máximo ancho
-      margin: '0 auto', // Centrado horizontal
+      margin: '20px', // Centrado horizontal
       borderRadius: '0.7em',
       padding: isMobile ? '15px' : '25px',
       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
       flex: 1,
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      height: 'auto'
+      
     },
     title: {
       textAlign: 'center', 
@@ -554,7 +558,7 @@ export default function UploadSamplesFromUsers() {
                 }}
               >
                 Category:
-                <select
+                <Select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   style={styles.inputField}
@@ -579,7 +583,7 @@ export default function UploadSamplesFromUsers() {
                   <option value="textures">Textures</option>
                   <option value="vocals">Vocals</option>
                   <option value="woodwind">Woodwind</option>
-                </select>
+                </Select>
               </label>
             </div>
   

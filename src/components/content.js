@@ -37,12 +37,12 @@ const Login = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        sessionStorage.setItem('userName', user.displayName || 'User');
-        sessionStorage.setItem('userImage', user.photoURL || '');
+        localStorage.setItem('userName', user.displayName || 'User');
+        localStorage.setItem('userImage', user.photoURL || '');
       } else {
         setUser(null);
-        sessionStorage.removeItem('userName');
-        sessionStorage.removeItem('userImage');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userImage');
       }
     });
 
@@ -89,10 +89,10 @@ const Login = () => {
         console.log(user);
         
         if (user) {
-          sessionStorage.setItem('userName', user.displayName || 'User');
-          sessionStorage.setItem('userImage', user.photoURL || '');
-          sessionStorage.setItem('userMyLikes', data.myLikes || 'nada');
-          sessionStorage.setItem('userEmail', data.user.email || 'nada');
+          localStorage.setItem('userName', user.displayName || 'User');
+          localStorage.setItem('userImage', user.photoURL || '');
+          localStorage.setItem('userMyLikes', data.myLikes || 'nada');
+          localStorage.setItem('userEmail', data.user.email || 'nada');
         }
 
         //router.push('/music/globalCollections=test1?type=audio&quality=low');
@@ -180,8 +180,8 @@ const Login = () => {
     try {
       await signOut(auth);
       setUser(null);
-      sessionStorage.removeItem('userName');
-      sessionStorage.removeItem('userImage');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userImage');
     } catch (error) {
       console.error('Error logging out:', error);
     }

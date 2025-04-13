@@ -26,9 +26,9 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
 
     // Get user data from sessionStorage
     useEffect(() => {
-        const name = sessionStorage.getItem('userName') || '';
-        const image = sessionStorage.getItem('userImage') || '';
-        const myLikes = sessionStorage.getItem('userMyLikes') || '';
+        const name = localStorage.getItem('userName') || '';
+        const image = localStorage.getItem('userImage') || '';
+        const myLikes = localStorage.getItem('userMyLikes') || '';
         setUserName(name);
         setUserImage(image);
         setUserMyLikes(myLikes)
@@ -62,9 +62,9 @@ const Menu = ({ isOpen, onClose, className = '', openUpdateBackgroundColor }) =>
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            sessionStorage.removeItem('userName');
-            sessionStorage.removeItem('userImage');
-            sessionStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userImage');
+            localStorage.removeItem('userEmail');
             router.push('/');
             onClose();
         } catch (error) {
