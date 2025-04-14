@@ -75,7 +75,7 @@ export default async function handler(req, res) {
       const finalFileName = `${folderPath}/${originalName}`;
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+      const timeout = setTimeout(() => controller.abort(), 300000);
 
       const uploadResponse = await fetch(`${BUNNY_ENDPOINT}${encodeURI(finalFileName)}`, {
         method: 'PUT',
