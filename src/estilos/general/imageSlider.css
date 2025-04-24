@@ -1,0 +1,297 @@
+/* Contenedor principal del slider */
+/* Ahora se adapta al tamaño de su contenedor padre */
+.slider-container {
+    /* Se elimina fixed y se usa relative para permitir la encapsulación */
+    position: relative;
+    width: 100%;
+    height: 100%;
+    /* Se mantienen los estilos de centrado */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Opcional: si deseas un borde para visualizarlo, lo puedes dejar */
+    border: 1px solid #ddd;
+}
+
+/* Contenedor del slider */
+/* Elimina la altura en viewport y confía en el aspect-ratio para calcular la altura */
+.slider {
+    width: 100%;
+    max-width: 1024px; /* Máximo ancho para pantallas grandes */
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.7em;
+}
+
+/* Wrapper que agrupa ambas capas y respeta el borde redondeado */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    overflow: hidden;
+}
+
+/* Imagen de fondo: se extiende para cubrir el contenedor, con desenfoque y transparencia */
+.background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* Cubre todo el contenedor */
+    filter: blur(4px);          /* Aplica desenfoque */
+    transform: scale(1.1);      /* Aumenta ligeramente para evitar bordes vacíos */
+    opacity: 0.5;               /* La opacidad base se mantiene en 0.5 */
+    z-index: 1;
+}
+
+/* Imagen principal: se mantiene sin distorsión, centrada y con borde definido */
+.slideImage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Mantiene su proporción original */
+    display: block;
+    border-radius: 0.7em;
+    border: 2px solid #ddd;  /* Borde para resaltar el contorno */
+    z-index: 2;
+}
+
+/* Contenedor de los controles, abarcando solo el contenido */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
+    width: fit-content; /* Se adapta al contenido */
+    border-radius: 20px;
+    padding: 10px;
+}
+
+/* Estilos para los botones dentro de los controles */
+.controls button {
+    flex: 1 1 100px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    border: none;
+    background-color: #008cba;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.controls button:hover {
+    background-color: #005f75;
+}
+
+/* Opciones del modal para selección de efecto */
+.modal-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+}
+
+.modal-options button {
+    padding: 8px 16px;
+    border: none;
+    background-color: #008cba;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+}
+
+.modal-options button:hover {
+    background-color: #005f75;
+}
+
+/* ====================== */
+/* Animaciones para la imagen principal */
+/* ====================== */
+
+/* Fade */
+.fadeTransition {
+    animation: fadeEffect 1s;
+}
+@keyframes fadeEffect {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Slide (de derecha a izquierda) */
+.slideTransition {
+    animation: slideEffect 1s;
+}
+@keyframes slideEffect {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Zoom */
+.zoomTransition {
+    animation: zoomEffect 1s;
+}
+@keyframes zoomEffect {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Rotate */
+.rotateTransition {
+    animation: rotateEffect 1s;
+}
+@keyframes rotateEffect {
+    from { transform: rotate(-15deg); opacity: 0; }
+    to { transform: rotate(0deg); opacity: 1; }
+}
+
+/* Flip */
+.flipTransition {
+    animation: flipEffect 1s;
+    backface-visibility: hidden;
+}
+@keyframes flipEffect {
+    from { transform: rotateY(90deg); opacity: 0; }
+    to { transform: rotateY(0deg); opacity: 1; }
+}
+
+/* Blur */
+.blurTransition {
+    animation: blurEffect 1s;
+}
+@keyframes blurEffect {
+    from { filter: blur(5px); opacity: 0; }
+    to { filter: blur(0); opacity: 1; }
+}
+
+/* Slide Down */
+.slideDownTransition {
+    animation: slideDownEffect 1s;
+}
+@keyframes slideDownEffect {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Slide Up */
+.slideUpTransition {
+    animation: slideUpEffect 1s;
+}
+@keyframes slideUpEffect {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ====================== */
+/* Animaciones para la imagen de fondo (con estado final fijo en 0.5 de opacidad) */
+/* ====================== */
+
+/* Fade Background */
+.bg-fadeTransition {
+    animation: fadeEffectBackground 1s forwards;
+}
+@keyframes fadeEffectBackground {
+    from { opacity: 0.5; }
+    to { opacity: 0.5; }
+}
+
+/* Slide Background */
+.bg-slideTransition {
+    animation: slideEffectBackground 1s forwards;
+}
+@keyframes slideEffectBackground {
+    from { transform: translateX(100%); opacity: 0.5; }
+    to { transform: translateX(0); opacity: 0.5; }
+}
+
+/* Zoom Background */
+.bg-zoomTransition {
+    animation: zoomEffectBackground 1s forwards;
+}
+@keyframes zoomEffectBackground {
+    from { transform: scale(0.8); opacity: 0.5; }
+    to { transform: scale(1); opacity: 0.5; }
+}
+
+/* Rotate Background */
+.bg-rotateTransition {
+    animation: rotateEffectBackground 1s forwards;
+}
+@keyframes rotateEffectBackground {
+    from { transform: rotate(-15deg); opacity: 0.5; }
+    to { transform: rotate(0deg); opacity: 0.5; }
+}
+
+/* Flip Background */
+.bg-flipTransition {
+    animation: flipEffectBackground 1s forwards;
+    backface-visibility: hidden;
+}
+@keyframes flipEffectBackground {
+    from { transform: rotateY(90deg); opacity: 0.5; }
+    to { transform: rotateY(0deg); opacity: 0.5; }
+}
+
+/* Blur Background */
+.bg-blurTransition {
+    animation: blurEffectBackground 1s forwards;
+}
+@keyframes blurEffectBackground {
+    from { filter: blur(5px); opacity: 0.5; }
+    to { filter: blur(0); opacity: 0.5; }
+}
+
+/* Slide Down Background */
+.bg-slideDownTransition {
+    animation: slideDownEffectBackground 1s forwards;
+}
+@keyframes slideDownEffectBackground {
+    from { transform: translateY(-100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 0.5; }
+}
+
+/* Slide Up Background */
+.bg-slideUpTransition {
+    animation: slideUpEffectBackground 1s forwards;
+}
+@keyframes slideUpEffectBackground {
+    from { transform: translateY(100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 0.5; }
+}
+
+/* ====================== */
+/* Media Queries para pantallas medianas y pequeñas */
+/* ====================== */
+@media (max-width: 768px) {
+    .slider {
+        max-width: 90%;
+    }
+    .controls button {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .slider {
+        max-width: 100%;
+    }
+    .controls button {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+    .modal-options button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}

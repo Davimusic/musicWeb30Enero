@@ -1,4 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import ImageSlider from "@/components/complex/imageSlider";
+
+export default function Home() {
+  const images = [
+    "https://res.cloudinary.com/dplncudbq/image/upload/v1740088605/exclusiveMusicForExclusivePeople/tik5d_20250220_165649/xahzj2sgmlra6u7cnhhb.jpg",
+    "https://res.cloudinary.com/dplncudbq/image/upload/v1740088487/exclusiveMusicForExclusivePeople/tik3_20250220_165447/u7orq2vc0pwiewoxiagi.jpg",
+    "https://res.cloudinary.com/dplncudbq/image/upload/v1739834151/exclusiveMusicForExclusivePeople/saul_20250217_181549/bhir7pnxzcdt0tomyjcj.png",
+  ];
+
+  return (
+    <div style={{width: '100vw', height: '100vh'}}>
+      otra infohghghghg
+      hghghg
+      ghghgg
+      <div style={{width: '100%', height: '90%'}}>
+      <ImageSlider
+  images={images}
+  showControls={true}
+  controls={{
+    showPrevious: true,
+    showPlayPause: true,
+    showNext: true,
+    showShuffle: true,
+    showEffects: true
+  }}
+/>
+
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+/*import React, { useState, useEffect } from 'react';
 
 const FileGroupsDisplay = () => {
   const [groups, setGroups] = useState({});
@@ -59,4 +96,4 @@ const FileGroupsDisplay = () => {
   );
 };
 
-export default FileGroupsDisplay;
+export default FileGroupsDisplay;*/

@@ -8,7 +8,7 @@ import CheckBox from '@/components/complex/checkBox';
 import UploadAudiosFromDAW from './uploadAudiosFromUsers';
 '../../../estilos/general/general.css'
 '../../../estilos/music/subdivisionGrid.module.css'
-import PropTypes from 'prop-types';
+
 
 const BPM = 120;
 const DEFAULT_ROWS = 4;
@@ -17,19 +17,6 @@ const PIANO_KEYS = 88;
 const globalBuffersRef = { current: new Map() };
 const globalSelectedPianoSampleRef = { current: 'piano', duration: 0, durationToUse: 1 };
 const globalAudioContextRef = { current: null };
-
-
-
-
-
-
-/*let PREDEFINED_PIANO_SAMPLES = [
-  { id: 'piano', name: 'Piano (A4)', path: '/samples/public/keyboards/C3-1s.wav', baseFreq: 440 },
-  { id: 'voz', name: 'Voz (A4)', path: '/samples/public/voice/vos.wav', baseFreq: 440 },
-  { id: 'uno', name: 'Uno (A4)', path: '/samples/public/percussion/uno.mp3', baseFreq: 440 },
-  { id: 'C', name: 'C (A4)', path: '/samples/public/keyboards/C3.wav', baseFreq: 440 },
-  { id: 'hu', name: 'hu', path: '/samples/public/voice/hu.wav', baseFreq: 440 },
-];*/
 
 const getNoteName = (midiNote) => {
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -46,9 +33,6 @@ const DEFAULT_COLORS = {
   hihat: '#45B7D1', 
   clap: '#FFBE0B'
 };
-
-
-
 
 const useAudioContext = () => {
   const [audioContextState, setAudioContextState] = useState('suspended');
@@ -653,7 +637,7 @@ const useRecording = ({  }) => {
   };
 };
 
-const useSamples = ({ isPianoMode }) => {
+const useSamples = ({ isPianoMode, PREDEFINED_PIANO_SAMPLES }) => {
   const [samplesLoaded, setSamplesLoaded] = useState(false);
 
   const loadSamples = useCallback(async () => {
@@ -714,106 +698,13 @@ const useSamples = ({ isPianoMode }) => {
     }
   }, [isPianoMode]);
 
+
+  
+  
+  
   return { samplesLoaded, loadSamples };
 };
 
-const PianoFull88 = ({ isPianoMode }) => {
-  const [activeKeys, setActiveKeys] = useState([]);
-  const whiteKeyWidth = 50;
-  const blackKeyWidth = 30;
-
-  const generatePianoKeys = () => {
-    const whiteKeys = [];
-    const blackKeys = [];
-    let index = 0;
-
-    // Primera parte: Grupo inicial (A0, B0)
-    whiteKeys.push({ note: "A0", left: index * whiteKeyWidth });
-    index++;
-    whiteKeys.push({ note: "B0", left: index * whiteKeyWidth });
-    index++;
-
-    // Para cada octava 1 a 7, las teclas blancas en orden: C, D, E, F, G, A, B
-    const order = ["C", "D", "E", "F", "G", "A", "B"];
-    for (let octave = 1; octave <= 7; octave++) {
-      for (let i = 0; i < order.length; i++) {
-        const note = order[i] + octave;
-        whiteKeys.push({ note, left: index * whiteKeyWidth });
-        index++;
-      }
-    }
-    // Última tecla: C8
-    whiteKeys.push({ note: "C8", left: index * whiteKeyWidth });
-
-    // Generar teclas negras
-    whiteKeys.forEach((key, i) => {
-      const noteLetter = key.note[0];
-      if (i === whiteKeys.length - 1 || noteLetter === "B" || noteLetter === "E") return;
-
-      const octaveStr = key.note.slice(1);
-      const blackNote = key.note[0] + "#" + octaveStr;
-      const leftPos = key.left + whiteKeyWidth / 2 - blackKeyWidth / 2;
-      blackKeys.push({ note: blackNote, left: leftPos });
-    });
-
-    return { whiteKeys, blackKeys };
-  };
-
-  const { whiteKeys, blackKeys } = useMemo(generatePianoKeys, []);
-
-  const playNote = (note) => {
-    setActiveKeys((prev) => [...prev, note]);
-    setTimeout(() => {
-      setActiveKeys((prev) => prev.filter((n) => n !== note));
-    }, 300);
-  };
-
-  const keyMap = {
-    a: "C4", w: "C#4", s: "D4", e: "D#4", d: "E4",
-    f: "F4", t: "F#4", g: "G4", y: "G#4", h: "A4",
-    u: "A#4", j: "B4", k: "C5"
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      const note = keyMap[e.key.toLowerCase()];
-      if (note) playNote(note);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  if (!isPianoMode) return null;
-
-  return (
-    <div className={styles.pianoGridContainer}>
-      <div className={styles.pianoGridWrapper}>
-        <div className={styles.pianoGrid}>
-          {whiteKeys.map((key) => (
-            <div
-              key={`white-${key.note}`}
-              className={`${styles.whiteKey} ${activeKeys.includes(key.note) ? styles.activeWhite : ""}`}
-              style={{ left: `${key.left}px` }}
-              onClick={() => playNote(key.note)}
-            >
-              <span className={styles.keyLabel}>{key.note}</span>
-            </div>
-          ))}
-          {blackKeys.map((key) => (
-            <div
-              key={`black-${key.note}`}
-              className={`${styles.blackKey} ${activeKeys.includes(key.note) ? styles.activeBlack : ""}`}
-              style={{ left: `${key.left}px` }}
-              onClick={() => playNote(key.note)}
-            >
-              <span className={styles.keyLabel}>{key.note}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const Controls = ({
   isPianoMode,
@@ -892,9 +783,36 @@ const Controls = ({
     const loadAndUpdateSample = async () => {
       const sample = PREDEFINED_PIANO_SAMPLES.find(s => s.id === selectedPianoSample);
       if (!sample || !globalAudioContextRef.current) return;
-
+  
+      // Verificar si el sample ya está cargado
+      if (globalSelectedPianoSampleRef.current === selectedPianoSample && 
+          globalBuffersRef.current.has('pianoSample')) {
+        const existingBuffer = globalBuffersRef.current.get('pianoSample');
+        if (existingBuffer) {
+          const calculatedDuration = Math.max(0.1, existingBuffer.buffer.duration);
+          const safeDuration = Math.min(calculatedDuration, 10);
+          
+          // Usar el durationToUse de la referencia global si existe
+          const durationToUse = globalSelectedPianoSampleRef.durationToUse 
+            ? Math.min(globalSelectedPianoSampleRef.durationToUse, safeDuration)
+            : safeDuration;
+          
+          setCurrentSampleData({
+            duration: safeDuration,
+            durationToUse: durationToUse,  // Usar el valor guardado
+            isLoading: false
+          });
+          
+          // Actualizar la referencia global para mantener consistencia
+          globalSelectedPianoSampleRef.duration = safeDuration;
+          globalSelectedPianoSampleRef.durationToUse = durationToUse;
+          
+          return;
+        }
+      }
+  
       setCurrentSampleData(prev => ({ ...prev, isLoading: true }));
-
+  
       try {
         const response = await fetch(sample.path);
         if (!response.ok) throw new Error('Failed to fetch sample');
@@ -905,22 +823,28 @@ const Controls = ({
         const calculatedDuration = Math.max(0.1, audioBuffer.duration);
         const safeDuration = Math.min(calculatedDuration, 10);
         
+        // Usar el durationToUse existente si está disponible y es válido
+        const durationToUse = globalSelectedPianoSampleRef.current === selectedPianoSample && 
+                             globalSelectedPianoSampleRef.durationToUse
+          ? Math.min(globalSelectedPianoSampleRef.durationToUse, safeDuration)
+          : safeDuration;
+        
         globalSelectedPianoSampleRef.current = selectedPianoSample;
         globalSelectedPianoSampleRef.duration = safeDuration;
-        globalSelectedPianoSampleRef.durationToUse = safeDuration;
+        globalSelectedPianoSampleRef.durationToUse = durationToUse;
         
         setCurrentSampleData({
           duration: safeDuration,
-          durationToUse: safeDuration,
+          durationToUse: durationToUse,  // Usar el valor guardado o el nuevo
           isLoading: false
         });
-
+  
         globalBuffersRef.current.set('pianoSample', {
           buffer: audioBuffer,
           baseFreq: sample.baseFreq,
           duration: safeDuration
         });
-
+  
       } catch (error) {
         console.error('Error loading sample:', error);
         setCurrentSampleData({
@@ -930,7 +854,7 @@ const Controls = ({
         });
       }
     };
-
+  
     loadAndUpdateSample();
   }, [selectedPianoSample]);
 
@@ -2124,56 +2048,6 @@ Grid.defaultProps = {
   currentStep: 0,
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const SequencerToggle = ({ 
   showLeftPanel, 
   onToggle, 
@@ -2235,10 +2109,6 @@ const SequencerToggle = ({
     </div>
   );
 };
-
-
-
-
 
 const SubdivisionGrid = () => {
   const [isPianoMode, setIsPianoMode] = useState(false);
@@ -2466,7 +2336,7 @@ const SubdivisionGrid = () => {
   const baseBufferRef = useRef(null);
 
   const { audioContextRef, audioContextState, initAudioContext } = useAudioContext();
-  const { samplesLoaded, loadSamples } = useSamples({ isPianoMode, audioContextRef });
+  const { samplesLoaded, loadSamples } = useSamples({ isPianoMode, audioContextRef, PREDEFINED_PIANO_SAMPLES });
   const pianoSynth = usePianoSynth({ audioContextRef });
   const playback = usePlayback({
     //audioContextRef,
@@ -2531,6 +2401,10 @@ const SubdivisionGrid = () => {
   }, []);
 
   useEffect(() => {
+    console.log(PREDEFINED_PIANO_SAMPLES);
+  }, [PREDEFINED_PIANO_SAMPLES]);
+
+  useEffect(() => {
     const loadPianoSample = async () => {
       if (!isPianoMode || !PREDEFINED_PIANO_SAMPLES.length) return;
       
@@ -2572,9 +2446,7 @@ const SubdivisionGrid = () => {
     loadPianoSample();
   }, [selectedPianoSample, isPianoMode, PREDEFINED_PIANO_SAMPLES]);
 
-  useEffect(() => {
-    console.log(activeRows);
-  }, [activeRows]);
+  
 
 
   useEffect(() => { selectedCellsRef.current = selectedCells; }, [selectedCells]);
