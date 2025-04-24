@@ -1,3 +1,23 @@
+/*/ pages/notFound.js o donde desees integrarlo
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import StripeButton from "@/components/complex/stripeButton";
+
+const stripePromise = loadStripe("pk_test_51Mm2l3Hb6LFSD03O1seZ4YYZlm5E6pJAzYlOs4H8i1KbrzlGENHjav7f7MsWhbn9P0UwZbxxLvuGZuU7KAUXrtAt00GctWWZFu");
+
+const NotFound = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <StripeButton amount={10.00} />
+    </Elements>
+  );
+};
+
+export default NotFound;
+*/
+
+
+
 import PayPalButton from "@/components/complex/paypalButton";
 import '../../estilos/general/general.css';
 import React from 'react';
@@ -18,80 +38,73 @@ const NotFound = () => {
         className="container"
         style={{ 
           display: 'flex', 
-          flexDirection: 'row', // Por defecto, disposición en fila
-          justifyContent: 'space-between', // Espacio entre las columnas
-          alignItems: 'stretch', // Asegura que ambas columnas tengan la misma altura
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'stretch',
           minHeight: '90vh', 
-          width: '90vw', // Ancho del contenedor principal
-          maxWidth: '1200px', // Ancho máximo para evitar que se expanda demasiado
-          gap: '2em', // Espacio entre las columnas
-          flexWrap: 'wrap', // Permitir que los elementos se envuelvan en pantallas pequeñas
+          width: '90vw',
+          maxWidth: '1200px',
+          gap: '2em',
+          flexWrap: 'wrap',
         }}
       >
-        {/* Columna izquierda: Contenido (PayPal) */}
+        {/* Contenedor de PayPal */}
         <div 
           className="paypal-container backgroundColor3" 
           style={{ 
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
-            justifyContent: 'flex-start', // Alinear contenido al inicio
-            height: '80vh', // Altura fija para el contenedor
+            justifyContent: 'flex-start',
+            height: '80vh',
             borderRadius: '0.7em',
             padding: '1em',
-            overflowY: 'auto', // Scroll independiente para esta columna
-            scrollbarWidth: 'none', // Ocultar barra de scroll en Firefox
+            overflowY: 'auto',
+            scrollbarWidth: 'none',
           }}
         >
-          {/* Estilos para ocultar la barra de scroll en WebKit (Chrome, Safari, Edge) */}
-          <style>
-            {`
-              .backgroundColor3::-webkit-scrollbar {
-                display: none; /* Ocultar barra de scroll */
+          <style>{`
+            .backgroundColor3::-webkit-scrollbar {
+              display: none; 
+            }
+
+            @media (max-width: 768px) {
+              .container {
+                display: block; 
               }
 
-              /* Estilos para móviles */
-              @media (max-width: 768px) {
-                .container {
-                  display: block; /* Cambia a bloque en móviles */
-                }
-
-                .paypal-container {
-                  width: 100%; /* Ocupa el 100% del ancho en móviles */
-                  height: auto; /* Altura automática */
-                  margin-bottom: 2em; /* Espacio debajo del contenedor */
-                }
+              .paypal-container {
+                width: 100%; 
+                height: auto; 
+                margin-bottom: 2em; 
               }
-            `}
-          </style>
+            }
+          `}</style>
           <PayPalButton/>
         </div>
 
-        {/* Columna derecha: Descripción */}
+        {/* Contenedor de la descripción */}
         <div 
           className="backgroundColor3"
           style={{ 
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
-            justifyContent: 'flex-start', // Alinear contenido al inicio
-            flex: 1, // Ocupa el espacio disponible
-            height: '80vh', // Altura fija para el contenedor
+            justifyContent: 'flex-start',
+            flex: 1,
+            height: '80vh',
             borderRadius: '0.7em',
             padding: '1em',
-            overflowY: 'auto', // Scroll independiente para esta columna
-            minWidth: '300px', // Ancho mínimo para evitar que se encoja demasiado
-            scrollbarWidth: 'none', // Ocultar barra de scroll en Firefox
+            overflowY: 'auto',
+            minWidth: '300px',
+            scrollbarWidth: 'none',
           }}
         >
-          {/* Estilos para ocultar la barra de scroll en WebKit (Chrome, Safari, Edge) */}
-          <style>
-            {`
-              .backgroundColor3::-webkit-scrollbar {
-                display: none; /* Ocultar barra de scroll */
-              }
-            `}
-          </style>
+          <style>{`
+            .backgroundColor3::-webkit-scrollbar {
+              display: none; 
+            }
+          `}</style>
           <h2>Descripción de la venta</h2>
           <p>
             Este es un texto de prueba que describe lo que se está vendiendo.
@@ -105,6 +118,7 @@ const NotFound = () => {
 };
 
 export default NotFound;
+
 
 
 

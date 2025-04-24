@@ -256,26 +256,7 @@ const Audio = ({
 
       <FullControlMedia {...fullControlMediaProps} />
 
-      {/* Nuevo: Mostrar la transcripción de la letra en tiempo real */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '300px',
-          maxHeight: '400px',
-          overflowY: 'auto',
-          padding: '10px',
-          border: '1px solid #ccc',
-          borderRadius: '5px',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          zIndex: 1000,
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>Letra en Tiempo Real</h3>
-        <p>{transcript || 'Habla o reproduce audio para ver la letra...'}</p>
-      </div>
+      
     </>
   );
 };

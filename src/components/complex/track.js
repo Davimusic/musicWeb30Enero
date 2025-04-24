@@ -2,27 +2,38 @@ import React, { useEffect, useRef, memo, useCallback } from "react";
 import { drawWaveform } from "@/functions/music/drawWaveform";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
 
+
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
 import PianoGenerator from "@/functions/music/components/audioScaleGenerator";
 
-const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks, totalElements, openModal, audioNodesRef, currentTime, isPlaying, audioContextRef, preloadSequencerSamples, scheduleDrumMachine, startTransport }) => {
+const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks, totalElements, openModal, audioNodesRef, currentTime, isPlaying, audioContextRef, preloadSequencerSamples, scheduleDrumMachine, startTransport, waveFormStyle }) => {
   const canvasRef = useRef(null);
+  const { audioBuffer, type, backgroundColorTrack } = track;
 
   useEffect(() => {
-    if (track.type !== "drumMachine" && track.audioBuffer) {
+    // Ejecuta la lógica solo para tracks que no son del tipo "drumMachine" y tienen audioBuffer.
+    if (type !== "drumMachine" && audioBuffer) {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      
+  
+      console.log(track);
+      console.log(pixelsPerSecond);
+      console.log(pixelsHeight);
+      console.log(waveFormStyle);
+  
       drawWaveform(
-        canvas, 
-        track.audioBuffer, 
-        pixelsPerSecond, 
-        track, 
-        setTracks, 
-        track.backgroundColorTrack
+        canvas,
+        audioBuffer,
+        pixelsPerSecond,
+        track,
+        setTracks,
+        backgroundColorTrack,
+        "red",
+        waveFormStyle
       );
     }
-  }, [track, pixelsPerSecond, pixelsHeight]);
+    // Nota: solo dependemos de las propiedades relevantes y de los otros valores que se usan.
+  }, [audioBuffer, type, backgroundColorTrack, pixelsPerSecond, pixelsHeight, waveFormStyle]);
 
   const handleCanvasClick = (e) => {
     if (track.type === "drumMachine") {

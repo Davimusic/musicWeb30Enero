@@ -390,7 +390,8 @@ export const GlobalControls = ({
   toggleMenu,
   openModal,
   openSubdivision,
-  handleAddDrumMachine
+  handleAddDrumMachine,
+  waveStyles
 }) => {
   const fileInputRef = useRef(null);
 
@@ -418,6 +419,7 @@ export const GlobalControls = ({
         <StopIcon onClick={onStop} />
         <RecordIcon isRecording={isRecording} onClick={onRecord} />
         <AddTrackIcon size={30} onClick={handleAddDrumMachine}/>
+        <div onClick={waveStyles}>xx</div>
       </div>
 
       {/* Visualización del tiempo */}

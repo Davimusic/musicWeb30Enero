@@ -31,10 +31,12 @@ import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
 import { createDrumMachineTrack } from "@/functions/music/DAW3/createTack";
 import UploadAudiosFromDAW from "@/functions/music/components/uploadAudiosFromUsers";
+import { WAVEFORM_STYLES } from "@/functions/music/drawWaveform";
 
 
 
 import { createPortal } from 'react-dom'; 
+//import Select from "./select";
 
 
 
@@ -92,6 +94,7 @@ const AudioEditor = () => {
     timeSignatureBottom: 4, // Denominador del compás (ej. 4 en 4/4)
     enabled: false
   });
+  const [waveFormStyle, setWaveFormStyle] = useState('DEFAULT');
 
 
   
@@ -178,7 +181,9 @@ const AudioEditor = () => {
 }, []);
 
 
-  
+useEffect(() => {
+  console.log(waveFormStyle);
+}, [waveFormStyle]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -794,6 +799,41 @@ const AudioEditor = () => {
         </div>
       );
     }
+
+    if (modalState.content === 'waveStyles') {
+      
+      return (
+        <div style={{ width: '300px', padding: '20px' }}>
+          <h2 className="title-md" style={{ textAlign: 'center', marginBottom: '20px', fontWeight: 300 }}>
+            Wave styles
+          </h2>
+          
+          <div style={{ 
+            backgroundColor: 'rgba(0,0,0,0.1)', 
+            padding: '10px', 
+            borderRadius: '4px',
+            marginBottom: '20px'
+          }}>
+            <select
+              value={waveFormStyle}
+              onChange={(e) => setWaveFormStyle(e.target.value)}>
+              
+              <option value="default">DEFAULT</option>
+              <option value="sc_split">SOUNDCLOUD_SPLIT</option>
+              <option value="st_bars">SOUNDTRAP_BARS</option>
+              <option value="glow_lines">GLOW_LINES</option>
+              <option value="watercolor">WATERCOLOR</option>
+              <option value="modern_bars">MODERN_BARS</option>
+              <option value="dual_grad">DUAL_GRADIENT</option>
+              <option value="neon_outline">NEON_OUTLINE</option>
+              <option value="wavy_ribbon">WAVY_RIBBON</option>
+              <option value="faded_peaks">FADED_PEAKS</option>
+              <option value="geometric">GEOMETRIC</option>
+            </select>  
+          </div>
+        </div>
+      );
+    }
   };
 
  
@@ -900,6 +940,7 @@ const AudioEditor = () => {
                       preloadSequencerSamples={preloadSequencerSamples}
                       scheduleDrumMachine={scheduleDrumMachine}
                       startTransport={startTransport}
+                      waveFormStyle={waveFormStyle}
                     />
                   </div>
                 </div>
@@ -934,6 +975,7 @@ const AudioEditor = () => {
           openModal={()=>openModal('', 'zoomSliders')}
           openSubdivision={()=>openModal('', 'subdivisions')}
           handleAddDrumMachine={handleAddDrumMachine}
+          waveStyles={()=>openModal('', 'waveStyles')}
         />
       </div>
     </div>

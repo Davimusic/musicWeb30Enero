@@ -175,7 +175,8 @@ const Select = ({
             padding: '5px',
             borderRadius: '0.7em',
             maxHeight: '50vh',
-            overflow: 'auto'
+            overflow: 'auto',
+            zIndex: '20000'
           }}
         >
           {React.Children.map(children, (child) => {

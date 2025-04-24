@@ -1,6 +1,6 @@
 /* Estilos generales para el componente Music */
 .music-container {
-  height: 97vh;
+  height: 100vh;
   display: flex;
   flex-direction: column; /* Asegura que los elementos se apilen verticalmente */
   border-radius: 20px;

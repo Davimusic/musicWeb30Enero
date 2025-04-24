@@ -34,7 +34,23 @@ export default function UploadSamplesFromUsers() {
 
 
   useEffect(() => {
-    console.log(localStorage.getItem('userEmail'))
+    const userEmail = localStorage.getItem('userEmail');
+    console.log("User Email:", userEmail);
+  
+    if (userEmail) {
+      fetch('/api/getAllDAWSampleCategories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user: { email: userEmail } }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Received categories:", data);
+      })
+      .catch(error => console.error("Error fetching categories:", error));
+    }
   }, []);
 
   useEffect(() => {
@@ -758,7 +774,7 @@ export default function UploadSamplesFromUsers() {
                         <span className="file-name">{fileObj.file.name}</span>
                       </div>
                       <button
-                         onClick={() => {
+                        onClick={() => {
                           const updatedFiles = [...selectedFiles];
                           updatedFiles.splice(index, 1);
                           setSelectedFiles(updatedFiles);

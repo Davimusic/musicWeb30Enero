@@ -63,7 +63,7 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
       className="time-ruler"
       style={{
         width: `${totalWidth}px`,
-        minWidth: `calc(100% + ${windowWidth}px)`, // Por si acaso
+        minWidth: `calc(100% + ${windowWidth}px)`,
         height: "30px",
         position: "sticky",
         top: 0,
@@ -71,7 +71,7 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
         zIndex: 11,
         backgroundColor: "white",
         display: "flex",
-        overflow: "visible"
+        overflow: "hidden" // Evita que se desborde el contenido
       }}
     >
       {Array.from({ length: numberOfMarks }).map((_, i) => (
@@ -80,17 +80,51 @@ const TimeRuler = ({ pixelsPerSecond, tracks }) => {
           className="time-mark"
           style={{
             width: `${pixelsPerSecond}px`,
-            flexShrink: 0
+            flexShrink: 0,
+            boxSizing: "border-box",
+            borderLeft: "1px solid black",
           }}
-        >
-          <div style={{ display: "flex" }}>
-            <div style={{padding: '0', border: 'solid 1px black'}} className="color1"></div>
-            <div style={{marginTop: '10px'}} className="time-label title-xxs color1">{formatTime(i)}</div>
+        > 
+          {/* Fila superior: etiqueta de tiempo */}
+          <div 
+            style={{ 
+              textAlign: "center", 
+              marginTop: "2px",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              fontSize: '10px'
+            }} 
+            className="time-label  color1"
+          >
+            {formatTime(i)}
+          </div>
+          {/* Fila inferior: subdivisiones equidistantes */}
+          <div 
+            style={{ 
+              position: "relative", 
+              height: "15px", 
+              width: "100%" 
+            }}
+          >
+            {Array.from({ length: 3 }).map((_, j) => (
+              <div
+                key={j}
+                style={{
+                  position: "absolute",
+                  left: `${((j + 1) * 100) / 4}%`, // 25%, 50% y 75% para 4 subdivisiones
+                  top: 0,
+                  height: "100%",
+                  width: "1px",
+                  backgroundColor: "gray",
+                }}
+              />
+            ))}
           </div>
         </div>
       ))}
     </div>
   );
+  
 };
 
 TimeRuler.propTypes = {

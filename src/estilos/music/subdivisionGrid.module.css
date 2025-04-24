@@ -1,0 +1,11 @@
+.container {
+    /* Ya tienes overflowX: auto en el estilo inline, pero aquí ocultamos la scrollbar */
+    scrollbar-width: none;         /* Firefox */
+    -ms-overflow-style: none;      /* IE and Edge */
+    background-color: aqua;
+  }
+  
+  .container::-webkit-scrollbar {
+    display: none;                 /* Chrome, Safari and Opera */
+  }
+  

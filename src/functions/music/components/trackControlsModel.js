@@ -24,7 +24,7 @@ const TrackControlsModal = ({ track, openModal, audioNodesRef, currentTime, isPl
       style={{
         position: 'sticky',
         left: '0px',
-        top: '0',
+        top: '0px',
         zIndex: 10,
         display: 'flex',
         alignItems: 'center',

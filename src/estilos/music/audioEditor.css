@@ -49,19 +49,21 @@
   position: relative;/*en prueba*/
 }
 
-/* Track Container (modificado mínimamente) */
+
 .track-container {
-  display: block; /* Cambiado de flex a block para sticky correcto */
+  display: block; 
   position: relative;
-  /*min-height: 100px;*/
-  /*background-color: aqua;*/
   width: max-content;
   margin-bottom: 10px;
 }
 
+
+
 /* Track Waveform (modificado para sticky) */
 .track-waveform {
   position: relative;
+  /*height: 100px;*/
+  /*background-color: #1a1a1a;*/
 }
 
 /* Estilo para el nombre sticky (usa tu clase .mirar) */
@@ -85,7 +87,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: #1896a700;
+  /*background: #1896a7;*/
   border-radius: 0.7em;
 }
 

@@ -6,7 +6,7 @@ const BPM = 120;
 const DEFAULT_ROWS = 4;
 const PIANO_KEYS = 88;
 
-const PREDEFINED_PIANO_SAMPLES = [
+let PREDEFINED_PIANO_SAMPLES = [
   { id: 'piano', name: 'Piano (A4)', path: '/C3-1s.wav', baseFreq: 440 },
   { id: 'voz', name: 'Voz (A4)', path: '/vos.wav', baseFreq: 440 },
   { id: 'uno', name: 'Uno (A4)', path: '/uno.mp3', baseFreq: 440 },
@@ -718,6 +718,7 @@ const Grid = ({
   handleCellClick,
   gridContainerRef,
   indicatorRef,
+  activeRows
 }) => {
   const is88KeyMode = isPianoMode && rows === 88;
 
@@ -1245,6 +1246,7 @@ const SubdivisionGrid = () => {
         handleCellClick={handleCellClick}
         gridContainerRef={playback.gridContainerRef}
         indicatorRef={playback.indicatorRef}
+        activeRows={activeRows}
       />
 
       {!isPianoMode && (
