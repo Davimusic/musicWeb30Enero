@@ -1,4 +1,5 @@
 import ImageSlider from "@/components/complex/imageSlider";
+import '../estilos/general/general.css'
 
 export default function Home() {
   const images = [
@@ -8,11 +9,11 @@ export default function Home() {
   ];
 
   return (
-    <div style={{width: '100vw', height: '100vh'}}>
+    <div className="fullscreen-floating">
       otra infohghghghg
       hghghg
       ghghgg
-      <div style={{width: '100%', height: '90%'}}>
+      <div style={{width: '100%'}}>
       <ImageSlider
   images={images}
   showControls={true}
