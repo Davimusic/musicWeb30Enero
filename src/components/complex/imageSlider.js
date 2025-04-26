@@ -21,6 +21,7 @@ const ImageSlider = ({
   },
   // Si se pasa fixedEffect, se usará siempre ese efecto y se deshabilitará la opción de cambiarlo.
   fixedEffect,
+  timeToShow = 5000
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -55,7 +56,7 @@ const ImageSlider = ({
           return (prevIndex + 1) % images.length;
         }
       });
-    }, 2000);
+    }, timeToShow);
     return () => clearInterval(intervalId);
   }, [images, isPlaying, isShuffle]);
 

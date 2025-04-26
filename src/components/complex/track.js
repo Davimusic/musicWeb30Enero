@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, memo, useCallback } from "react";
 import { drawWaveform } from "@/functions/music/drawWaveform";
 import SubdivisionGrid from "@/functions/music/components/subdivisionGrid";
+import { PercussionSequencer, PianoSequencer } from "@/functions/music/components/subdivisionGrid";
+
 
 
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
@@ -107,20 +109,9 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight
       >
         
   
-        {/*<PianoGenerator/>*/}
-        <SubdivisionGrid/>
-  {/*PIXELS_PER_SECOND={pixelsPerSecond}
-  pulsesPerMeasure={4}
-  subdivisionsPerPulse={4} // 16 pasos por compás
-  BPM={120}
-  totalElements={16} // 1 compás
-  rows={4} // Kick, Snare, Hihat, Clap
-  isPlaying={isPlaying}
-  currentTime={currentTime}
-  onCellTrigger={handleCellTrigger}
-  startTransport={startTransport}
-  audioContext={audioContextRef.current}
-/>*/}
+        
+        <PercussionSequencer/>{/*PianoSequencer*/}
+  
           
           {track.drumPattern.patterns[track.drumPattern.currentPattern].steps.map((step, i) => {
             if (step.activeSounds.length === 0) return null;

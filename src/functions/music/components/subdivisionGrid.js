@@ -1,4 +1,2388 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect, useReducer } from 'react';
+import SingleColorPickerModalContent from '@/components/complex/singleColorPickerModalContent';
+import Modal from '@/components/complex/modal';
+import RangeInput from '@/components/complex/rangeInput';
+import TogglePlayPause from '@/components/complex/TogglePlayPause';
+import CustomNumberInput from '@/components/complex/customNumberInput';
+import CheckBox from '@/components/complex/checkBox';
+import UploadAudiosFromDAW from './uploadAudiosFromUsers';
+'../../../estilos/general/general.css'
+'../../../estilos/music/subdivisionGrid.module.css'
+
+
+
+
+
+const DEFAULT_SAMPLES = ['kick', 'snare', 'hihat', 'clap'];
+const DEFAULT_COLORS = {
+  kick: '#FF6B6B',
+  snare: '#4ECDC4',
+  hihat: '#45B7D1',
+  clap: '#FFBE0B'
+};
+
+
+
+/* ----------------------------- Constantes Compartidas ----------------------------- */
+const BPM = 120;
+const PIANO_KEYS = 88;
+
+const globalBuffersRef = { current: new Map() };
+const globalAudioContextRef = { current: null };
+const DEFAULT_ROWS = 4
+
+// Mover esto FUERA de PercussionSequencer
+function RowControlsModal({
+  rowIndex,
+  rowSamples,
+  customColors,
+  setCustomColors,
+  onSampleChange,
+  onClose,
+  customSamples
+}) {
+
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  return (
+    <div style={{ padding: '20px', minWidth: '300px' }}>
+      {!showColorPicker ? (
+        <>
+          <h3 style={{ marginTop: 0 }}>Row {rowIndex + 1} Controls</h3>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label>Sound Sample:</label>
+            <select
+              value={rowSamples[rowIndex]}
+              onChange={(e) => onSampleChange(e.target.value)}
+              style={{ width: '100%', padding: '8px', marginTop: '8px' }}
+            >
+              <option value="kick">Kick</option>
+              <option value="snare">Snare</option>
+              <option value="hihat">Hihat</option>
+              <option value="clap">Clap</option>
+              {customSamples.map((sample, idx) => (
+                <option key={idx} value={sample.name}>{sample.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label>Color Reference:</label>
+            <div 
+              style={{
+                width: '60px',
+                height: '60px',
+                backgroundColor: customColors[rowSamples[rowIndex]],
+                borderRadius: '8px',
+                marginTop: '8px',
+                cursor: 'pointer',
+                border: '2px solid #ddd'
+              }}
+              onClick={()=> setShowColorPicker(true)}
+            />
+          </div>
+
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Close
+          </button>
+        </>
+      ) : (
+        <SingleColorPickerModalContent
+          initialColor={customColors[rowSamples[rowIndex]]}
+          onColorUpdate={(newColor) => {
+            const pass = {...customColors}
+            pass[rowSamples[rowIndex]] = newColor
+            setCustomColors(pass) 
+            setShowColorPicker(false);
+          }}
+          onClose={() => setShowColorPicker(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+
+export const PercussionSequencer = () => {
+  // State for sequencer configuration
+  const [rows, setRows] = useState(DEFAULT_ROWS);
+  const [rowSamples, setRowSamples] = useState(
+    Array(DEFAULT_ROWS).fill().map((_, i) => DEFAULT_SAMPLES[i] || 'kick')
+  );
+  const [selectedCells, setSelectedCells] = useState(new Set());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [numerator, setNumerator] = useState(4);
+  const [denominator, setDenominator] = useState(4);
+  const [subdivisionsPerPulse, setSubdivisionsPerPulse] = useState(4);
+  const [measures, setMeasures] = useState(1);
+  const [measureWidth, setMeasureWidth] = useState(800);
+  const [componentHeight, setComponentHeight] = useState(300);
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [activeRows, setActiveRows] = useState(new Set());
+  const [samplesLoaded, setSamplesLoaded] = useState(false);
+  const [audioContextState, setAudioContextState] = useState('suspended');
+  const [isGlobalRecording, setIsGlobalRecording] = useState(false);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [newSampleName, setNewSampleName] = useState('');
+  const [customSamples, setCustomSamples] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState(null);
+  const [collapsedRows, setCollapsedRows] = useState(() => {
+    const initialCollapsed = new Set();
+    Array.from({ length: DEFAULT_ROWS }).forEach((_, i) => {
+      initialCollapsed.add(i);
+    });
+    return initialCollapsed;
+  });
+
+  // Refs
+  const scheduledSourcesRef = useRef(new Set());
+  const animationRef = useRef(null);
+  const currentStepRef = useRef(0);
+  const nextStepTimeRef = useRef(0);
+  const startTimeRef = useRef(0);
+  const lastFrameTimeRef = useRef(0);
+  const gridContainerRef = useRef(null);
+  //const indicatorRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const tempSampleNameRef = useRef('');
+  
+
+  // Agregar después de los otros refs:
+const isPlayingRef = useRef(isPlaying);
+const numeratorRef = useRef(numerator);
+const subdivisionsPerPulseRef = useRef(subdivisionsPerPulse);
+const measuresRef = useRef(measures);
+
+const headerContainerRef = useRef(null);
+const isScrollingProgrammatically = useRef(false);
+
+const handleSyncScroll = (source, target) => {
+  if (!isScrollingProgrammatically.current && target) {
+    isScrollingProgrammatically.current = true;
+    target.scrollLeft = source.scrollLeft;
+    requestAnimationFrame(() => {
+      isScrollingProgrammatically.current = false;
+    });
+  }
+};
+
+// Update the grid scroll handler
+const handleGridScroll = (e) => {
+  handleSyncScroll(e.target, headerContainerRef.current);
+};
+
+// Update the header scroll handler
+const handleHeaderScroll = (e) => {
+  handleSyncScroll(e.target, gridContainerRef.current);
+};
+
+
+// Agrega este estado en tu componente principal
+const [hoveredRow, setHoveredRow] = useState(null);
+
+
+// Y agregar useEffect para sincronizarlos:
+useEffect(() => {
+  isPlayingRef.current = isPlaying;
+  numeratorRef.current = numerator;
+  subdivisionsPerPulseRef.current = subdivisionsPerPulse;
+  measuresRef.current = measures;
+}, [isPlaying, numerator, subdivisionsPerPulse, measures, showLeftPanel]);
+
+  // Derived values
+
+const totalStepsPerMeasure = numerator * subdivisionsPerPulse;
+const totalSteps = measures * totalStepsPerMeasure;
+const cellWidth = measureWidth / totalStepsPerMeasure;
+//const totalGridWidth = measures * numerator * subdivisionsPerPulse * cellWidth;
+// Modificar el cálculo del grid width
+const totalGridWidth = measures * numerator * subdivisionsPerPulse * cellWidth + 2; // +2px para bordes
+
+
+const collapsedRowCount = collapsedRows.size;
+const totalExpandedRows = rows - collapsedRowCount;
+const availableHeightForExpanded = componentHeight - (collapsedRowCount * 20);
+const expandedRowHeight = totalExpandedRows > 0 ? availableHeightForExpanded / totalExpandedRows : 0;
+
+const rowHeights = Array.from({ length: rows }, (_, rowIndex) => 
+  collapsedRows.has(rowIndex) ? 20 : expandedRowHeight
+);
+
+const cumulativeHeights = [];
+let currentHeight = 0;
+for (let i = 0; i < rows; i++) {
+  cumulativeHeights[i] = currentHeight;
+  currentHeight += rowHeights[i];
+}
+
+
+
+  const [customColors, setCustomColors] = useState(() => {
+    const initialColors = {};
+    Object.keys(DEFAULT_COLORS).forEach(key => {
+      initialColors[key] = DEFAULT_COLORS[key];
+    });
+    return initialColors;
+  });
+  
+  // Y actualizar la función getRowColor:
+  const getRowColor = (sampleName) => {
+    return customColors[sampleName] || DEFAULT_COLORS[sampleName] || '#a5d6a7';
+  };
+
+
+
+
+
+  // Initialize audio context
+  const initAudioContext = useCallback(() => {
+    if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+      globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      setAudioContextState(globalAudioContextRef.current.state);
+      
+      globalAudioContextRef.current.onstatechange = () => {
+        setAudioContextState(globalAudioContextRef.current.state);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (modalOpen) {
+      setModalContent(prev => 
+        React.isValidElement(prev) ? 
+        React.cloneElement(prev, { 
+          rowSamples: [...rowSamples],
+          customColors: {...customColors} // Nombre corregido
+        }) : 
+        prev
+      );
+    }
+  }, [rowSamples, customColors, modalOpen]); // Dependencia actualizada
+
+
+  // Load samples
+  const loadSamples = useCallback(async () => {
+    const samples = {
+      kick: '/samples/public/percussion/uno.mp3',
+      snare: '/samples/public/percussion/dos.mp3',
+      hihat: '/samples/public/percussion/tres.mp3',
+      clap: '/samples/public/percussion/cuatro.mp3'
+    };
+    
+    try {
+      if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+        globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const responses = await Promise.all(
+        Object.values(samples).map(url => 
+          fetch(url).then(res => {
+            if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+            return res;
+          }))
+      );
+      
+      const arrayBuffers = await Promise.all(
+        responses.map(res => res.arrayBuffer())
+      );
+      
+      const audioBuffers = await Promise.all(
+        arrayBuffers.map((buffer, index) => {
+          const sampleName = Object.keys(samples)[index];
+          try {
+            return globalAudioContextRef.current.decodeAudioData(buffer);
+          } catch (error) {
+            console.error(`Error decoding ${sampleName}:`, error);
+            return null;
+          }
+        })
+      );
+      
+      audioBuffers.forEach((buffer, index) => {
+        if (buffer) {
+          const sampleName = Object.keys(samples)[index];
+          globalBuffersRef.current.set(sampleName, buffer);
+        }
+      });
+      
+      setSamplesLoaded(true);
+    } catch (error) {
+      console.error('Error loading samples:', error);
+      setSamplesLoaded(false);
+    }
+  }, []);
+
+  // Play sound
+  const playSound = useCallback((sound, time, rowIndex) => {
+    if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') return;
+  
+    // Resaltar solo la fila que está sonando
+    setActiveRows(prev => {
+      const newSet = new Set();
+      newSet.add(rowIndex);
+      return newSet;
+    });
+    
+    setTimeout(() => {
+      setActiveRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rowIndex);
+        return newSet;
+      });
+    }, 200);
+  
+    const buffer = globalBuffersRef.current.get(sound);
+    if (buffer) {
+      const source = globalAudioContextRef.current.createBufferSource();
+      source.buffer = buffer;
+      const gainNode = globalAudioContextRef.current.createGain();
+      gainNode.gain.value = 0.8;
+      source.connect(gainNode);
+      gainNode.connect(globalAudioContextRef.current.destination);
+      source.start(time);
+      scheduledSourcesRef.current.add(source);
+    }
+  }, [rowSamples]);
+
+  // Stop playback
+  const stopPlayback = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
+    scheduledSourcesRef.current.forEach(source => {
+      try { 
+        source.stop(); 
+        source.disconnect();
+      } catch(e) { 
+        console.warn('Error stopping source:', e); 
+      }
+    });
+    
+    scheduledSourcesRef.current.clear();
+    
+    
+    
+    currentStepRef.current = 0;
+    nextStepTimeRef.current = 0;
+    setIsPlaying(false);
+    lastFrameTimeRef.current = 0;
+  }, []);
+  
+  const startPlayback = useCallback(async (autoScroll) => {
+    try {
+      if (!globalAudioContextRef.current) initAudioContext();
+  
+      setCurrentStep(0);
+      currentStepRef.current = 0;
+      nextStepTimeRef.current = 0;
+      
+      if (globalAudioContextRef.current.state === 'suspended') {
+        await globalAudioContextRef.current.resume();
+      }
+  
+      stopPlayback();
+      
+      // Reset scroll position for both containers
+      if (gridContainerRef.current && headerContainerRef.current && autoScroll) {
+        isScrollingProgrammatically.current = true;
+        gridContainerRef.current.scrollLeft = 0;
+        headerContainerRef.current.scrollLeft = 0;
+        requestAnimationFrame(() => {
+          isScrollingProgrammatically.current = false;
+        });
+      }
+      
+      startTimeRef.current = globalAudioContextRef.current.currentTime;
+      nextStepTimeRef.current = startTimeRef.current;
+      setIsPlaying(true);
+  
+      const scheduler = () => {
+        if (!isPlayingRef.current) return;
+        
+        const currentTime = globalAudioContextRef.current.currentTime;
+        const stepsPerSecond = (BPM * subdivisionsPerPulseRef.current) / 60;
+        const totalSteps = measuresRef.current * numeratorRef.current * subdivisionsPerPulseRef.current;
+        
+        const newStep = Math.floor((currentTime - startTimeRef.current) * stepsPerSecond) % totalSteps;
+        
+        if (newStep !== currentStepRef.current) {
+          // Programar sonidos
+          Array.from({ length: rows }).forEach((_, rowIndex) => {
+            const cellId = `${rowIndex}-${newStep}`;
+            if (selectedCells.has(cellId)) {
+              const sound = rowSamples[rowIndex];
+              playSound(sound, currentTime, rowIndex);
+            }
+          });
+          
+          currentStepRef.current = newStep;
+          setCurrentStep(newStep);
+        }
+  
+        // Scroll sincronizado para ambos contenedores
+        if (autoScroll && gridContainerRef.current && headerContainerRef.current) {
+          const posX = newStep * cellWidth;
+          
+          if (Math.abs(gridContainerRef.current.scrollLeft - posX) > cellWidth) {
+            isScrollingProgrammatically.current = true;
+            gridContainerRef.current.scrollLeft = posX;
+            headerContainerRef.current.scrollLeft = posX;
+            requestAnimationFrame(() => {
+              isScrollingProgrammatically.current = false;
+            });
+          }
+        }
+  
+        animationRef.current = requestAnimationFrame(scheduler);
+      };
+  
+      // Iniciar el loop
+      animationRef.current = requestAnimationFrame(scheduler);
+      
+    } catch (error) {
+      console.error('Error starting playback:', error);
+      stopPlayback();
+      setIsPlaying(false);
+    }
+  }, [stopPlayback, measureWidth, initAudioContext, rows, rowSamples, selectedCells]);
+  
+
+
+  useEffect(() => {
+    const gridContainer = gridContainerRef.current;
+    const headerContainer = headerContainerRef.current;
+  
+    if (gridContainer && headerContainer) {
+      // Add passive listeners for smoother scrolling
+      gridContainer.addEventListener('scroll', handleGridScroll, { passive: true });
+      headerContainer.addEventListener('scroll', handleHeaderScroll, { passive: true });
+  
+      return () => {
+        gridContainer.removeEventListener('scroll', handleGridScroll);
+        headerContainer.removeEventListener('scroll', handleHeaderScroll);
+      };
+    }
+  }, []);
+  
+
+  // Toggle playback
+  const togglePlayback = useCallback(async () => {
+    if (!samplesLoaded) return;
+    
+    if (isPlaying) {
+      stopPlayback();
+      setIsPlaying(false);
+    } else {
+      await startPlayback(autoScroll);
+    }
+  }, [startPlayback, stopPlayback, isPlaying, samplesLoaded, autoScroll]);
+
+  // Handle cell click
+  const handleCellClick = (rowIndex, stepIndex) => {
+    const cellId = `${rowIndex}-${stepIndex}`;
+    setSelectedCells(prev => {
+      const newSet = new Set(prev);
+      newSet.has(cellId) ? newSet.delete(cellId) : newSet.add(cellId);
+      return newSet;
+    });
+    
+    initAudioContext();
+    const sound = rowSamples[rowIndex];
+    playSound(sound, globalAudioContextRef.current.currentTime + 0.05, rowIndex);
+  };
+
+  // Handle rows change
+  const handleRowsChange = (newRows) => {
+    const numRows = Math.max(1, Math.min(30, newRows));
+    setRows(numRows);
+    
+    setRowSamples(prev => {
+      const newRowSamples = Array(numRows).fill().map((_, i) => 
+        i < prev.length ? prev[i] : DEFAULT_SAMPLES[i % DEFAULT_SAMPLES.length] || 'kick'
+      );
+      return newRowSamples;
+    });
+  };
+
+  // Recording functions
+  const playCountdownBeep = useCallback((count, onFinish) => {
+    if (!globalAudioContextRef.current) {
+      globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    const beepDuration = 0.1;
+    const interval = 0.5;
+    const startTime = globalAudioContextRef.current.currentTime;
+
+    for (let i = 0; i < count; i++) {
+      const time = startTime + i * interval;
+      
+      const osc = globalAudioContextRef.current.createOscillator();
+      const gain = globalAudioContextRef.current.createGain();
+      
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(i === count - 1 ? 880 : 440, time);
+      
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.5, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + beepDuration);
+      
+      osc.connect(gain);
+      gain.connect(globalAudioContextRef.current.destination);
+      
+      osc.start(time);
+      osc.stop(time + beepDuration);
+    }
+
+    if (onFinish) {
+      setTimeout(onFinish, count * interval * 1000);
+    }
+  }, []);
+
+  const startRecording = useCallback(() => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        setIsGlobalRecording(true);
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        recordedChunksRef.current = [];
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+        };
+        mediaRecorderRef.current.onstop = async () => {
+          const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+          const arrayBuffer = await blob.arrayBuffer();
+          globalAudioContextRef.current.decodeAudioData(arrayBuffer, (audioBuffer) => {
+            const tempName = `custom-${Date.now()}`;
+            tempSampleNameRef.current = tempName;
+            globalBuffersRef.current.set(tempName, audioBuffer);
+            setNewSampleName(tempName);
+            setShowNameInput(true);
+            setIsGlobalRecording(false);
+          }, (err) => {
+            console.error("Error decoding recorded audio", err);
+            setIsGlobalRecording(false);
+          });
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorderRef.current.start();
+      })
+      .catch(err => {
+        console.error("Error accessing microphone: ", err);
+        setIsGlobalRecording(false);
+      });
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  }, []);
+
+  const saveCustomSample = useCallback(() => {
+    if (newSampleName.trim()) {
+      const tempName = tempSampleNameRef.current;
+      const buffer = globalBuffersRef.current.get(tempName);
+      
+      if (buffer) {
+        globalBuffersRef.current.delete(tempName);
+        globalBuffersRef.current.set(newSampleName.trim(), buffer);
+        
+        setCustomSamples(prev => [...prev, { 
+          name: newSampleName.trim(), 
+          buffer 
+        }]);
+        
+        setShowNameInput(false);
+        setNewSampleName('');
+        tempSampleNameRef.current = '';
+      }
+    }
+  }, [newSampleName]);
+
+  const handleStartRecording = useCallback(async () => {
+    try {
+      if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+        globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      playCountdownBeep(4, () => {
+        startRecording();
+      });
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  }, [playCountdownBeep, startRecording]);
+
+  const [currentSample, setCurrentSample] = useState(null);
+
+    useEffect(() => {
+      console.log(currentSample);
+    }, [currentSample]);
+
+  const openRowControls = (rowIndex) => {
+    //const currentSample = rowSamples[rowIndex];
+    setCurrentSample(rowSamples[rowIndex])
+    
+    setModalContent(
+      <RowControlsModal
+        rowIndex={rowIndex}
+        rowSamples={rowSamples} // Pasar el array completo
+        customColors={customColors} // Pasar colores actualizados
+        setCustomColors={setCustomColors}
+        customSamples={customSamples}
+        onSampleChange={(newSample) => {
+          const newRowSamples = [...rowSamples];
+          newRowSamples[rowIndex] = newSample;
+          setRowSamples(newRowSamples);
+          setCurrentSample(newSample)
+        }}
+        onClose={() => setModalOpen(false)}
+      />
+    );
+    setModalOpen(true);
+  };
+
+  
+
+  // Open controls modal
+  const openControlsModal = () => {
+    setModalContent(
+      <div style={{ padding: '20px', width: '70vw' }}>
+        <div style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px' }}>
+          <h3 style={{ margin: '0 0 10px 0' }}>Record new sample:</h3>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={isGlobalRecording ? stopRecording : handleStartRecording}
+              style={{ 
+                padding: '8px 16px',
+                backgroundColor: isGlobalRecording ? '#ff4444' : '#4CAF50', 
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {isGlobalRecording ? '⏹ Stop recording' : '🎤 Record new sample'}
+            </button>
+
+            {showNameInput && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1 }}>
+                <input
+                  type="text"
+                  value={newSampleName}
+                  onChange={(e) => setNewSampleName(e.target.value)}
+                  placeholder="Sample name"
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', flex: 1 }}
+                />
+                <button 
+                  onClick={saveCustomSample}
+                  style={{ 
+                    padding: '8px 16px',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+            <label style={{ marginRight: '10px' }}>Number of rows:</label>
+            <div style={{display: 'flex'}}>
+              <RangeInput
+                min={1}
+                max={30}
+                value={rows}
+                onChange={handleRowsChange}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput 
+                min={1}
+                max={30}
+                step={1}
+                value={rows}
+                onChange={(e) => handleRowsChange(Number(e.target.value))} 
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: '15px',
+          marginBottom: '20px'
+        }}>
+          <div style={{marginRight: '10px'}}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Numerator:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={numerator}
+                onChange={setNumerator}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={numerator}
+                onChange={(e) => setNumerator(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Denominator:</label>
+            <select 
+              value={denominator} 
+              onChange={e => setDenominator(Number(e.target.value))}
+              style={{ padding: '6px', width: '100%' }}
+            >
+              {[1, 2, 4, 8, 16, 32].map(val => (
+                <option key={val} value={val}>{val}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Subdivisions:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={subdivisionsPerPulse}
+                onChange={setSubdivisionsPerPulse}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={subdivisionsPerPulse}
+                onChange={(e) => setSubdivisionsPerPulse(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Measures:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={measures}
+                onChange={setMeasures}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={measures}
+                onChange={(e) => setMeasures(Number(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+            <CheckBox
+              checked={autoScroll}
+              onChange={(e) => setAutoScroll(e.target.checked)}
+            />
+            Auto-scroll during playback
+          </label>
+          
+          <div style={{ display: 'grid', gap: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Measure width:</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <RangeInput
+                  min={300}
+                  max={1200}
+                  value={measureWidth}
+                  onChange={setMeasureWidth}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                />
+                <CustomNumberInput
+                  min={300}
+                  max={1200}
+                  value={measureWidth}
+                  onChange={(e) => setMeasureWidth(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <RangeInput
+                  min={230}
+                  max={600}
+                  value={componentHeight}
+                  onChange={setComponentHeight}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                />
+                <CustomNumberInput
+                  min={230}
+                  max={600}
+                  value={componentHeight}
+                  onChange={(e) => setComponentHeight(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+    setModalOpen(true);
+  };
+
+  const renderGridCells = () => {
+    return Array.from({ length: rows }).map((_, rowIndex) => {
+      const isCollapsed = collapsedRows.has(rowIndex);
+      const visibleRowIndex = rowIndex; // Ahora usamos el índice real para posicionamiento
+  
+      return Array.from({ length: totalSteps }).map((_, stepIndex) => {
+        const cellId = `${rowIndex}-${stepIndex}`;
+        const isActive = selectedCells.has(cellId);
+        const cellBgColor = isActive ? getRowColor(rowSamples[rowIndex]) : '#f9f9f9';
+  
+        const borderRadiusValue = isActive ? '8px' : '2px';
+        let cellBorderLeft = '1px solid #eee';
+        if (stepIndex % totalStepsPerMeasure === 0) {
+          cellBorderLeft = '3px solid black';
+        } else if (stepIndex % subdivisionsPerPulse === 0) {
+          cellBorderLeft = '2px solid gray';
+        }
+        
+        return (
+          <div
+            key={`cell-${rowIndex}-${stepIndex}`}
+            onClick={() => handleCellClick(rowIndex, stepIndex)}
+            style={{
+              position: 'absolute',
+  left: `${stepIndex * cellWidth}px`,
+  top: `${cumulativeHeights[rowIndex]}px`,
+  width: `${cellWidth}px`,
+  height: `${rowHeights[rowIndex]}px`,
+              backgroundColor: cellBgColor,
+              border: 'none',
+              borderLeft: cellBorderLeft,
+              borderTop: '1px solid #eee',
+              borderBottom: '1px solid #eee',
+              borderRight: '1px solid #eee',
+              borderRadius: borderRadiusValue,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxSizing: 'border-box',
+              opacity: isCollapsed ? 0.7 : 1
+            }}
+          />
+        );
+      });
+    }).flat();
+  };
+
+  // Render left panel
+const renderLeftPanel = () => {
+  return Array.from({ length: rows }).map((_, rowIndex) => {
+    const isCollapsed = collapsedRows.has(rowIndex);
+    const visibleRowIndex = Array.from({ length: rows }).reduce((acc, _, i) => {
+      return i < rowIndex ? acc + (collapsedRows.has(i) ? 0 : 1) : acc;
+    }, 0);
+
+    return (
+      <div
+        key={`left-${rowIndex}`}
+        style={{
+          height: `${rowHeights[rowIndex]}px`,
+          border: '1px solid #ddd',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: isCollapsed ? 'center' : 'center',
+          fontSize: '10px',
+          color: '#000',
+          cursor: 'pointer',
+          userSelect: 'none',
+          boxSizing: 'border-box',
+          backgroundColor: activeRows.has(rowIndex) ? 
+            `${getRowColor(rowSamples[rowIndex])}80` : 'transparent',
+          transition: 'all 0.2s ease-out',
+          overflow: 'hidden'
+        }}
+        onMouseEnter={() => setHoveredRow(rowIndex)}
+        onMouseLeave={() => setHoveredRow(null)}
+        onClick={() => !isCollapsed && openRowControls(rowIndex)}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setCollapsedRows(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(rowIndex)) {
+                newSet.delete(rowIndex);
+              } else {
+                newSet.add(rowIndex);
+              }
+              return newSet;
+            });
+          }}
+          style={{
+            position: 'absolute',
+            left: '2px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0',
+            fontSize: '20px',
+            color: '#666',
+            zIndex: 1
+          }}
+        >
+          {isCollapsed ? '▶' : '▼'}
+        </button>
+
+        {!isCollapsed && (
+          <>
+            <span style={{ fontSize: '15px' }}>Row {rowIndex + 1}</span>
+            <div style={{ marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  backgroundColor: getRowColor(rowSamples[rowIndex]),
+                  borderRadius: '2px'
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '20px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '70px'
+                }}
+              >
+                {rowSamples[rowIndex]}
+              </span>
+            </div>
+          </>
+        )}
+
+        {isCollapsed && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            paddingLeft: '20px'
+          }}>
+            <div
+              style={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: getRowColor(rowSamples[rowIndex]),
+                borderRadius: '2px',
+                marginRight: '5px'
+              }}
+            />
+            <span
+              style={{
+                fontSize: '12px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '40px'
+              }}
+            >
+              {rowSamples[rowIndex]}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  });
+};
+
+
+const renderTimelineHeaders = () => {
+  return Array.from({ length: totalSteps }).map((_, stepIndex) => {
+    const localStep = stepIndex % totalStepsPerMeasure;
+    const measureLabel = localStep === 0 ? Math.floor(stepIndex / totalStepsPerMeasure) + 1 : "";
+    const pulseLabel = localStep % subdivisionsPerPulse === 0 ? Math.floor(localStep / subdivisionsPerPulse) + 1 : "";
+    const subdivisionLabel = (localStep % subdivisionsPerPulse) + 1;
+    let borderLeft = '1px solid #999';
+    if (localStep === 0) {
+      borderLeft = '3px solid #333';
+    } else if (localStep % subdivisionsPerPulse === 0) {
+      borderLeft = '2px solid #666';
+    }
+    const bgColor = localStep === 0 ? '#e0e0e0' : '#eee';
+    
+    return (
+      <div
+        key={`header-${stepIndex}`}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+          width: `${cellWidth}px`,
+          height: '45px',
+          borderLeft,
+          backgroundColor: bgColor
+        }}
+      >
+        <div style={{ fontSize: '14px', height: '15px', lineHeight: '15px', color: '#000' }}>
+          {measureLabel}
+        </div>
+        <div style={{ fontSize: '12px', height: '15px', lineHeight: '15px', color: '#000' }}>
+          {pulseLabel}
+        </div>
+        <div style={{ fontSize: '10px', height: '15px', lineHeight: '15px', color: '#000' }}>
+          {subdivisionLabel}
+        </div>
+      </div>
+    );
+  });
+};
+
+  // Initialize on mount
+  useEffect(() => {
+    loadSamples();
+    return () => {
+      stopPlayback();
+      if (globalAudioContextRef.current) globalAudioContextRef.current.close();
+    };
+  }, [loadSamples, stopPlayback]);
+
+  
+  return (
+    <div style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      paddingLeft: '5px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    }}>
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        {modalContent}
+      </Modal>
+  
+      <div style={{ 
+        display: 'flex', 
+        gap: '10px', 
+        alignItems: 'center', 
+        marginBottom: '10px',
+        flexWrap: 'wrap' 
+      }}>
+        <button
+          onClick={() => setShowLeftPanel(!showLeftPanel)}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: showLeftPanel ? '#ff4444' : '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            minWidth: '140px'
+          }}
+        >
+          {showLeftPanel ? '◄ Hide Left Panel' : '► Show Left Panel'}
+        </button>
+  
+        <TogglePlayPause 
+          size={20}
+          isPlaying={isPlaying}
+          onToggle={togglePlayback}
+        />
+  
+        <button
+          onClick={openControlsModal}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            minWidth: '100px'
+          }}
+        >
+          Controls
+        </button>
+      </div>
+      
+      <div
+        style={{
+          display: 'flex',
+          border: '1px solid #ddd',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          position: 'relative',
+          overflow: 'hidden',
+          width: '100%'
+        }}
+      >
+        {showLeftPanel && (
+          <div style={{ 
+            width: '60px', 
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1,
+            borderRight: '1px solid #ddd'
+          }}>
+            <div style={{ 
+              height: '45px',
+              borderBottom: '1px solid #ddd',
+              backgroundColor: '#f5f5f5'
+            }}></div>
+            {renderLeftPanel()}
+          </div>
+        )}
+  
+        {/* Contenedor principal unificado */}
+        <div style={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          width: '380px'
+        }}>
+          {/* Cabecera con scroll sincronizado */}
+          <div
+            ref={headerContainerRef}
+            style={{
+              height: '45px',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              borderBottom: '1px solid #ddd',
+              backgroundColor: '#f5f5f5',
+              position: 'sticky',
+              top: 0,
+              zIndex: 2
+            }}
+            onScroll={handleHeaderScroll}
+          >
+            <div style={{
+              width: `${totalGridWidth}px`,
+              height: '100%',
+              display: 'flex',
+              position: 'relative'
+            }}>
+              {renderTimelineHeaders()}
+            </div>
+          </div>
+  
+          {/* Grid principal con scroll sincronizado */}
+          <div
+            ref={gridContainerRef}
+            onScroll={handleGridScroll}  
+            style={{
+              height: '50vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}
+            
+          >
+            <div
+              style={{
+                width: `${totalGridWidth}px`,
+                height: `${componentHeight}px`,
+                position: 'relative'
+              }}
+              
+            >
+              {renderGridCells()}
+              
+              {/* Indicador de paso actual */}
+              {isPlaying && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${currentStep * cellWidth}px`,
+                    top: 0,
+                    width: '2px',
+                    height: '100%',
+                    backgroundColor: 'red',
+                    zIndex: 3,
+                    pointerEvents: 'none'
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+
+  
+};
+
+
+
+
+
+
+const globalSelectedPianoSampleRef = { current: 'piano', duration: 0, durationToUse: 1 };
+
+const getNoteName = (midiNote) => {
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const octave = Math.floor(midiNote / 12) - 1;
+  return `${noteNames[midiNote % 12]}${octave}`;
+};
+
+const PIANO_NOTES = Array.from({ length: 88 }, (_, i) => getNoteName(21 + i)).reverse();
+
+export const PianoSequencer = () => {
+  // State for sequencer configuration
+  const [rows, setRows] = useState(PIANO_KEYS);
+  const [selectedCells, setSelectedCells] = useState(new Set());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [numerator, setNumerator] = useState(4);
+  const [denominator, setDenominator] = useState(4);
+  const [subdivisionsPerPulse, setSubdivisionsPerPulse] = useState(4);
+  const [measures, setMeasures] = useState(1);
+  const [measureWidth, setMeasureWidth] = useState(800);
+  const [componentHeight, setComponentHeight] = useState(300);
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [activeRows, setActiveRows] = useState(new Set());
+  const [selectedPianoSample, setSelectedPianoSample] = useState('piano');
+  const [pianoSamples, setPianoSamples] = useState([]);
+  const [currentSampleData, setCurrentSampleData] = useState({
+    duration: 1,
+    durationToUse: 1,
+    isLoading: false
+  });
+  const [audioContextState, setAudioContextState] = useState('suspended');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState(null);
+
+  // Refs
+  const scheduledSourcesRef = useRef(new Set());
+  const animationRef = useRef(null);
+  const currentStepRef = useRef(0);
+  const nextStepTimeRef = useRef(0);
+  const startTimeRef = useRef(0);
+  const lastFrameTimeRef = useRef(0);
+  const gridContainerRef = useRef(null);
+  const indicatorRef = useRef(null);
+
+  // Derived values
+  const totalStepsPerMeasure = numerator * subdivisionsPerPulse;
+  const totalSteps = measures * totalStepsPerMeasure;
+  const cellWidth = measureWidth / totalStepsPerMeasure;
+  const rowHeight = componentHeight / rows;
+  const is88KeyMode = rows === 88;
+
+  // Initialize audio context
+  const initAudioContext = useCallback(() => {
+    if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+      globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      setAudioContextState(globalAudioContextRef.current.state);
+      
+      globalAudioContextRef.current.onstatechange = () => {
+        setAudioContextState(globalAudioContextRef.current.state);
+      };
+    }
+  }, []);
+
+  // Load piano samples
+  const loadPianoSamples = useCallback(async () => {
+    if (pianoSamples.length === 0) return;
+
+    try {
+      const sample = pianoSamples.find(s => s.id === selectedPianoSample) || pianoSamples[0];
+      if (!sample) return;
+
+      if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') {
+        globalAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const response = await fetch(sample.path);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await globalAudioContextRef.current.decodeAudioData(arrayBuffer);
+      
+      globalBuffersRef.current.set('pianoSample', {
+        buffer: audioBuffer,
+        baseFreq: sample.baseFreq
+      });
+
+      const calculatedDuration = Math.max(0.1, audioBuffer.duration);
+      const safeDuration = Math.min(calculatedDuration, 10);
+      
+      setCurrentSampleData({
+        duration: safeDuration,
+        durationToUse: Math.min(globalSelectedPianoSampleRef.durationToUse || safeDuration, safeDuration),
+        isLoading: false
+      });
+      
+      globalSelectedPianoSampleRef.current = selectedPianoSample;
+      globalSelectedPianoSampleRef.duration = safeDuration;
+      globalSelectedPianoSampleRef.durationToUse = Math.min(globalSelectedPianoSampleRef.durationToUse || safeDuration, safeDuration);
+    } catch (error) {
+      console.error('Error loading piano sample:', error);
+      setCurrentSampleData({
+        duration: 1,
+        durationToUse: 1,
+        isLoading: false
+      });
+    }
+  }, [selectedPianoSample, pianoSamples]);
+
+  // Play sound
+  const playSound = useCallback((note, time, rowIndex) => {
+    if (!globalAudioContextRef.current || globalAudioContextRef.current.state === 'closed') return;
+
+    setActiveRows(prev => {
+      const newSet = new Set(prev);
+      newSet.add(rowIndex);
+      return newSet;
+    });
+    
+    setTimeout(() => {
+      setActiveRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rowIndex);
+        return newSet;
+      });
+    }, 200);
+
+    const pianoSample = globalBuffersRef.current.get('pianoSample');
+    if (pianoSample) {
+      const source = globalAudioContextRef.current.createBufferSource();
+      source.buffer = pianoSample.buffer;
+      const noteFreq = getNoteFrequency(note);
+      const playbackRate = noteFreq / pianoSample.baseFreq;
+      source.playbackRate.value = playbackRate;
+
+      const gainNode = globalAudioContextRef.current.createGain();
+      gainNode.gain.setValueAtTime(0.8, time);
+
+      const userDuration = globalSelectedPianoSampleRef.durationToUse;
+      const effectiveDuration = Math.min(
+        userDuration / playbackRate,
+        pianoSample.buffer.duration / playbackRate
+      );
+
+      const fadeOutDuration = Math.min(0.1, effectiveDuration * 0.1);
+      const fadeOutStartTime = time + effectiveDuration - fadeOutDuration;
+
+      gainNode.gain.exponentialRampToValueAtTime(0.001, fadeOutStartTime + fadeOutDuration);
+
+      source.connect(gainNode);
+      gainNode.connect(globalAudioContextRef.current.destination);
+      
+      source.start(time);
+      source.stop(time + effectiveDuration + fadeOutDuration);
+      
+      scheduledSourcesRef.current.add(source);
+    }
+  }, []);
+
+  const getNoteFrequency = (note) => {
+    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const octave = parseInt(note.slice(-1));
+    const key = note.slice(0, -1).replace("#", "#");
+    const index = notes.indexOf(key);
+    return 440 * Math.pow(2, (octave - 4) + (index - 9) / 12);
+  };
+
+  // Stop playback
+  const stopPlayback = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
+    scheduledSourcesRef.current.forEach(source => {
+      try { 
+        source.stop(); 
+        source.disconnect();
+      } catch(e) { 
+        console.warn('Error stopping source:', e); 
+      }
+    });
+    
+    scheduledSourcesRef.current.clear();
+    
+    if (indicatorRef.current) {
+      indicatorRef.current.style.transform = 'translateX(0)';
+    }
+    
+    currentStepRef.current = 0;
+    nextStepTimeRef.current = 0;
+    setIsPlaying(false);
+    lastFrameTimeRef.current = 0;
+  }, []);
+
+  // Start playback
+  const startPlayback = useCallback(async (autoScroll) => {
+    try {
+      if (globalAudioContextRef.current.state === 'suspended') {
+        await globalAudioContextRef.current.resume();
+      }
+
+      stopPlayback();
+      
+      if (gridContainerRef.current && autoScroll) {
+        gridContainerRef.current.scrollTo({ left: 0, behavior: 'auto' });
+      }
+      
+      startTimeRef.current = globalAudioContextRef.current.currentTime;
+      nextStepTimeRef.current = startTimeRef.current;
+      currentStepRef.current = 0;
+      setIsPlaying(true);
+      lastFrameTimeRef.current = performance.now();
+
+      const scheduler = () => {
+        if (!isPlaying) return;
+      
+        const currentTime = globalAudioContextRef.current.currentTime;
+        const elapsedTime = currentTime - startTimeRef.current;
+        const stepsPerSecond = (BPM * subdivisionsPerPulse) / 60;
+        const totalSteps = measures * numerator * subdivisionsPerPulse;
+        const cellWidth = measureWidth / (numerator * subdivisionsPerPulse);
+        
+        const newStep = Math.floor(elapsedTime * stepsPerSecond) % totalSteps;
+        setCurrentStep(newStep);
+        
+        if (indicatorRef.current) {
+          const posX = newStep * cellWidth;
+          indicatorRef.current.style.transform = `translateX(${posX}px)`;
+          
+          if (autoScroll && gridContainerRef.current) {
+            const container = gridContainerRef.current;
+            const containerWidth = container.clientWidth;
+            const scrollLeft = posX - (containerWidth / 2) + (cellWidth / 2);
+            //const maxScroll = container.scrollWidth - containerWidth;
+            const maxScroll = totalGridWidth - gridContainerRef.current.clientWidth + 1000; // +10px de margen
+            const boundedScroll = Math.max(0, Math.min(scrollLeft, maxScroll));
+            
+            container.scrollTo({ 
+              left: boundedScroll,
+              behavior: 'smooth' 
+            });
+          }
+        }
+      
+        const currentStepDuration = (60 / BPM) / subdivisionsPerPulse;
+        
+        while (nextStepTimeRef.current < currentTime + 0.1) {
+          const stepIndex = Math.floor(
+            ((nextStepTimeRef.current - startTimeRef.current) * stepsPerSecond) % totalSteps
+          );
+          
+          const activeNotes = [];
+          selectedCells.forEach(cellId => {
+            const [rowIndex, cellStep] = cellId.split('-').map(Number);
+            if (cellStep === stepIndex && rowIndex < rows) {
+              activeNotes.push(PIANO_NOTES[rowIndex]);
+            }
+          });
+          
+          if (activeNotes.length > 0) {
+            activeNotes.forEach(note => {
+              playSound(note, nextStepTimeRef.current, PIANO_NOTES.indexOf(note));
+            });
+          }
+          
+          nextStepTimeRef.current += currentStepDuration;
+        }
+        
+        animationRef.current = requestAnimationFrame(scheduler);
+      };
+      
+      animationRef.current = requestAnimationFrame(scheduler);
+    } catch (error) {
+      console.error('Error starting playback:', error);
+      stopPlayback();
+      setIsPlaying(false);
+    }
+  }, [stopPlayback, isPlaying, subdivisionsPerPulse, measures, numerator, selectedCells, rows, playSound]);
+
+  // Toggle playback
+  const togglePlayback = useCallback(async () => {
+    if (isPlaying) {
+      stopPlayback();
+      setIsPlaying(false);
+    } else {
+      await startPlayback(autoScroll);
+    }
+  }, [startPlayback, stopPlayback, isPlaying, autoScroll]);
+
+  // Handle cell click
+  const handleCellClick = (rowIndex, stepIndex) => {
+    const cellId = `${rowIndex}-${stepIndex}`;
+    setSelectedCells(prev => {
+      const newSet = new Set(prev);
+      newSet.has(cellId) ? newSet.delete(cellId) : newSet.add(cellId);
+      return newSet;
+    });
+    
+    initAudioContext();
+    const noteName = PIANO_NOTES[rowIndex];
+    playSound(noteName, globalAudioContextRef.current.currentTime + 0.05, rowIndex);
+  };
+
+  // Handle duration change
+  const handleDurationChange = (value) => {
+    const newValue = parseFloat(value);
+    const clampedValue = Math.max(0.1, Math.min(currentSampleData.duration, newValue));
+    
+    setCurrentSampleData(prev => ({
+      ...prev,
+      durationToUse: clampedValue
+    }));
+    
+    globalSelectedPianoSampleRef.durationToUse = clampedValue;
+  };
+
+  // Handle sample preview
+  const handleSamplePreview = () => {
+    if (!currentSampleData.isLoading && globalAudioContextRef.current) {
+      const source = globalAudioContextRef.current.createBufferSource();
+      const pianoSample = globalBuffersRef.current.get('pianoSample');
+      if (pianoSample) {
+        source.buffer = pianoSample.buffer;
+        const playbackRate = pianoSample.baseFreq / pianoSample.baseFreq;
+        source.playbackRate.value = playbackRate;
+
+        const gainNode = globalAudioContextRef.current.createGain();
+        gainNode.gain.value = 0.8;
+
+        const durationToUse = Math.min(
+          currentSampleData.durationToUse,
+          pianoSample.buffer.duration
+        );
+
+        const fadeOutDuration = Math.min(0.1, durationToUse * 0.1);
+        const fadeOutStartTime = globalAudioContextRef.current.currentTime + durationToUse - fadeOutDuration;
+        
+        gainNode.gain.exponentialRampToValueAtTime(0.001, fadeOutStartTime + fadeOutDuration);
+        
+        source.connect(gainNode);
+        gainNode.connect(globalAudioContextRef.current.destination);
+        
+        source.start(0);
+        source.stop(globalAudioContextRef.current.currentTime + durationToUse + fadeOutDuration);
+      }
+    }
+  };
+
+  // Check if key is black
+  const isBlackKey = (note) => note.includes('#');
+
+  // Get octave groups for 88-key piano
+  const octaveGroups = useMemo(() => {
+    if (!is88KeyMode) return [];
+    const groups = [];
+    let groupStart = 0;
+    for (let i = 0; i < rows; i++) {
+      const note = PIANO_NOTES[i];
+      if (i > 0 && note.startsWith('B') && note[1] !== '#') {
+        groups.push({
+          start: groupStart,
+          end: i - 1,
+          span: i - groupStart,
+          label: PIANO_NOTES[groupStart]
+        });
+        groupStart = i;
+      }
+    }
+    groups.push({
+      start: groupStart,
+      end: rows - 1,
+      span: rows - groupStart,
+      label: PIANO_NOTES[groupStart]
+    });
+    return groups;
+  }, [is88KeyMode, rows]);
+
+  // Get effective heights for octave groups
+  const octaveGroupEffectiveHeights = useMemo(() => {
+    if (!is88KeyMode) return [];
+    return octaveGroups.map((group) => {
+      const groupRows = Array.from({ length: group.span }, (_, i) => group.start + i);
+      return group.span * rowHeight;
+    });
+  }, [is88KeyMode, octaveGroups, rowHeight]);
+
+  // Get positions for octave groups
+  const octaveGroupPositions = useMemo(() => {
+    if (!is88KeyMode) return [];
+    let accum = 0;
+    return octaveGroupEffectiveHeights.map((height) => {
+      const pos = accum;
+      accum += height;
+      return pos;
+    });
+  }, [is88KeyMode, octaveGroupEffectiveHeights]);
+
+  // Render left panel for 88-key piano
+  const render88LeftPanel = () => {
+    return octaveGroups.map((group, groupIndex) => {
+      const groupRows = Array.from({ length: group.span }, (_, i) => group.start + i);
+      const containerHeight = octaveGroupEffectiveHeights[groupIndex];
+      const isGroupActive = groupRows.some(r => activeRows.has(r));
+      
+      const octaveNum = parseInt(group.label.match(/\d+/)[0]);
+      const isOctave0 = octaveNum === 0;
+      const isOctave8 = octaveNum === 8;
+  
+      const whiteKeys = 
+        isOctave0 ? ['A', 'B'] :
+        isOctave8 ? ['C'] :
+        ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  
+      const whiteKeyHeight = containerHeight / whiteKeys.length;
+  
+      const blackKeysConfig = [
+        isOctave0 && { 
+          note: 'A#', 
+          whiteRef: 'A', 
+          offset: 0.9, 
+          width: '35%' 
+        },
+        !isOctave0 && !isOctave8 && [
+          { note: 'C#', whiteRef: 'C', offset: 0.9, width: '35%' },
+          { note: 'D#', whiteRef: 'D', offset: 1.15, width: '35%' },
+          { note: 'F#', whiteRef: 'F', offset: 0.9, width: '35%' },
+          { note: 'G#', whiteRef: 'G', offset: 1.1, width: '35%' },
+          { note: 'A#', whiteRef: 'A', offset: 1.1, width: '35%' }
+        ]
+      ].flat().filter(Boolean);
+  
+      return (
+        <div
+          key={`octave-group-${groupIndex}`}
+          style={{
+            height: `${containerHeight}px`,
+            position: 'relative',
+            overflow: 'hidden',
+            borderBottom: '1px solid #ddd',
+            backgroundColor: isGroupActive ? 'rgba(76, 175, 80, 0.15)' : '#f5f5f5',
+          }}
+        >
+          {whiteKeys.map((note, i) => {
+            const fullNote = `${note}${octaveNum}`;
+            const rowIndex = PIANO_NOTES.findIndex(n => n === fullNote);
+            const isActive = activeRows.has(rowIndex);
+  
+            return (
+              <div
+                key={`white-${groupIndex}-${i}`}
+                style={{
+                  position: 'absolute',
+                  bottom: `${i * whiteKeyHeight}px`,
+                  left: 0,
+                  width: '100%',
+                  height: `${whiteKeyHeight}px`,
+                  backgroundColor: isActive ? 'rgba(76, 175, 80, 0.7)' : '#fff',
+                  borderTop: '1px solid black',
+                  zIndex: 1,
+                  transition: 'background-color 0.1s ease-out'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  right: '4px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '10px',
+                  color: isActive ? '#fff' : '#000',
+                  zIndex: 3,
+                  pointerEvents: 'none'
+                }}>
+                  {fullNote}
+                </div>
+              </div>
+            );
+          })}
+  
+          {blackKeysConfig.map((blackKey, i) => {
+            const pos = whiteKeys.indexOf(blackKey.whiteRef);
+            if (pos === -1) return null;
+            
+            const fullNote = `${blackKey.note}${octaveNum}`;
+            const rowIndex = PIANO_NOTES.findIndex(n => n === fullNote);
+            const isActive = activeRows.has(rowIndex);
+  
+            return (
+              <div
+                key={`black-${groupIndex}-${i}`}
+                style={{
+                  position: 'absolute',
+                  bottom: `${(pos + blackKey.offset) * whiteKeyHeight - (whiteKeyHeight * 0.2)}px`,
+                  left: '0',
+                  width: blackKey.width,
+                  height: `${whiteKeyHeight * 0.6}px`,
+                  backgroundColor: isActive ? 'rgba(76, 175, 80, 0.9)' : '#000',
+                  zIndex: 2,
+                  boxShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                  borderRadius: '4px',
+                  borderRight: '1px solid #333',
+                  transition: 'background-color 0.1s ease-out'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  right: '4px',
+                  top: '2px',
+                  color: isActive ? '#000' : '#fff',
+                  fontSize: '10px',
+                  textShadow: isActive ? 'none' : '0 1px 1px #000',
+                  fontWeight: isActive ? 'bold' : 'normal'
+                }}>
+                  {fullNote}
+                </div>
+              </div>
+            );
+          })}
+  
+          <div style={{ 
+            position: 'absolute',
+            top: '2px',
+            left: '4px',
+            fontSize: '10px',
+            fontWeight: 'bold',
+            color: isGroupActive ? '#2d572c' : '#666',
+            zIndex: 2
+          }}>
+            {group.label} {isGroupActive && '•'}
+          </div>
+        </div>
+      );
+    });
+  };
+
+  // Render grid cells for 88-key piano
+  const render88GridCells = () => {
+    const cells = [];
+    octaveGroups.forEach((group, groupIndex) => {
+      const groupRows = Array.from({ length: group.span }, (_, i) => group.start + i);
+      const groupTop = octaveGroupPositions[groupIndex];
+      
+      groupRows.forEach((rowIndex, i) => {
+        const rowTop = groupTop + i * rowHeight;
+        for (let stepIndex = 0; stepIndex < totalSteps; stepIndex++) {
+          const cellId = `${rowIndex}-${stepIndex}`;
+          const isActive = selectedCells.has(cellId);
+          const cellBgColor = isActive
+            ? 'rgba(76, 175, 80, 0.8)'
+            : isBlackKey(PIANO_NOTES[rowIndex])
+                ? 'rgba(34, 34, 34, 0.7)'
+                : '#f9f9f9';
+          const borderRadiusValue = isActive ? '8px' : '2px';
+          let cellBorderLeft = '1px solid #eee';
+          if (stepIndex % totalStepsPerMeasure === 0) {
+            cellBorderLeft = '3px solid black';
+          } else if (stepIndex % subdivisionsPerPulse === 0) {
+            cellBorderLeft = '2px solid gray';
+          }
+          cells.push(
+            <div
+              key={`cell-${rowIndex}-${stepIndex}`}
+              onClick={() => handleCellClick(rowIndex, stepIndex)}
+              style={{
+                position: 'absolute',
+                left: `${stepIndex * cellWidth}px`,
+                top: `${rowTop}px`,
+                width: `${cellWidth}px`,
+                height: `${rowHeight}px`,
+                backgroundColor: cellBgColor,
+                border: 'none',
+                borderLeft: cellBorderLeft,
+                borderTop: '1px solid #eee',
+                borderBottom: '1px solid #eee',
+                borderRight: '1px solid #eee',
+                borderRadius: borderRadiusValue,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+                boxSizing: 'border-box'
+              }}
+            >
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    fontSize: '10px',
+                    color: '#fff',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  {PIANO_NOTES[rowIndex]}
+                </div>
+              )}
+            </div>
+          );
+        }
+      });
+    });
+    return cells;
+  };
+
+  // Render timeline headers
+  const renderTimelineHeaders = () => {
+    return Array.from({ length: totalSteps }).map((_, stepIndex) => {
+      const localStep = stepIndex % totalStepsPerMeasure;
+      const measureLabel = localStep === 0 ? Math.floor(stepIndex / totalStepsPerMeasure) + 1 : "";
+      const pulseLabel = localStep % subdivisionsPerPulse === 0 ? Math.floor(localStep / subdivisionsPerPulse) + 1 : "";
+      const subdivisionLabel = (localStep % subdivisionsPerPulse) + 1;
+      let borderLeft = '1px solid #999';
+      if (localStep === 0) {
+        borderLeft = '3px solid #333';
+      } else if (localStep % subdivisionsPerPulse === 0) {
+        borderLeft = '2px solid #666';
+      }
+      const bgColor = localStep === 0 ? '#e0e0e0' : '#eee';
+      
+      return (
+        <div
+          key={`header-${stepIndex}`}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            width: `${cellWidth}px`,
+            height: '45px',
+            borderLeft,
+            backgroundColor: bgColor
+          }}
+        >
+          <div style={{ fontSize: '14px', height: '15px', lineHeight: '15px', color: '#000' }}>
+            {measureLabel}
+          </div>
+          <div style={{ fontSize: '12px', height: '15px', lineHeight: '15px', color: '#000' }}>
+            {pulseLabel}
+          </div>
+          <div style={{ fontSize: '10px', height: '15px', lineHeight: '15px', color: '#000' }}>
+            {subdivisionLabel}
+          </div>
+        </div>
+      );
+    });
+  };
+
+  // Open controls modal
+  const openControlsModal = () => {
+    setModalContent(
+      <div style={{ padding: '20px', width: '70vw' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            marginBottom: '10px',
+            gap: '10px'
+          }}>
+            <label style={{ marginRight: '10px' }}>Piano Sample:</label>
+            <select
+              value={selectedPianoSample}
+              onChange={(e) => setSelectedPianoSample(e.target.value)}
+              disabled={currentSampleData.isLoading}
+              style={{ padding: '6px', minWidth: '150px' }}
+            >
+              {pianoSamples.map(sample => (
+                <option key={sample.id} value={sample.id}>
+                  {sample.name} {currentSampleData.isLoading && sample.id === selectedPianoSample ? '...' : ''}
+                </option>
+              ))}
+            </select>
+            
+            <div 
+              onClick={handleSamplePreview}
+              style={{
+                padding: '6px',
+                cursor: currentSampleData.isLoading ? 'not-allowed' : 'pointer',
+                opacity: currentSampleData.isLoading ? 0.5 : 1
+              }}
+            >
+              <TogglePlayPause 
+                size={24}
+                isPlaying={false}
+                onToggle={handleSamplePreview}
+              />
+            </div>
+          </div>
+          
+          {!currentSampleData.isLoading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
+              <div style={{ minWidth: '150px' }}>
+                  Duration: {currentSampleData.durationToUse.toFixed(2)}s / {currentSampleData.duration.toFixed(2)}s
+              </div>
+              <div style={{display: 'flex'}}>
+                <RangeInput
+                  min={0.10}
+                  max={currentSampleData.duration.toFixed(2)}
+                  step={0.01}
+                  value={currentSampleData.durationToUse}
+                  onChange={handleDurationChange}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                />
+                <CustomNumberInput
+                  min={0.10}
+                  max={Number(currentSampleData.duration.toFixed(2))}
+                  step={0.01}
+                  value={Number(currentSampleData.durationToUse.toFixed(2))}
+                  onChange={(e) => handleDurationChange(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: '15px',
+          marginBottom: '20px'
+        }}>
+          <div style={{marginRight: '10px'}}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Numerator:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={numerator}
+                onChange={setNumerator}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={numerator}
+                onChange={(e) => setNumerator(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Denominator:</label>
+            <select 
+              value={denominator} 
+              onChange={e => setDenominator(Number(e.target.value))}
+              style={{ padding: '6px', width: '100%' }}
+            >
+              {[1, 2, 4, 8, 16, 32].map(val => (
+                <option key={val} value={val}>{val}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Subdivisions:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={subdivisionsPerPulse}
+                onChange={setSubdivisionsPerPulse}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={subdivisionsPerPulse}
+                onChange={(e) => setSubdivisionsPerPulse(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Measures:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RangeInput
+                min={1}
+                max={12}
+                value={measures}
+                onChange={setMeasures}
+                colorClass="color3"
+                backgroundColorClass="backgroundColor1"
+                showLabel={false}
+              />
+              <CustomNumberInput
+                min={1}
+                max={12}
+                value={measures}
+                onChange={(e) => setMeasures(Number(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+            <CheckBox
+              checked={autoScroll}
+              onChange={(e) => setAutoScroll(e.target.checked)}
+            />
+            Auto-scroll during playback
+          </label>
+          
+          <div style={{ display: 'grid', gap: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Measure width:</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <RangeInput
+                  min={300}
+                  max={1200}
+                  value={measureWidth}
+                  onChange={setMeasureWidth}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                />
+                <CustomNumberInput
+                  min={300}
+                  max={1200}
+                  value={measureWidth}
+                  onChange={(e) => setMeasureWidth(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <RangeInput
+                  min={230}
+                  max={600}
+                  value={componentHeight}
+                  onChange={setComponentHeight}
+                  colorClass="color3"
+                  backgroundColorClass="backgroundColor1"
+                  showLabel={false}
+                />
+                <CustomNumberInput
+                  min={230}
+                  max={600}
+                  value={componentHeight}
+                  onChange={(e) => setComponentHeight(Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+    setModalOpen(true);
+  };
+
+  // Fetch piano samples on mount
+  useEffect(() => {
+    async function fetchSamples() {
+      try {
+        const response = await fetch('/api/blackBlaze/listAllPublicSamples');
+        if (!response.ok) throw new Error(`Error en fetch: ${response.statusText}`);
+        
+        const data = await response.json();
+        const publicSamples = [];
+
+        Object.entries(data.groups).forEach(([folder, filesArray]) => {
+          if (folder.startsWith('publicSamples')) {
+            filesArray.forEach(file => {
+              const parts = file.fileName.split('/');
+              const filename = parts[parts.length - 1];
+              const id = filename.split('.')[0];
+              
+              publicSamples.push({
+                id,
+                name: filename,
+                path: file.signedUrl,
+                baseFreq: 440,
+              });
+            });
+          }
+        });
+
+        if (publicSamples.length > 0) {
+          setSelectedPianoSample(publicSamples[0].id);
+        }
+
+        setPianoSamples(publicSamples);
+      } catch (error) {
+        console.error("Error al obtener samples públicos:", error);
+      }
+    }
+
+    fetchSamples();
+  }, []);
+
+  // Load samples when selected sample changes
+  useEffect(() => {
+    if (pianoSamples.length > 0) {
+      loadPianoSamples();
+    }
+  }, [selectedPianoSample, pianoSamples, loadPianoSamples]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+      if (globalAudioContextRef.current) globalAudioContextRef.current.close();
+    };
+  }, [stopPlayback]);
+
+  return (
+    <div style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      paddingLeft: '5px',
+      maxWidth: '1200px',
+      margin: '0 auto'
+    }}>
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+        {modalContent}
+      </Modal>
+
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+        <button
+          onClick={() => setShowLeftPanel(!showLeftPanel)}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: showLeftPanel ? '#ff4444' : '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {showLeftPanel ? '◄ Hide Left Panel' : '► Show Left Panel'}
+        </button>
+
+        <TogglePlayPause 
+          size={20}
+          isPlaying={isPlaying}
+          onToggle={togglePlayback}
+        />
+
+        <button
+          onClick={openControlsModal}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          Controls
+        </button>
+      </div>
+      
+      <div
+        style={{
+          display: 'flex',
+          width: `${measureWidth}px`,
+          border: '1px solid #ddd',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px',
+          boxSizing: 'border-box'
+        }}
+      >
+        {showLeftPanel && (
+          <div style={{ width: '60px', flexShrink: 0, boxSizing: 'border-box' }}>
+            <div style={{ height: '45px', boxSizing: 'border-box' }}></div>
+            {render88LeftPanel()}
+          </div>
+        )}
+
+        <div
+          style={{
+            width: showLeftPanel ? `${measureWidth - 60}px` : `${measureWidth}px`,
+            overflowX: 'auto',
+            position: 'relative',
+            scrollBehavior: 'auto',
+            boxSizing: 'border-box'
+          }}
+          ref={gridContainerRef}
+        >
+          <div style={{ width: `${totalSteps * cellWidth}px`, boxSizing: 'border-box' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${totalSteps}, ${cellWidth}px)`,
+                gridTemplateRows: '15px 15px 15px',
+                height: '45px',
+                boxSizing: 'border-box'
+              }}
+            >
+              {renderTimelineHeaders()}
+            </div>
+
+            <div
+              style={{
+                position: 'relative',
+                height: octaveGroupPositions.slice(-1)[0] + octaveGroupEffectiveHeights.slice(-1)[0],
+                boxSizing: 'border-box'
+              }}
+            >
+              {render88GridCells()}
+              <div
+                ref={indicatorRef}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: '2px',
+                  height: '100%',
+                  backgroundColor: 'red',
+                  zIndex: 10,
+                  pointerEvents: 'none'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import SingleColorPickerModalContent from '@/components/complex/singleColorPickerModalContent';
 import Modal from '@/components/complex/modal';
 import RangeInput from '@/components/complex/rangeInput';
@@ -239,21 +2623,7 @@ const usePlayback = ({
     }
   }, [isPianoModeRef]);
 
-  /*const getCurrentPatternSteps = useCallback(() => {
-    const currentTotalSteps = measuresRef.current * numeratorRef.current * subdivisionsPerPulseRef.current;
-    const steps = Array.from({ length: currentTotalSteps }, () => ({ activeSounds: [] }));
-    
-    selectedCellsRef.current.forEach(cellId => {
-      const [rowIndex, stepIndex] = cellId.split('-').map(Number);
-      if (stepIndex < currentTotalSteps && rowIndex < rowsRef.current) {
-        const sound = isPianoModeRef.current ? pianoNotes[rowIndex] : rowSamplesRef.current[rowIndex];
-        steps[stepIndex].activeSounds.push(sound);
-      }
-    });
-    
-    return steps;
-  }, [measuresRef, numeratorRef, subdivisionsPerPulseRef, selectedCellsRef, rowsRef, isPianoModeRef, pianoNotes, rowSamplesRef]);*/
-
+  
   const getCurrentPatternSteps = useCallback(() => {
     const currentTotalSteps = measuresRef.current * numeratorRef.current * subdivisionsPerPulseRef.current;
     const steps = Array.from({ length: currentTotalSteps }, () => ({ activeSounds: [] }));
@@ -908,7 +3278,7 @@ const Controls = ({
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       width: '70vw'
     }}>
-      {/* Recording Controls */}
+      
       <div className='backgroundColor4'
       style={{ 
         marginBottom: '20px', 
@@ -962,7 +3332,7 @@ const Controls = ({
           )}
         </div>
       </div>
-      {/* Mode Selection */}
+      
       <div style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center' }}>
           <CheckBox
@@ -998,7 +3368,7 @@ const Controls = ({
         )}
       </div>
 
-      {/* Piano Sample Controls */}
+      
       {isPianoMode && (
         <div style={{ marginBottom: '20px' }}>
           <div style={{ 
@@ -1094,7 +3464,7 @@ const Controls = ({
 
       
 
-      {/* Time Signature Controls */}
+      
       <div style={{ 
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
@@ -1178,7 +3548,7 @@ const Controls = ({
         </div>
       </div>
 
-      {/* Display Controls */}
+      
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
           <CheckBox
@@ -1581,7 +3951,7 @@ const Grid = ({
               : '#f5f5f5',
           }}
         >
-          {/* Botón colapsar/expandir */}
+          
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -1606,7 +3976,7 @@ const Grid = ({
           </button>
   
           {isGroupCollapsed ? (
-            /* MODO COLAPSADO */
+            
             <div
               style={{
                 width: '100%',
@@ -1630,7 +4000,7 @@ const Grid = ({
               </span>
             </div>
           ) : (
-            /* MODO EXPANDIDO */
+            
             <>
               {whiteKeys.map((note, i) => {
                 const fullNote = `${note}${octaveNum}`;
@@ -1714,7 +4084,7 @@ const Grid = ({
             </>
           )}
   
-          {/* Etiqueta de octava (siempre visible) */}
+          
           <div style={{ 
             position: 'absolute',
             top: '2px',
@@ -2269,7 +4639,7 @@ const SubdivisionGrid = () => {
         return (
           <div style={{ padding: '20px' }}>
             <h3>Seleccionar Sample</h3>
-            {/* Implementación del selector de samples */}
+            
           </div>
         );
   
@@ -2498,18 +4868,7 @@ const SubdivisionGrid = () => {
     setOpenColorSelector(true);
   };
 
-  /*const handleCellClick = (rowIndex, stepIndex) => {
-    const cellId = `${rowIndex}-${stepIndex}`;
-    setSelectedCells(prev => {
-      const newSet = new Set(prev);
-      newSet.has(cellId) ? newSet.delete(cellId) : newSet.add(cellId);
-      return newSet;
-    });
-    
-    initAudioContext();
-    const sound = isPianoMode ? PIANO_NOTES[rowIndex] : rowSamples[rowIndex];
-    playback.playSound(sound, globalAudioContextRef.current.currentTime + 0.05);
-  };*/
+  
 
   const handleCellClick = (rowIndex, stepIndex) => {
     const cellId = `${rowIndex}-${stepIndex}`;
@@ -2634,4 +4993,4 @@ const SubdivisionGrid = () => {
   );
 };
 
-export default SubdivisionGrid;
+export default SubdivisionGrid;*/

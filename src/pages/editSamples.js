@@ -1,4 +1,34 @@
-import ImageSlider from "@/components/complex/imageSlider";
+import React from "react";
+import QRGenerator from "@/components/complex/QRGenerator";
+
+export default function HomePage() {
+  return (
+    <div style={{ textAlign: "center", padding: "2rem" }}>
+      <h1>Generador de Código QR Personalizable</h1>
+      <QRGenerator 
+        value="https://app.brevo.com/contact/list"  // Valor o URL a codificar
+        width={500}
+        height={500}
+        image="https://res.cloudinary.com/dplncudbq/image/upload/v1740088605/exclusiveMusicForExclusivePeople/tik5d_20250220_165649/xahzj2sgmlra6u7cnhhb.jpg"    // Si no tienes un logo en ruta, dejarlo vacío. Sino, provee un path accesible.
+        dotsColor="back"            // Color personalizado para los puntos
+        bgColor="red"              // Color personalizado para el fondo
+        dotsType="classy"              // Por ej.: "classy", "rounded", classy-rounded etc.
+        cornersType="dot"              // Por ej.: "dot", "square", extra-rounded etc.
+      />
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+/*import ImageSlider from "@/components/complex/imageSlider";
 import '../estilos/general/general.css'
 
 export default function Home() {
@@ -24,12 +54,13 @@ export default function Home() {
     showShuffle: true,
     showEffects: true
   }}
+  timeToShow = {5000}
 />
 
       </div>
     </div>
   );
-}
+}*/
 
 
 
