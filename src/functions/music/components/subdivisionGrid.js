@@ -147,6 +147,9 @@ export const PercussionSequencer = () => {
     });
     return initialCollapsed;
   });
+  const [internalHighScrollSequencer, setInternalHighScrollSequencer] = useState('20vh');
+
+
 
   // Refs
   const scheduledSourcesRef = useRef(new Set());
@@ -168,8 +171,40 @@ const numeratorRef = useRef(numerator);
 const subdivisionsPerPulseRef = useRef(subdivisionsPerPulse);
 const measuresRef = useRef(measures);
 
+
+const MIN_EXPANDED_HEIGHT = 50; // Altura mínima para filas expandidas
+
+const collapsedRowCount = collapsedRows.size;
+const totalExpandedRows = rows - collapsedRowCount;
+
+// Calcular altura disponible considerando mínimo
+const availableHeightForExpanded = Math.max(
+  componentHeight - (collapsedRowCount * 20),
+  totalExpandedRows * MIN_EXPANDED_HEIGHT
+);
+
+const expandedRowHeight = totalExpandedRows > 0 ? 
+  Math.max(MIN_EXPANDED_HEIGHT, availableHeightForExpanded / totalExpandedRows) : 
+  0;
+
+const rowHeights = Array.from({ length: rows }, (_, rowIndex) => 
+  collapsedRows.has(rowIndex) ? 20 : expandedRowHeight
+);
+
+const cumulativeHeights = [];
+let currentHeight = 0;
+for (let i = 0; i < rows; i++) {
+  cumulativeHeights[i] = currentHeight;
+  currentHeight += rowHeights[i];
+}
+
+
+
+
 const headerContainerRef = useRef(null);
 const isScrollingProgrammatically = useRef(false);
+const leftPanelRef = useRef(null);
+const isScrollingVertically = useRef(false);
 
 const handleSyncScroll = (source, target) => {
   if (!isScrollingProgrammatically.current && target) {
@@ -214,22 +249,6 @@ const cellWidth = measureWidth / totalStepsPerMeasure;
 const totalGridWidth = measures * numerator * subdivisionsPerPulse * cellWidth + 2; // +2px para bordes
 
 
-const collapsedRowCount = collapsedRows.size;
-const totalExpandedRows = rows - collapsedRowCount;
-const availableHeightForExpanded = componentHeight - (collapsedRowCount * 20);
-const expandedRowHeight = totalExpandedRows > 0 ? availableHeightForExpanded / totalExpandedRows : 0;
-
-const rowHeights = Array.from({ length: rows }, (_, rowIndex) => 
-  collapsedRows.has(rowIndex) ? 20 : expandedRowHeight
-);
-
-const cumulativeHeights = [];
-let currentHeight = 0;
-for (let i = 0; i < rows; i++) {
-  cumulativeHeights[i] = currentHeight;
-  currentHeight += rowHeights[i];
-}
-
 
 
   const [customColors, setCustomColors] = useState(() => {
@@ -244,10 +263,6 @@ for (let i = 0; i < rows; i++) {
   const getRowColor = (sampleName) => {
     return customColors[sampleName] || DEFAULT_COLORS[sampleName] || '#a5d6a7';
   };
-
-
-
-
 
   // Initialize audio context
   const initAudioContext = useCallback(() => {
@@ -273,7 +288,6 @@ for (let i = 0; i < rows; i++) {
       );
     }
   }, [rowSamples, customColors, modalOpen]); // Dependencia actualizada
-
 
   // Load samples
   const loadSamples = useCallback(async () => {
@@ -463,24 +477,88 @@ for (let i = 0; i < rows; i++) {
     }
   }, [stopPlayback, measureWidth, initAudioContext, rows, rowSamples, selectedCells]);
   
+  /*useEffect(() => {
+    const gridContainer = gridContainerRef.current;
+    const headerContainer = headerContainerRef.current;
+    const leftPanel = leftPanelRef.current;
+  
+    if (gridContainer && headerContainer && leftPanel) {
+      // Horizontal scroll
+      gridContainer.addEventListener('scroll', handleGridScroll);
+      headerContainer.addEventListener('scroll', handleHeaderScroll);
+      
+      // Vertical scroll
+      gridContainer.addEventListener('scroll', handleGridVerticalScroll);
+      leftPanel.addEventListener('scroll', handleLeftPanelScroll);
+    }
+  
+    return () => {
+      if (gridContainer && headerContainer && leftPanel) {
+        gridContainer.removeEventListener('scroll', handleGridScroll);
+        headerContainer.removeEventListener('scroll', handleHeaderScroll);
+        gridContainer.removeEventListener('scroll', handleGridVerticalScroll);
+        leftPanel.removeEventListener('scroll', handleLeftPanelScroll);
+      }
+    };
+  }, [showLeftPanel]);*/
 
 
   useEffect(() => {
     const gridContainer = gridContainerRef.current;
-    const headerContainer = headerContainerRef.current;
+    const leftPanel = leftPanelRef.current;
   
-    if (gridContainer && headerContainer) {
-      // Add passive listeners for smoother scrolling
-      gridContainer.addEventListener('scroll', handleGridScroll, { passive: true });
-      headerContainer.addEventListener('scroll', handleHeaderScroll, { passive: true });
+    const handleGridVerticalScroll = (e) => {
+      if (!isScrollingVertically.current && leftPanel) {
+        isScrollingVertically.current = true;
+        leftPanel.scrollTop = e.target.scrollTop;
+        requestAnimationFrame(() => {
+          isScrollingVertically.current = false;
+        });
+      }
+    };
   
-      return () => {
-        gridContainer.removeEventListener('scroll', handleGridScroll);
-        headerContainer.removeEventListener('scroll', handleHeaderScroll);
-      };
+    const handleLeftPanelScroll = (e) => {
+      if (!isScrollingVertically.current && gridContainer) {
+        isScrollingVertically.current = true;
+        gridContainer.scrollTop = e.target.scrollTop;
+        requestAnimationFrame(() => {
+          isScrollingVertically.current = false;
+        });
+      }
+    };
+  
+    if (gridContainer && leftPanel) {
+      gridContainer.addEventListener('scroll', handleGridVerticalScroll);
+      leftPanel.addEventListener('scroll', handleLeftPanelScroll);
     }
-  }, []);
   
+    return () => {
+      if (gridContainer && leftPanel) {
+        gridContainer.removeEventListener('scroll', handleGridVerticalScroll);
+        leftPanel.removeEventListener('scroll', handleLeftPanelScroll);
+      }
+    };
+  }, [showLeftPanel]);
+
+
+
+  const handleVerticalSyncScroll = (source, target) => {
+    if (!isScrollingVertically.current && target) {
+      isScrollingVertically.current = true;
+      target.scrollTop = source.scrollTop;
+      requestAnimationFrame(() => {
+        isScrollingVertically.current = false;
+      });
+    }
+  };
+  
+  const handleGridVerticalScroll = (e) => {
+    handleVerticalSyncScroll(e.target, leftPanelRef.current);
+  };
+  
+  const handleLeftPanelScroll = (e) => {
+    handleVerticalSyncScroll(e.target, gridContainerRef.current);
+  };
 
   // Toggle playback
   const togglePlayback = useCallback(async () => {
@@ -508,9 +586,8 @@ for (let i = 0; i < rows; i++) {
     playSound(sound, globalAudioContextRef.current.currentTime + 0.05, rowIndex);
   };
 
-  // Handle rows change
   const handleRowsChange = (newRows) => {
-    const numRows = Math.max(1, Math.min(30, newRows));
+    const numRows = Math.max(1, Math.min(60, newRows));
     setRows(numRows);
     
     setRowSamples(prev => {
@@ -518,6 +595,24 @@ for (let i = 0; i < rows; i++) {
         i < prev.length ? prev[i] : DEFAULT_SAMPLES[i % DEFAULT_SAMPLES.length] || 'kick'
       );
       return newRowSamples;
+    });
+  
+    // Mantener el estado colapsado para las filas existentes y colapsar las nuevas
+    setCollapsedRows(prev => {
+      const newCollapsed = new Set(prev);
+      // Asegurarse de que todas las filas estén en el Set
+      for (let i = 0; i < numRows; i++) {
+        if (!newCollapsed.has(i)) {
+          newCollapsed.add(i);
+        }
+      }
+      // Eliminar filas que ya no existen
+      Array.from(newCollapsed).forEach(row => {
+        if (row >= numRows) {
+          newCollapsed.delete(row);
+        }
+      });
+      return newCollapsed;
     });
   };
 
@@ -659,8 +754,6 @@ for (let i = 0; i < rows; i++) {
     setModalOpen(true);
   };
 
-  
-
   // Open controls modal
   const openControlsModal = () => {
     setModalContent(
@@ -715,7 +808,7 @@ for (let i = 0; i < rows; i++) {
             <div style={{display: 'flex'}}>
               <RangeInput
                 min={1}
-                max={30}
+                max={60}
                 value={rows}
                 onChange={handleRowsChange}
                 colorClass="color3"
@@ -724,7 +817,7 @@ for (let i = 0; i < rows; i++) {
               />
               <CustomNumberInput 
                 min={1}
-                max={30}
+                max={60}
                 step={1}
                 value={rows}
                 onChange={(e) => handleRowsChange(Number(e.target.value))} 
@@ -847,26 +940,27 @@ for (let i = 0; i < rows; i++) {
               </div>
             </div>
             
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <RangeInput
-                  min={230}
-                  max={600}
-                  value={componentHeight}
-                  onChange={setComponentHeight}
-                  colorClass="color3"
-                  backgroundColorClass="backgroundColor1"
-                  showLabel={false}
-                />
-                <CustomNumberInput
-                  min={230}
-                  max={600}
-                  value={componentHeight}
-                  onChange={(e) => setComponentHeight(Number(e.target.value))}
-                />
-              </div>
-            </div>
+            // En el modal de controles, modificar el input de altura:
+<div>
+  <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <RangeInput
+      min={Math.max(230, rows * 20)} // Altura mínima dinámica (230px o espacio para filas colapsadas)
+      max={800}
+      value={componentHeight}
+      onChange={setComponentHeight}
+      colorClass="color3"
+      backgroundColorClass="backgroundColor1"
+      showLabel={false}
+    />
+    <CustomNumberInput
+      min={Math.max(230, rows * 20)}
+      max={800}
+      value={componentHeight}
+      onChange={(e) => setComponentHeight(Number(e.target.value))}
+    />
+  </div>
+</div>
           </div>
         </div>
       </div>
@@ -877,7 +971,6 @@ for (let i = 0; i < rows; i++) {
   const renderGridCells = () => {
     return Array.from({ length: rows }).map((_, rowIndex) => {
       const isCollapsed = collapsedRows.has(rowIndex);
-      const visibleRowIndex = rowIndex; // Ahora usamos el índice real para posicionamiento
   
       return Array.from({ length: totalSteps }).map((_, stepIndex) => {
         const cellId = `${rowIndex}-${stepIndex}`;
@@ -898,10 +991,10 @@ for (let i = 0; i < rows; i++) {
             onClick={() => handleCellClick(rowIndex, stepIndex)}
             style={{
               position: 'absolute',
-  left: `${stepIndex * cellWidth}px`,
-  top: `${cumulativeHeights[rowIndex]}px`,
-  width: `${cellWidth}px`,
-  height: `${rowHeights[rowIndex]}px`,
+              left: `${stepIndex * cellWidth}px`,
+              top: `${cumulativeHeights[rowIndex]}px`,
+              width: `${cellWidth}px`,
+              height: `${rowHeights[rowIndex]}px`,
               backgroundColor: cellBgColor,
               border: 'none',
               borderLeft: cellBorderLeft,
@@ -924,9 +1017,9 @@ for (let i = 0; i < rows; i++) {
 const renderLeftPanel = () => {
   return Array.from({ length: rows }).map((_, rowIndex) => {
     const isCollapsed = collapsedRows.has(rowIndex);
-    const visibleRowIndex = Array.from({ length: rows }).reduce((acc, _, i) => {
+    /*const visibleRowIndex = Array.from({ length: rows }).reduce((acc, _, i) => {
       return i < rowIndex ? acc + (collapsedRows.has(i) ? 0 : 1) : acc;
-    }, 0);
+    }, 0);*/
 
     return (
       <div
@@ -1017,7 +1110,8 @@ const renderLeftPanel = () => {
             justifyContent: 'center',
             width: '100%',
             paddingLeft: '20px'
-          }}>
+          }}
+          onClick={() => openRowControls(rowIndex)}>
             <div
               style={{
                 width: '12px',
@@ -1044,7 +1138,6 @@ const renderLeftPanel = () => {
     );
   });
 };
-
 
 const renderTimelineHeaders = () => {
   return Array.from({ length: totalSteps }).map((_, stepIndex) => {
@@ -1098,7 +1191,6 @@ const renderTimelineHeaders = () => {
     };
   }, [loadSamples, stopPlayback]);
 
-  
   return (
     <div style={{ 
       fontFamily: 'Arial, sans-serif', 
@@ -1165,24 +1257,42 @@ const renderTimelineHeaders = () => {
           boxSizing: 'border-box',
           position: 'relative',
           overflow: 'hidden',
-          width: '100%'
+          width: '90vw',
+          height: componentHeight + 45 // Ajuste para incluir la cabecera
         }}
       >
         {showLeftPanel && (
           <div style={{ 
-            width: '60px', 
-            flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            zIndex: 1,
+            width: '60px', 
+            flexShrink: 0,
             borderRight: '1px solid #ddd'
           }}>
+            {/* Cabecera del left panel (alineada con la regla superior) */}
             <div style={{ 
               height: '45px',
               borderBottom: '1px solid #ddd',
               backgroundColor: '#f5f5f5'
             }}></div>
-            {renderLeftPanel()}
+            
+            {/* Contenedor scrollable de filas */}
+            <div 
+              ref={leftPanelRef}
+              style={{ 
+                overflowY: 'auto',
+                height: componentHeight,
+                backgroundColor: '#f5f5f5'
+              }}
+              onScroll={handleLeftPanelScroll}
+            >
+              <div style={{
+                height: cumulativeHeights[rows - 1] + rowHeights[rows - 1],
+                position: 'relative'
+              }}>
+                {renderLeftPanel()}
+              </div>
+            </div>
           </div>
         )}
   
@@ -1191,9 +1301,7 @@ const renderTimelineHeaders = () => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden',
-          position: 'relative',
-          width: '380px'
+          overflow: 'hidden'
         }}>
           {/* Cabecera con scroll sincronizado */}
           <div
@@ -1204,8 +1312,6 @@ const renderTimelineHeaders = () => {
               overflowY: 'hidden',
               borderBottom: '1px solid #ddd',
               backgroundColor: '#f5f5f5',
-              position: 'sticky',
-              top: 0,
               zIndex: 2
             }}
             onScroll={handleHeaderScroll}
@@ -1225,19 +1331,17 @@ const renderTimelineHeaders = () => {
             ref={gridContainerRef}
             onScroll={handleGridScroll}  
             style={{
-              height: '50vh',
+              height: componentHeight,
               overflow: 'auto',
-              position: 'relative'
+              position: 'relative',
             }}
-            
           >
             <div
               style={{
                 width: `${totalGridWidth}px`,
-                height: `${componentHeight}px`,
+                height: cumulativeHeights[rows - 1] + rowHeights[rows - 1],
                 position: 'relative'
               }}
-              
             >
               {renderGridCells()}
               
@@ -1262,9 +1366,6 @@ const renderTimelineHeaders = () => {
       </div>
     </div>
   );
-  
-
-  
 };
 
 
