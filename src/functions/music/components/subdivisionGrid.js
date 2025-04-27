@@ -24,7 +24,7 @@ const DEFAULT_COLORS = {
 
 
 /* ----------------------------- Constantes Compartidas ----------------------------- */
-const BPM = 120;
+//const BPM = 120;
 const PIANO_KEYS = 88;
 
 const globalBuffersRef = { current: new Map() };
@@ -108,7 +108,8 @@ function RowControlsModal({
     if (sampleToLoad && onSampleLoadRequest) {
       setLoadingSamples(prev => ({ ...prev, [sampleId]: true }));
       try {
-        await onSampleLoadRequest(sampleToLoad);
+        // Pasar el ID del sample en lugar del objeto completo
+        await onSampleLoadRequest(sampleId); // <- Cambio clave aquí
       } catch (error) {
         console.error("Error loading sample:", error);
       } finally {
@@ -323,12 +324,10 @@ RowControlsModal.defaultProps = {
   customColors: {}
 };
 
-
-
-
 export const PercussionSequencer = () => {
   // States
   const [rows, setRows] = useState(DEFAULT_ROWS);
+  const [BPM, setBPM] = useState(120);
   const [rowSamples, setRowSamples] = useState(
     Array(DEFAULT_ROWS).fill().map((_, i) => DEFAULT_SAMPLES[i] || 'kick')
   );
@@ -379,6 +378,11 @@ export const PercussionSequencer = () => {
   const measuresRef = useRef(measures);
   const isScrollingProgrammatically = useRef(false);
   const isScrollingVertically = useRef(false);
+  const bpmRef = useRef(BPM);
+
+  useEffect(() => {
+    bpmRef.current = BPM;
+  }, [BPM]);
 
 
 
@@ -591,7 +595,7 @@ const findSample = (sampleId) => {
         if (!isPlayingRef.current) return;
         
         const currentTime = globalAudioContextRef.current.currentTime;
-        const stepsPerSecond = (BPM * subdivisionsPerPulseRef.current) / 60;
+        const stepsPerSecond = (bpmRef.current * subdivisionsPerPulseRef.current) / 60;
         const totalSteps = measuresRef.current * numeratorRef.current * subdivisionsPerPulseRef.current;
         const newStep = Math.floor((currentTime - startTimeRef.current) * stepsPerSecond) % totalSteps;
         
@@ -626,7 +630,7 @@ const findSample = (sampleId) => {
       stopPlayback();
       setIsPlaying(false);
     }
-  }, [initAudioContext, playSound, rows, rowSamples, selectedCells, stopPlayback]);
+  }, [initAudioContext, playSound, rows, rowSamples, selectedCells, stopPlayback, BPM]);
 
   const togglePlayback = useCallback(async () => {
     if (!samplesLoaded) return;
@@ -1329,6 +1333,18 @@ const findSample = (sampleId) => {
         >
           {showLeftPanel ? '◄ Hide Left Panel' : '► Show Left Panel'}
         </button>
+
+        <select
+        id="bpmSelect"
+        value={BPM}
+        onChange={(e) => setBPM(Number(e.target.value))}
+        >
+          {Array.from({ length: 211 }, (_, i) => i + 30).map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
   
         <TogglePlayPause 
           size={20}
