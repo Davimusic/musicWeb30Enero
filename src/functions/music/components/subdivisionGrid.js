@@ -5,6 +5,8 @@ import RangeInput from '@/components/complex/rangeInput';
 import TogglePlayPause from '@/components/complex/TogglePlayPause';
 import CustomNumberInput from '@/components/complex/customNumberInput';
 import CheckBox from '@/components/complex/checkBox';
+import ShowHide from '@/components/complex/showHide';
+import ControlsIcon from '@/components/complex/controlsIcon';
 import UploadAudiosFromDAW from './uploadAudiosFromUsers';
 '../../../estilos/general/general.css'
 '../../../estilos/music/subdivisionGrid.module.css'
@@ -42,12 +44,28 @@ function RowControlsModal({
   onClose,
   customSamples = [],
   availableSamples = { public: {}, user: {} },
-  onSampleLoadRequest
+  onSampleLoadRequest,
+  customDurations = {},
+  setCustomDurations,
+  getSampleDuration
 }) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [loadingSamples, setLoadingSamples] = useState({});
 
-  // Función para renderizar las categorías y sus samples
+  // Obtener información del sample actual
+  const currentSampleId = rowSamples[rowIndex];
+  const fullDuration = getSampleDuration(currentSampleId);
+  const currentDuration = customDurations[rowIndex] ?? 100;
+  const currentTime = (currentDuration / 100) * fullDuration;
+
+  // Cargar sample automáticamente si no está disponible
+  useEffect(() => {
+    if (fullDuration === 0 && !loadingSamples[currentSampleId]) {
+      handleSampleSelect(currentSampleId);
+    }
+  }, [currentSampleId, fullDuration]);
+
+  // Función para renderizar las categorías de samples
   const renderCategorySections = (type) => {
     const samplesData = type === 'public' ? availableSamples.public : availableSamples.user;
     if (!samplesData) return null;
@@ -70,8 +88,9 @@ function RowControlsModal({
               key={`${type}-${category}-${idx}`}
               value={sample.id}
               style={{ paddingLeft: '20px' }}
+              disabled={loadingSamples[sample.id]}
             >
-              {sample.name}
+              {sample.name} {loadingSamples[sample.id] ? ' (loading...)' : ''}
             </option>
           ))}
         </React.Fragment>
@@ -79,7 +98,7 @@ function RowControlsModal({
     });
   };
 
-  // Buscar sample
+  // Buscar un sample por ID
   const findSample = (sampleId) => {
     if (!sampleId) return null;
     
@@ -102,14 +121,14 @@ function RowControlsModal({
     return allSamples.find(s => s?.id === sampleId);
   };
 
+  // Manejar selección de sample
   const handleSampleSelect = async (sampleId) => {
     const sampleToLoad = findSample(sampleId);
     
     if (sampleToLoad && onSampleLoadRequest) {
       setLoadingSamples(prev => ({ ...prev, [sampleId]: true }));
       try {
-        // Pasar el ID del sample en lugar del objeto completo
-        await onSampleLoadRequest(sampleId); // <- Cambio clave aquí
+        await onSampleLoadRequest(sampleId);
       } catch (error) {
         console.error("Error loading sample:", error);
       } finally {
@@ -120,13 +139,13 @@ function RowControlsModal({
     onSampleChange(sampleId);
   };
 
-  // Obtener el color actual para esta fila
+  // Obtener color actual de la fila
   const getCurrentColor = () => {
     const currentSample = rowSamples[rowIndex];
     return customColors[currentSample] || DEFAULT_COLORS[currentSample] || '#a5d6a7';
   };
 
-  // Verificar si hay samples
+  // Verificar si hay samples públicos o de usuario
   const hasPublicSamples = Object.values(availableSamples.public || {}).some(
     sub => Object.values(sub || {}).flat().length > 0
   );
@@ -134,23 +153,90 @@ function RowControlsModal({
     sub => Object.values(sub || {}).flat().length > 0
   );
 
+  // Renderizar control de duración
+  const renderDurationControl = () => (
+    <div style={{ marginBottom: '25px' }}>
+      <label style={{
+        display: 'block',
+        marginBottom: '8px',
+        fontWeight: '500',
+        fontSize: '14px'
+      }}>
+        Audio Duration
+      </label>
+      
+      {loadingSamples[currentSampleId] ? (
+        <div style={{ color: '#666', fontStyle: 'italic' }}>
+          Loading audio...
+        </div>
+      ) : fullDuration > 0 ? (
+        <>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={currentDuration}
+            onChange={(e) => {
+              const newValue = parseInt(e.target.value, 10);
+              setCustomDurations(prev => ({
+                ...prev,
+                [rowIndex]: newValue
+              }));
+            }}
+            style={{ 
+              width: '100%',
+              cursor: 'pointer',
+              accentColor: getCurrentColor()
+            }}
+          />
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '12px',
+            color: '#666',
+            marginTop: '5px'
+          }}>
+            <span>{currentTime.toFixed(2)}s</span>
+            <span>{fullDuration.toFixed(2)}s</span>
+          </div>
+        </>
+      ) : (
+        <div style={{ color: '#ff4444' }}>
+          Error loading duration
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div style={{ 
       padding: '20px', 
-      minWidth: '320px',
+      width: '100%',
       maxWidth: '400px',
-      
+      minWidth: '0',
       borderRadius: '8px',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      color: 'white',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      margin: '0 auto',
+      '@media (max-width: 480px)': {
+        padding: '15px',
+        maxWidth: 'calc(100vw - 40px)',
+        minWidth: 'unset'
+      }
     }}>
       {!showColorPicker ? (
         <>
           <h3 style={{ 
             marginTop: 0, 
             marginBottom: '20px',
-            color: '#333',
             borderBottom: '1px solid #ddd',
-            paddingBottom: '10px'
+            paddingBottom: '10px',
+            fontSize: 'clamp(16px, 4vw, 20px)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}>
             Row {rowIndex + 1} Controls
           </h3>
@@ -160,28 +246,31 @@ function RowControlsModal({
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              fontSize: '14px'
             }}>
               Sound Sample:
             </label>
             
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <select
                 value={rowSamples[rowIndex]}
                 onChange={(e) => handleSampleSelect(e.target.value)}
                 style={{ 
                   width: '100%', 
-                  padding: '5px',
-                  borderRadius: '4px',
+                  padding: '10px',
+                  borderRadius: '8px',
                   border: '1px solid #ccc',
                   backgroundColor: '#fff',
                   cursor: 'pointer',
-                  minHeight: '200px'
+                  maxHeight: '200px',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                  appearance: 'none',
+                  WebkitAppearance: 'none'
                 }}
                 disabled={loadingSamples[rowSamples[rowIndex]]}
                 size="10"
               >
-                {/* Samples básicos */}
                 <optgroup label="🔊 BASIC SAMPLES">
                   <option value="kick">Kick</option>
                   <option value="snare">Snare</option>
@@ -189,35 +278,32 @@ function RowControlsModal({
                   <option value="clap">Clap</option>
                 </optgroup>
                 
-                {/* Separador Public */}
                 {hasPublicSamples && (
                   <option disabled style={{ 
                     fontWeight: 'bold', 
                     backgroundColor: '#e0e0e0',
-                    color: '#2196F3'
+                    color: 'black',
+                    fontSize: '12px'
                   }}>
                     ══════ 🌐 PUBLIC SAMPLES ══════
                   </option>
                 )}
                 
-                {/* Categorías Public */}
                 {hasPublicSamples && renderCategorySections('public')}
                 
-                {/* Separador User */}
                 {hasUserSamples && (
                   <option disabled style={{ 
                     fontWeight: 'bold', 
                     backgroundColor: '#e0e0e0',
-                    color: '#4CAF50'
+                    color: '#4CAF50',
+                    fontSize: '12px'
                   }}>
                     ══════ 👤 USER SAMPLES ══════
                   </option>
                 )}
                 
-                {/* Categorías User */}
                 {hasUserSamples && renderCategorySections('user')}
                 
-                {/* Samples personalizados */}
                 {customSamples.length > 0 && (
                   <optgroup label="🎛️ CUSTOM SAMPLES">
                     {customSamples.map((sample, idx) => (
@@ -232,10 +318,11 @@ function RowControlsModal({
               {loadingSamples[rowSamples[rowIndex]] && (
                 <div style={{
                   position: 'absolute',
-                  right: '10px',
-                  top: '10px',
+                  right: '15px',
+                  top: '12px',
                   color: '#666',
-                  fontSize: '12px'
+                  fontSize: '12px',
+                  pointerEvents: 'none'
                 }}>
                   Loading...
                 </div>
@@ -243,12 +330,15 @@ function RowControlsModal({
             </div>
           </div>
 
+          {/* Control de duración del audio */}
+          {renderDurationControl()}
+
           <div style={{ marginBottom: '25px' }}>
             <label style={{
               display: 'block',
               marginBottom: '8px',
               fontWeight: '500',
-              color: '#555'
+              fontSize: '14px'
             }}>
               Row Color:
             </label>
@@ -260,18 +350,22 @@ function RowControlsModal({
                 backgroundColor: getCurrentColor(),
                 borderRadius: '8px',
                 cursor: 'pointer',
-                border: '2px solid #ddd',
+                border: 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                '@media (max-width: 480px)': {
+                  height: '50px'
+                }
               }}
               onClick={() => setShowColorPicker(true)}
             >
               <span style={{
                 color: '#fff',
                 textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '14px'
               }}>
                 {getCurrentColor().toUpperCase()}
               </span>
@@ -287,13 +381,14 @@ function RowControlsModal({
               onClick={onClose}
               style={{
                 padding: '10px 20px',
-                backgroundColor: '#2196F3',
-                color: 'white',
+                color: 'black',
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontWeight: '500',
-                transition: 'background-color 0.2s'
+                transition: 'background-color 0.2s',
+                fontSize: '14px',
+                minWidth: '80px'
               }}
             >
               Close
@@ -321,13 +416,20 @@ function RowControlsModal({
 RowControlsModal.defaultProps = {
   availableSamples: { public: {}, user: {} },
   customSamples: [],
-  customColors: {}
+  customColors: {},
+  customDurations: {},
+  setCustomDurations: () => {},
+  getSampleDuration: () => 0
 };
 
 export const PercussionSequencer = () => {
   // States
   const [rows, setRows] = useState(DEFAULT_ROWS);
+  const [customDurations, setCustomDurations] = useState({});
   const [BPM, setBPM] = useState(120);
+  const [rowModalOpen, setRowModalOpen] = useState(false); // Nuevo estado para modal de fila
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null); 
+  const [controlsModalOpen, setControlsModalOpen] = useState(false);
   const [rowSamples, setRowSamples] = useState(
     Array(DEFAULT_ROWS).fill().map((_, i) => DEFAULT_SAMPLES[i] || 'kick')
   );
@@ -339,7 +441,7 @@ export const PercussionSequencer = () => {
   const [subdivisionsPerPulse, setSubdivisionsPerPulse] = useState(4);
   const [measures, setMeasures] = useState(1);
   const [measureWidth, setMeasureWidth] = useState(800);
-  const [componentHeight, setComponentHeight] = useState(300);
+  const [componentHeight, setComponentHeight] = useState(200);
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [activeRows, setActiveRows] = useState(new Set());
@@ -383,6 +485,10 @@ export const PercussionSequencer = () => {
   useEffect(() => {
     bpmRef.current = BPM;
   }, [BPM]);
+
+  useEffect(() => {
+    numeratorRef.current = numerator;
+  }, [numerator]);
 
 
 
@@ -555,11 +661,18 @@ const findSample = (sampleId) => {
     if (buffer && globalAudioContextRef.current) {
       const source = globalAudioContextRef.current.createBufferSource();
       source.buffer = buffer;
+      
+      // Obtener duración personalizada
+      const durationPercentage = customDurations[rowIndex] ?? 100;
+      const customDuration = (durationPercentage / 100) * buffer.duration;
+      
+      // Configurar parámetros de reproducción
       source.connect(globalAudioContextRef.current.destination);
-      source.start(time);
+      source.start(time, 0, customDuration);
+      
       scheduledSourcesRef.current.add(source);
     }
-  }, []);
+  }, [customDurations]);
 
   // Playback control
   const stopPlayback = useCallback(() => {
@@ -698,7 +811,7 @@ const findSample = (sampleId) => {
     }
 
     const beepDuration = 0.1;
-    const interval = 0.5;
+    const interval = 60 / BPM;
     const startTime = globalAudioContextRef.current.currentTime;
 
     for (let i = 0; i < count; i++) {
@@ -717,7 +830,7 @@ const findSample = (sampleId) => {
     }
 
     if (onFinish) setTimeout(onFinish, count * interval * 1000);
-  }, []);
+  }, [BPM]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -777,7 +890,7 @@ const findSample = (sampleId) => {
   const handleStartRecording = useCallback(async () => {
     try {
       initAudioContext();
-      playCountdownBeep(4, startRecording);
+      playCountdownBeep(numeratorRef.current, startRecording);
     } catch (error) {
       console.error("Error starting recording:", error);
     }
@@ -785,272 +898,14 @@ const findSample = (sampleId) => {
 
   // Modal functions
   const openRowControls = (rowIndex) => {
-    setModalContent(
-      <RowControlsModal
-        rowIndex={rowIndex}
-        rowSamples={[rowSamples]}
-        customColors={{customColors}}
-        setCustomColors={setCustomColors}
-        customSamples={customSamples}
-        availableSamples={availableSamples}
-        onSampleLoadRequest={async (sampleId) => {
-          try {
-            // Usar la función findSample del componente padre
-            const sample = findSample(sampleId);
-            
-            if (!sample) {
-              throw new Error(`Sample with ID ${sampleId} not found`);
-            }
-  
-            if (globalBuffersRef.current.has(sampleId)) {
-              return;
-            }
-  
-            const response = await fetch(sample.url);
-            if (!response.ok) {
-              throw new Error(`Failed to fetch sample: ${response.status} ${response.statusText}`);
-            }
-  
-            const buffer = await response.arrayBuffer();
-            const audioBuffer = await globalAudioContextRef.current.decodeAudioData(buffer);
-            
-            globalBuffersRef.current.set(sampleId, audioBuffer);
-            
-            const basicSamples = ['kick', 'snare', 'hihat', 'clap'];
-            if (!basicSamples.includes(sampleId)) {
-              setSamplesLoaded(true);
-            }
-          } catch (error) {
-            console.error("Error loading sample:", error);
-            throw error;
-          }
-        }}
-        onSampleChange={(newSample) => {
-          const newRowSamples = [...rowSamples];
-          newRowSamples[rowIndex] = newSample;
-          setRowSamples(newRowSamples);
-          
-          if (globalAudioContextRef.current) {
-            playSound(newSample, globalAudioContextRef.current.currentTime + 0.05, rowIndex);
-          }
-        }}
-        onClose={() => setModalOpen(false)}
-      />
-    );
-    setModalOpen(true);
+    setSelectedRowIndex(rowIndex);
+    setRowModalOpen(true);
   };
-
-
+  
+  
+  
   const openControlsModal = () => {
-    setModalContent(
-      <div style={{ padding: '20px', width: '70vw' }}>
-        <div style={{ marginBottom: '20px', padding: '15px', borderRadius: '8px' }}>
-          <h3 style={{ margin: '0 0 10px 0' }}>Record new sample:</h3>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={isGlobalRecording ? stopRecording : handleStartRecording}
-              style={{ 
-                padding: '8px 16px',
-                backgroundColor: isGlobalRecording ? '#ff4444' : '#4CAF50', 
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              {isGlobalRecording ? '⏹ Stop recording' : '🎤 Record new sample'}
-            </button>
-
-            {showNameInput && (
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1 }}>
-                <input
-                  type="text"
-                  value={newSampleName}
-                  onChange={(e) => setNewSampleName(e.target.value)}
-                  placeholder="Sample name"
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', flex: 1 }}
-                />
-                <button 
-                  onClick={saveCustomSample}
-                  style={{ 
-                    padding: '8px 16px',
-                    backgroundColor: '#2196F3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '10px' }}>
-            <label style={{ marginRight: '10px' }}>Number of rows:</label>
-            <div style={{display: 'flex'}}>
-              <RangeInput
-                min={1}
-                max={300}
-                value={rows}
-                onChange={handleRowsChange}
-                colorClass="color3"
-                backgroundColorClass="backgroundColor1"
-                showLabel={false}
-              />
-              <CustomNumberInput 
-                min={1}
-                max={300}
-                step={1}
-                value={rows}
-                onChange={(e) => handleRowsChange(Number(e.target.value))} 
-              />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: '15px',
-          marginBottom: '20px'
-        }}>
-          <div style={{marginRight: '10px'}}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Numerator:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <RangeInput
-                min={1}
-                max={12}
-                value={numerator}
-                onChange={setNumerator}
-                colorClass="color3"
-                backgroundColorClass="backgroundColor1"
-                showLabel={false}
-              />
-              <CustomNumberInput
-                min={1}
-                max={12}
-                value={numerator}
-                onChange={(e) => setNumerator(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Denominator:</label>
-            <select 
-              value={denominator} 
-              onChange={e => setDenominator(Number(e.target.value))}
-              style={{ padding: '6px', width: '100%' }}
-            >
-              {[1, 2, 4, 8, 16, 32].map(val => (
-                <option key={val} value={val}>{val}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Subdivisions:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <RangeInput
-                min={1}
-                max={12}
-                value={subdivisionsPerPulse}
-                onChange={setSubdivisionsPerPulse}
-                colorClass="color3"
-                backgroundColorClass="backgroundColor1"
-                showLabel={false}
-              />
-              <CustomNumberInput
-                min={1}
-                max={12}
-                value={subdivisionsPerPulse}
-                onChange={(e) => setSubdivisionsPerPulse(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Measures:</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <RangeInput
-                min={1}
-                max={12}
-                value={measures}
-                onChange={setMeasures}
-                colorClass="color3"
-                backgroundColorClass="backgroundColor1"
-                showLabel={false}
-              />
-              <CustomNumberInput
-                min={1}
-                max={12}
-                value={measures}
-                onChange={(e) => setMeasures(Number(e.target.value))}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
-            <CheckBox
-              checked={autoScroll}
-              onChange={(e) => setAutoScroll(e.target.checked)}
-            />
-            Auto-scroll during playback
-          </label>
-          
-          <div style={{ display: 'grid', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Measure width:</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <RangeInput
-                  min={300}
-                  max={1200}
-                  value={measureWidth}
-                  onChange={setMeasureWidth}
-                  colorClass="color3"
-                  backgroundColorClass="backgroundColor1"
-                  showLabel={false}
-                />
-                <CustomNumberInput
-                  min={300}
-                  max={1200}
-                  value={measureWidth}
-                  onChange={(e) => setMeasureWidth(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Grid height:</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <RangeInput
-                  min={Math.max(230, rows * 20)}
-                  max={800}
-                  value={componentHeight}
-                  onChange={setComponentHeight}
-                  colorClass="color3"
-                  backgroundColorClass="backgroundColor1"
-                  showLabel={false}
-                />
-                <CustomNumberInput
-                  min={Math.max(230, rows * 20)}
-                  max={800}
-                  value={componentHeight}
-                  onChange={(e) => setComponentHeight(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-    setModalOpen(true);
+    setControlsModalOpen(true);
   };
 
   // Render functions
@@ -1305,114 +1160,659 @@ const findSample = (sampleId) => {
       fontFamily: 'Arial, sans-serif', 
       paddingLeft: '5px',
       maxWidth: '1200px',
-      margin: '0 auto'
+      margin: '0 auto',
+      overflow: 'hidden'
     }}>
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
-        {modalContent}
+      {/* Modal para controles de fila */}
+      <Modal isOpen={rowModalOpen} onClose={() => {
+        setRowModalOpen(false);
+        setSelectedRowIndex(null);
+      }}>
+        {selectedRowIndex !== null && (
+          <RowControlsModal
+            key={selectedRowIndex}
+            rowIndex={selectedRowIndex}
+            rowSamples={rowSamples}
+            customColors={customColors}
+            setCustomColors={setCustomColors}
+            customSamples={customSamples}
+            availableSamples={availableSamples}
+            onSampleLoadRequest={async (sampleId) => {
+              try {
+                const sample = findSample(sampleId);
+                if (!sample) throw new Error(`Sample not found`);
+                if (!globalBuffersRef.current.has(sampleId)) {
+                  const response = await fetch(sample.url);
+                  const buffer = await response.arrayBuffer();
+                  const audioBuffer = await globalAudioContextRef.current.decodeAudioData(buffer);
+                  globalBuffersRef.current.set(sampleId, audioBuffer);
+                }
+              } catch (error) {
+                console.error("Error loading sample:", error);
+                throw error;
+              }
+            }}
+            onSampleChange={(newSample) => {
+              const newRowSamples = [...rowSamples];
+              newRowSamples[selectedRowIndex] = newSample;
+              setRowSamples(newRowSamples);
+              if (globalAudioContextRef.current) {
+                const buffer = globalBuffersRef.current.get(newSample);
+                if (buffer) {
+                  const source = globalAudioContextRef.current.createBufferSource();
+                  source.buffer = buffer;
+                  source.connect(globalAudioContextRef.current.destination);
+                  source.start(globalAudioContextRef.current.currentTime + 0.05);
+                }
+              }
+            }}
+            onClose={() => {
+              setRowModalOpen(false);
+              setSelectedRowIndex(null);
+            }}
+            customDurations={customDurations}
+            setCustomDurations={setCustomDurations}
+            getSampleDuration={(sampleId) => {
+              const buffer = globalBuffersRef.current.get(sampleId);
+              return buffer ? buffer.duration : 0;
+            }}
+          />
+        )}
       </Modal>
   
+      {/* Modal para controles generales COMPLETO */}
+      <Modal isOpen={controlsModalOpen} onClose={() => setControlsModalOpen(false)}>
+        <div style={{ 
+          padding: '20px', 
+          width: '70vw', 
+          maxHeight: '80vh', 
+          overflowY: 'auto',
+          borderRadius: '8px',
+          backgroundColor: '#000',
+          color: '#fff',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }}>
+          {/* Sección de grabación */}
+          <div style={{ 
+            marginBottom: '25px',
+            padding: '20px',
+            borderRadius: '8px',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #333'
+          }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>Recording Studio</h3>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={isGlobalRecording ? stopRecording : handleStartRecording}
+                style={{ 
+                  padding: '12px 24px',
+                  backgroundColor: isGlobalRecording ? '#dc3545' : '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isGlobalRecording ? (
+                  <>
+                    <i className="fas fa-stop"></i> Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-microphone"></i> Record Sample
+                  </>
+                )}
+              </button>
+  
+              {showNameInput && (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '10px', 
+                  alignItems: 'center', 
+                  flex: 1,
+                  minWidth: '300px'
+                }}>
+                  <input
+                    type="text"
+                    value={newSampleName}
+                    onChange={(e) => setNewSampleName(e.target.value)}
+                    placeholder="My Awesome Sample"
+                    style={{ 
+                      padding: '12px',
+                      borderRadius: '6px',
+                      border: '1px solid #444',
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      flex: 1,
+                      fontSize: '16px',
+                      outline: 'none',
+                      transition: 'border 0.2s'
+                    }}
+                  />
+                  <button 
+                    onClick={saveCustomSample}
+                    disabled={!newSampleName.trim()}
+                    style={{ 
+                      padding: '12px 24px',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      fontWeight: '500',
+                      opacity: !newSampleName.trim() ? 0.6 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <i className="fas fa-save"></i> Save
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+  
+          {/* Sección de configuración del grid */}
+          <div style={{ 
+            marginBottom: '25px',
+            padding: '20px',
+            borderRadius: '8px',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #333'
+          }}>
+            <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>Grid Configuration</h3>
+            
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '20px',
+              marginBottom: '20px'
+            }}>
+              {/* Control de filas */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-grip-lines"></i> Rows
+                </label>
+                <RangeInput
+                  min={1}
+                  max={300}
+                  value={rows}
+                  onChange={handleRowsChange}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+  
+              {/* Control de tiempo */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-time-signature"></i> Time Signature
+                </label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <select
+                    value={numerator}
+                    onChange={(e) => setNumerator(Number(e.target.value))}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid #444',
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      flex: 1,
+                      fontSize: '16px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                      <option key={num} value={num} style={{ backgroundColor: '#333', color: '#fff' }}>{num}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '20px', color: '#fff' }}>/</span>
+                  <select
+                    value={denominator}
+                    onChange={(e) => setDenominator(Number(e.target.value))}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid #444',
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      flex: 1,
+                      fontSize: '16px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {[1, 2, 4, 8, 16, 32].map(den => (
+                      <option key={den} value={den} style={{ backgroundColor: '#333', color: '#fff' }}>{den}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+  
+              {/* Subdivisiones */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-divide"></i> Subdivisions
+                </label>
+                <RangeInput
+                  min={1}
+                  max={12}
+                  value={subdivisionsPerPulse}
+                  onChange={setSubdivisionsPerPulse}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+  
+              {/* Medidas */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-ruler-combined"></i> Measures
+                </label>
+                <RangeInput
+                  min={1}
+                  max={12}
+                  value={measures}
+                  onChange={setMeasures}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+            </div>
+  
+            {/* Configuración de visualización */}
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '20px',
+              marginTop: '20px'
+            }}>
+              {/* Ancho de medida */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-arrows-alt-h"></i> Measure Width
+                </label>
+                <RangeInput
+                  min={300}
+                  max={1200}
+                  step={10}
+                  value={measureWidth}
+                  onChange={setMeasureWidth}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+  
+              {/* Altura del componente */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-arrows-alt-v"></i> Grid Height
+                </label>
+                <RangeInput
+                  min={Math.max(230, rows * 20)}
+                  max={400}
+                  step={10}
+                  value={componentHeight}
+                  onChange={setComponentHeight}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+  
+              {/* BPM */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '10px',
+                  fontWeight: '500',
+                  color: '#fff'
+                }}>
+                  <i className="fas fa-tachometer-alt"></i> BPM
+                </label>
+                <RangeInput
+                  min={30}
+                  max={240}
+                  value={BPM}
+                  onChange={setBPM}
+                  progressColor="backgroundColor1"
+                  trackColor="backgroundColor2"
+                />
+              </div>
+            </div>
+  
+            {/* Opciones adicionales */}
+            <div style={{ 
+              marginTop: '25px',
+              padding: '15px',
+              borderRadius: '8px',
+              backgroundColor: '#1a1a1a',
+              border: '1px solid #333'
+            }}>
+              <h4 style={{ margin: '0 0 15px 0', color: '#fff' }}>Display Options</h4>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  backgroundColor: '#333',
+                  border: '1px solid #444',
+                  flex: '1 1 200px'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={autoScroll}
+                    onChange={(e) => setAutoScroll(e.target.checked)}
+                    style={{ 
+                      width: '18px', 
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff'
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '500', color: '#fff' }}>Auto-scroll</div>
+                    <div style={{ fontSize: '14px', color: '#aaa' }}>Follow playback position</div>
+                  </div>
+                </label>
+  
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  backgroundColor: '#333',
+                  border: '1px solid #444',
+                  flex: '1 1 200px'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={showLeftPanel}
+                    onChange={(e) => setShowLeftPanel(e.target.checked)}
+                    style={{ 
+                      width: '18px', 
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff'
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '500', color: '#fff' }}>Left Panel</div>
+                    <div style={{ fontSize: '14px', color: '#aaa' }}>Show row controls</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+  
+          {/* Sección de samples personalizados */}
+          {customSamples.length > 0 && (
+            <div style={{ 
+              padding: '20px',
+              borderRadius: '8px',
+              backgroundColor: '#1a1a1a',
+              border: '1px solid #333'
+            }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>
+                <i className="fas fa-folder-open"></i> Custom Samples ({customSamples.length})
+              </h3>
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '12px'
+              }}>
+                {customSamples.map((sample, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#333',
+                      borderRadius: '6px',
+                      border: '1px solid #444',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      ':hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                        backgroundColor: '#444'
+                      }
+                    }}
+                    onClick={() => {
+                      if (selectedRow !== null) {
+                        const updatedRows = [...rowsData];
+                        updatedRows[selectedRow] = {
+                          ...updatedRows[selectedRow],
+                          sample: sample.audioBuffer,
+                          sampleName: sample.name
+                        };
+                        setRowsData(updatedRows);
+                        setControlsModalOpen(false);
+                        toast.success(`Sample "${sample.name}" asignado a la fila ${selectedRow + 1}`);
+                      } else {
+                        playSamplePreview(sample.audioBuffer);
+                        toast.info(`Reproduciendo preview de "${sample.name}"`);
+                      }
+                    }}
+                    onDoubleClick={() => {
+                      if (window.confirm(`¿Eliminar el sample "${sample.name}"?`)) {
+                        deleteCustomSample(index);
+                      }
+                    }}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#555',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      color: '#fff'
+                    }}>
+                      <i className="fas fa-music"></i>
+                    </div>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{
+                        fontWeight: '500',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        color: '#fff'
+                      }}>
+                        {sample.name}
+                      </div>
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#aaa'
+                      }}>
+                        {sample.duration ? `${sample.duration.toFixed(2)}s` : 'Custom Sample'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+      
+      {/* Controles principales de la interfaz */}
       <div style={{ 
         display: 'flex', 
         gap: '10px', 
         alignItems: 'center', 
-        marginBottom: '10px',
-        flexWrap: 'wrap' 
+        marginBottom: '15px',
+        flexWrap: 'wrap',
+        padding: '10px',
+        borderRadius: '8px'
       }}>
-        <button
+        <ShowHide 
+          isVisible={showLeftPanel}
           onClick={() => setShowLeftPanel(!showLeftPanel)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: showLeftPanel ? '#ff4444' : '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            minWidth: '140px'
-          }}
-        >
-          {showLeftPanel ? '◄ Hide Left Panel' : '► Show Left Panel'}
-        </button>
-
-        <select
-        id="bpmSelect"
-        value={BPM}
-        onChange={(e) => setBPM(Number(e.target.value))}
-        >
-          {Array.from({ length: 211 }, (_, i) => i + 30).map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-  
-        <TogglePlayPause 
-          size={20}
-          isPlaying={isPlaying}
-          onToggle={togglePlayback}
         />
   
-        <button
-          onClick={openControlsModal}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '10px',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          border: '1px solid #dee2e6'
+        }}>
+          <label htmlFor="bpmSelect" style={{ 
+            fontWeight: '500',
+            whiteSpace: 'nowrap'
+          }}>
+            <i className="fas fa-tachometer-alt"></i> BPM:
+          </label>
+          <select
+            id="bpmSelect"
+            value={BPM}
+            onChange={(e) => setBPM(Number(e.target.value))}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ced4da',
+              fontSize: '16px',
+              cursor: 'pointer',
+              minWidth: '80px'
+            }}
+          >
+            {Array.from({ length: 211 }, (_, i) => i + 30).map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </select>
+        </div>
+  
+        <TogglePlayPause 
+          isPlaying={isPlaying}
+          onToggle={togglePlayback}
+          size={24}
+          playIcon={<i className="fas fa-play"></i>}
+          pauseIcon={<i className="fas fa-pause"></i>}
           style={{
-            padding: '8px 16px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            minWidth: '100px'
+            padding: '12px 24px',
+            fontSize: '16px',
+            minWidth: '120px'
           }}
-        >
-          Controls
-        </button>
+        />
+  
+          <ControlsIcon 
+            onToggle={openControlsModal}
+            colorIcon={'white'}
+          />
       </div>
       
+      {/* Grid principal */}
       <div style={{
         display: 'flex',
-        border: '1px solid #ddd',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '4px',
+        border: '1px solid #dee2e6',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px',
         boxSizing: 'border-box',
         position: 'relative',
         overflow: 'hidden',
         width: '90vw',
-        height: componentHeight + 45
+        height: componentHeight + 45,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        {showLeftPanel && (
+        <div style={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          width: '180px',
+          flexShrink: 0,
+          borderRight: '1px solid #dee2e6',
+          backgroundColor: '#fff',
+          transition: 'all 0.5s ease',
+          transform: showLeftPanel ? 'translateX(0)' : 'translateX(-180px)',
+          position: showLeftPanel ? 'relative' : 'absolute',
+          zIndex: 2,
+          left: showLeftPanel ? '0' : '-180px',
+          opacity: showLeftPanel ? 1 : 0
+        }}>
           <div style={{ 
+            height: '45px',
+            borderBottom: '1px solid #dee2e6',
+            backgroundColor: '#f8f9fa',
             display: 'flex',
-            flexDirection: 'column',
-            width: '60px', 
-            flexShrink: 0,
-            borderRight: '1px solid #ddd'
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: '500'
           }}>
-            <div style={{ 
-              height: '45px',
-              borderBottom: '1px solid #ddd',
-              backgroundColor: '#f5f5f5'
-            }}></div>
-            
-            <div 
-              ref={leftPanelRef}
-              style={{ 
-                overflowY: 'scroll',
-                height: componentHeight,
-                backgroundColor: '#f5f5f5'
-              }}
-              onScroll={handleLeftPanelScroll}
-            >
-              <div style={{
-                height: cumulativeHeights[rows - 1] + rowHeights[rows - 1],
-                position: 'relative',
-                width: '77px' // 60px + 17px de scroll compensado
-              }}>
-                {renderLeftPanel()}
-              </div>
+            Rows
+          </div>
+          
+          <div 
+            ref={leftPanelRef}
+            style={{ 
+              overflowY: 'auto',
+              height: componentHeight,
+              backgroundColor: '#fff',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              }
+            }}
+            onScroll={handleLeftPanelScroll}
+          >
+            <div style={{
+              height: cumulativeHeights[rows - 1] + rowHeights[rows - 1],
+              position: 'relative'
+            }}>
+              {renderLeftPanel()}
             </div>
           </div>
-        )}
+        </div>
   
         <div style={{ 
           flex: 1,
@@ -1424,11 +1824,16 @@ const findSample = (sampleId) => {
             ref={headerContainerRef}
             style={{
               height: '45px',
-              overflowX: 'scroll',
+              overflowX: 'auto',
               overflowY: 'hidden',
-              borderBottom: '1px solid #ddd',
-              backgroundColor: '#f5f5f5',
-              zIndex: 2
+              borderBottom: '1px solid #dee2e6',
+              backgroundColor: '#f8f9fa',
+              zIndex: 2,
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              }
             }}
             onScroll={handleHeaderScroll}
           >
@@ -1447,8 +1852,14 @@ const findSample = (sampleId) => {
             onScroll={handleGridScroll}  
             style={{
               height: componentHeight,
-              overflow: 'scroll',
-              position: 'relative'
+              overflow: 'auto',
+              position: 'relative',
+              backgroundColor: '#fff',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              }
             }}
           >
             <div
@@ -1466,11 +1877,12 @@ const findSample = (sampleId) => {
                     position: 'absolute',
                     left: `${currentStep * cellWidth}px`,
                     top: 0,
-                    width: '2px',
+                    width: '3px',
                     height: '100%',
-                    backgroundColor: 'red',
+                    backgroundColor: '#dc3545',
                     zIndex: 3,
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
+                    boxShadow: '0 0 8px rgba(220,53,69,0.5)'
                   }}
                 />
               )}
@@ -1479,18 +1891,35 @@ const findSample = (sampleId) => {
         </div>
       </div>
   
-      <style>
-        {`
-          /* Scrollbars completamente invisibles */
-          ::-webkit-scrollbar {
-            display: none;
-          }
-          * {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-        `}
-      </style>
+      {/* Estilos globales */}
+      <style jsx global>{`
+        /* Ocultar scrollbars pero mantener funcionalidad */
+        ::-webkit-scrollbar {
+          width: 0 !important;
+          height: 0 !important;
+          display: none;
+        }
+        * {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+  
+        /* Fuentes de iconos */
+        .fas {
+          font-size: inherit;
+        }
+  
+        /* Transiciones suaves */
+        * {
+          transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+        }
+  
+        /* Mejor selección de texto */
+        ::selection {
+          background: rgba(0,123,255,0.2);
+          color: inherit;
+        }
+      `}</style>
     </div>
   );
 };
