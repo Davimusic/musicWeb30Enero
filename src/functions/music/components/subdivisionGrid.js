@@ -788,8 +788,8 @@ const findSample = (sampleId) => {
     setModalContent(
       <RowControlsModal
         rowIndex={rowIndex}
-        rowSamples={[...rowSamples]}
-        customColors={{...customColors}}
+        rowSamples={[rowSamples]}
+        customColors={{customColors}}
         setCustomColors={setCustomColors}
         customSamples={customSamples}
         availableSamples={availableSamples}
@@ -1718,7 +1718,7 @@ export const PianoSequencer = () => {
       
         const currentTime = globalAudioContextRef.current.currentTime;
         const elapsedTime = currentTime - startTimeRef.current;
-        const stepsPerSecond = (BPM * subdivisionsPerPulse) / 60;
+        const stepsPerSecond = (bpmRef.current * subdivisionsPerPulse) / 60;
         const totalSteps = measures * numerator * subdivisionsPerPulse;
         const cellWidth = measureWidth / (numerator * subdivisionsPerPulse);
         
