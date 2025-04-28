@@ -8,7 +8,7 @@ import { PercussionSequencer, PianoSequencer } from "@/functions/music/component
 import TrackControlsModal from "@/functions/music/components/trackControlsModel";
 import PianoGenerator from "@/functions/music/components/audioScaleGenerator";
 
-const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks, totalElements, openModal, audioNodesRef, currentTime, isPlaying, audioContextRef, preloadSequencerSamples, scheduleDrumMachine, startTransport, waveFormStyle }) => {
+const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight, setTracks, totalElements, openModal, audioNodesRef, currentTime, isPlaying, audioContextRef, preloadSequencerSamples, scheduleDrumMachine, startTransport, waveFormStyle, handleLoadAudio}) => {
   const canvasRef = useRef(null);
   const { audioBuffer, type, backgroundColorTrack } = track;
 
@@ -110,7 +110,7 @@ const Track = memo(({ track, pixelsPerSecond, onSelectTime, tracks, pixelsHeight
         
   
         
-        <PercussionSequencer/>{/*PianoSequencer*/}
+        <PercussionSequencer handleLoadAudio={handleLoadAudio}/>{/*PianoSequencer*/}
   
           
           {track.drumPattern.patterns[track.drumPattern.currentPattern].steps.map((step, i) => {
